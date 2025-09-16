@@ -4,6 +4,11 @@ import './globals.css'
 import { Providers } from '@/components/providers'
 import { Navigation } from '@/components/layout/navigation'
 
+// Initialize services (including cron scheduler)
+if (typeof window === 'undefined') {
+  import('@/lib/startup')
+}
+
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {

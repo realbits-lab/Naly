@@ -11,6 +11,7 @@ import {
   BookOpen,
   BrainCircuit,
   Building2,
+  Clock,
   Home,
   LineChart,
   PieChart,
@@ -71,6 +72,13 @@ const navigation = [
     href: '/visualizations',
     icon: LineChart,
     description: 'Interactive charts and graphs'
+  },
+  {
+    name: 'Cron Jobs',
+    href: '/cron-jobs',
+    icon: Clock,
+    description: 'Automated task scheduling',
+    badge: 'New'
   }
 ]
 
