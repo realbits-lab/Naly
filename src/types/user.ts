@@ -3,6 +3,14 @@
 import { ComplexityLevel, AudienceType } from './content'
 import { TimeHorizon } from './analytics'
 
+export enum UserRole {
+  RETAIL_INDIVIDUAL = 'RETAIL_INDIVIDUAL',
+  RETAIL_PROFESSIONAL = 'RETAIL_PROFESSIONAL',
+  INSTITUTIONAL_ANALYST = 'INSTITUTIONAL_ANALYST',
+  INSTITUTIONAL_MANAGER = 'INSTITUTIONAL_MANAGER',
+  ADMIN = 'ADMIN',
+}
+
 export enum SubscriptionTier {
   FREE = 'FREE',
   PREMIUM = 'PREMIUM',

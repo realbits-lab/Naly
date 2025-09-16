@@ -1,5 +1,5 @@
 import NextAuth from "next-auth"
-import GoogleProvider from "@auth/google-provider"
+import Google from "next-auth/providers/google"
 import { DrizzleAdapter } from "@auth/drizzle-adapter"
 import { db } from "@/lib/db"
 import { users, accounts, sessions, verificationTokens } from "@/lib/schema/users"
@@ -33,7 +33,7 @@ export const authConfig: NextAuthConfig = {
     verificationTokensTable: verificationTokens,
   }),
   providers: [
-    GoogleProvider({
+    Google({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
       authorization: {

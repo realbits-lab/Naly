@@ -1,6 +1,14 @@
-import { pgTable, uuid, varchar, timestamp, jsonb, decimal, date, pgEnum, index } from 'drizzle-orm/pg-core'
+import { pgTable, uuid, varchar, timestamp, jsonb, decimal, date, pgEnum, index, text, integer, boolean, primaryKey } from 'drizzle-orm/pg-core'
 
 // Enums
+export const userRoleEnum = pgEnum('user_role_enum', [
+  'RETAIL_INDIVIDUAL',
+  'RETAIL_PROFESSIONAL',
+  'INSTITUTIONAL_ANALYST',
+  'INSTITUTIONAL_MANAGER',
+  'ADMIN'
+])
+
 export const subscriptionTierEnum = pgEnum('subscription_tier_enum', [
   'free',
   'premium',
@@ -26,7 +34,11 @@ export const userActionEnum = pgEnum('user_action_enum', [
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
   email: varchar('email', { length: 255 }).unique().notNull(),
+  name: varchar('name', { length: 255 }),
+  image: varchar('image', { length: 255 }),
+  emailVerified: timestamp('email_verified', { mode: 'date' }),
   passwordHash: varchar('password_hash', { length: 255 }),
+  role: userRoleEnum('role').default('RETAIL_INDIVIDUAL'),
   demographics: jsonb('demographics'),
   preferences: jsonb('preferences'),
   subscriptionTier: subscriptionTierEnum('subscription_tier').default('free'),
@@ -35,6 +47,7 @@ export const users = pgTable('users', {
 }, (table) => ({
   emailIdx: index('idx_users_email').on(table.email),
   subscriptionIdx: index('idx_users_subscription').on(table.subscriptionTier),
+  roleIdx: index('idx_users_role').on(table.role),
 }))
 
 // User Portfolios table
@@ -101,4 +114,37 @@ export const userPredictions = pgTable('user_predictions', {
   userIdIdx: index('idx_user_predictions_user_id').on(table.userId),
   tickerIdx: index('idx_user_predictions_ticker').on(table.ticker),
   createdAtIdx: index('idx_user_predictions_created_at').on(table.createdAt),
+}))
+
+// NextAuth.js required tables
+export const accounts = pgTable('accounts', {
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  type: varchar('type', { length: 255 }).notNull(),
+  provider: varchar('provider', { length: 255 }).notNull(),
+  providerAccountId: varchar('provider_account_id', { length: 255 }).notNull(),
+  refresh_token: text('refresh_token'),
+  access_token: text('access_token'),
+  expires_at: integer('expires_at'),
+  token_type: varchar('token_type', { length: 255 }),
+  scope: varchar('scope', { length: 255 }),
+  id_token: text('id_token'),
+  session_state: varchar('session_state', { length: 255 }),
+}, (table) => ({
+  compoundKey: primaryKey({
+    columns: [table.provider, table.providerAccountId],
+  }),
+}))
+
+export const sessions = pgTable('sessions', {
+  sessionToken: varchar('session_token', { length: 255 }).notNull().primaryKey(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  expires: timestamp('expires', { mode: 'date' }).notNull(),
+})
+
+export const verificationTokens = pgTable('verification_token', {
+  identifier: varchar('identifier', { length: 255 }).notNull(),
+  token: varchar('token', { length: 255 }).notNull(),
+  expires: timestamp('expires', { mode: 'date' }).notNull(),
+}, (table) => ({
+  compoundKey: primaryKey({ columns: [table.identifier, table.token] }),
 }))
