@@ -97,10 +97,8 @@ export async function GET(request: NextRequest) {
         and(
           eq(communityArticles.sectionId, sectionId),
           eq(communityArticles.isActive, true),
-          // Show published articles or user's own drafts
-          session?.user?.id
-            ? undefined
-            : eq(communityArticles.publishedAt, sql`published_at IS NOT NULL`)
+          // Show published articles to everyone
+          sql`published_at IS NOT NULL`
         )
       )
       .orderBy(...orderBy)
@@ -117,9 +115,7 @@ export async function GET(request: NextRequest) {
         and(
           eq(communityArticles.sectionId, sectionId),
           eq(communityArticles.isActive, true),
-          session?.user?.id
-            ? undefined
-            : eq(communityArticles.publishedAt, sql`published_at IS NOT NULL`)
+          sql`published_at IS NOT NULL`
         )
       )
 

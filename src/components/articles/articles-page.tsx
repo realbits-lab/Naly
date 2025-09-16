@@ -51,10 +51,11 @@ interface ArticleStats {
 }
 
 interface ArticlesPageProps {
-  userId: string
+  userId?: string
+  isLoggedIn: boolean
 }
 
-export function ArticlesPage({ userId }: ArticlesPageProps) {
+export function ArticlesPage({ userId, isLoggedIn }: ArticlesPageProps) {
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null)
   const [showArticleViewer, setShowArticleViewer] = useState(false)
   const [stats, setStats] = useState<ArticleStats | null>(null)
@@ -185,7 +186,25 @@ export function ArticlesPage({ userId }: ArticlesPageProps) {
         </TabsList>
 
         <TabsContent value="generate" className="space-y-6">
-          <ArticleGenerator onArticleGenerated={handleArticleGenerated} />
+          {isLoggedIn ? (
+            <ArticleGenerator onArticleGenerated={handleArticleGenerated} />
+          ) : (
+            <Card>
+              <CardContent className="pt-6">
+                <div className="text-center space-y-4">
+                  <div className="mx-auto w-12 h-12 bg-muted rounded-lg flex items-center justify-center">
+                    <Sparkles className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold">Login Required</h3>
+                    <p className="text-muted-foreground">
+                      You need to be logged in to generate articles
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         <TabsContent value="articles" className="space-y-6">

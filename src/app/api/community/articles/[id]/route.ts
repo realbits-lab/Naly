@@ -71,10 +71,8 @@ export async function GET(
         and(
           eq(communityArticles.id, articleId),
           eq(communityArticles.isActive, true),
-          // Show published articles or user's own articles
-          session?.user?.id && session.user.id === communityArticles.authorId
-            ? undefined
-            : sql`published_at IS NOT NULL`
+          // Show published articles to everyone
+          sql`published_at IS NOT NULL`
         )
       )
 

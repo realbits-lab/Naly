@@ -8,10 +8,6 @@ export async function GET(request: NextRequest) {
   try {
     const session = await auth()
 
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
     const { searchParams } = new URL(request.url)
     const limit = parseInt(searchParams.get('limit') || '10')
     const offset = parseInt(searchParams.get('offset') || '0')
@@ -19,8 +15,16 @@ export async function GET(request: NextRequest) {
     const sentiment = searchParams.get('sentiment')
     const search = searchParams.get('search')
 
-    // Build where conditions
-    let whereConditions = [eq(generatedArticles.userId, session.user.id)]
+    // Build where conditions - show all public articles or user's own articles
+    let whereConditions = []
+
+    if (session?.user?.id) {
+      // For logged in users, show all articles but mark which ones are theirs
+      // No additional filtering needed for now
+    } else {
+      // For non-logged in users, show all public articles
+      // No additional filtering needed for now since all generated articles are public
+    }
 
     if (category && category !== 'all') {
       whereConditions.push(eq(generatedArticles.sourceCategory, category))
@@ -56,7 +60,7 @@ export async function GET(request: NextRequest) {
         createdAt: generatedArticles.createdAt,
       })
       .from(generatedArticles)
-      .where(and(...whereConditions))
+      .where(whereConditions.length > 0 ? and(...whereConditions) : undefined)
       .orderBy(desc(generatedArticles.createdAt))
       .limit(limit)
       .offset(offset)
@@ -65,7 +69,7 @@ export async function GET(request: NextRequest) {
     const totalCountResult = await db
       .select({ count: generatedArticles.id })
       .from(generatedArticles)
-      .where(and(...whereConditions))
+      .where(whereConditions.length > 0 ? and(...whereConditions) : undefined)
 
     const totalCount = totalCountResult.length
 

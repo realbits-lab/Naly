@@ -11,28 +11,23 @@ export async function GET(
   try {
     const session = await auth()
 
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
     const [article] = await db
       .select()
       .from(generatedArticles)
-      .where(and(
-        eq(generatedArticles.id, params.id),
-        eq(generatedArticles.userId, session.user.id)
-      ))
+      .where(eq(generatedArticles.id, params.id))
 
     if (!article) {
       return NextResponse.json({ error: 'Article not found' }, { status: 404 })
     }
 
-    // Track the view
-    await db.insert(articleViews).values({
-      articleId: params.id,
-      userId: session.user.id,
-      sessionId: request.headers.get('x-session-id') || 'anonymous',
-    })
+    // Track the view if user is logged in
+    if (session?.user?.id) {
+      await db.insert(articleViews).values({
+        articleId: params.id,
+        userId: session.user.id,
+        sessionId: request.headers.get('x-session-id') || 'anonymous',
+      })
+    }
 
     return NextResponse.json({ article })
 

@@ -38,11 +38,7 @@ export async function GET(request: NextRequest) {
       })
       .from(communitySections)
       .where(
-        and(
-          eq(communitySections.isActive, true),
-          // Show all sections to logged in users, only public to non-logged in
-          session?.user?.id ? undefined : eq(communitySections.isPublic, true)
-        )
+        eq(communitySections.isActive, true)
       )
       .orderBy(communitySections.displayOrder, communitySections.createdAt)
 
