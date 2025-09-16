@@ -14,6 +14,7 @@ import {
   Clock,
   Home,
   LineChart,
+  Newspaper,
   PieChart,
   Settings,
   TrendingUp,
@@ -66,6 +67,13 @@ const navigation = [
     href: '/narratives',
     icon: BookOpen,
     description: 'Intelligent market stories'
+  },
+  {
+    name: 'News Articles',
+    href: '/news-articles',
+    icon: Newspaper,
+    description: 'AI-generated financial analysis',
+    badge: 'New'
   },
   {
     name: 'Visualizations',

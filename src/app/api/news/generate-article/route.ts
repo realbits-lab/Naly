@@ -1,0 +1,195 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { auth } from '@/lib/auth'
+import { NewsService } from '@/lib/news-service'
+import { ArticleGenerator } from '@/lib/article-generator'
+import { db } from '@/lib/db'
+import { generatedArticles } from '@/lib/schema'
+import { z } from 'zod'
+
+// Schema for optional custom news input
+const customNewsSchema = z.object({
+  title: z.string().optional(),
+  content: z.string().optional(),
+  source: z.string().optional(),
+  category: z.string().optional(),
+}).optional()
+
+export async function POST(request: NextRequest) {
+  try {
+    const session = await auth()
+
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const body = await request.json()
+    const customNews = customNewsSchema.parse(body.customNews)
+
+    const newsService = new NewsService()
+    const articleGenerator = new ArticleGenerator()
+
+    let newsResult
+
+    if (customNews && customNews.title && customNews.content) {
+      // Use custom news provided by user
+      const customArticle = {
+        title: customNews.title,
+        content: customNews.content,
+        url: 'custom://user-provided',
+        source: customNews.source || 'User Provided',
+        publishedAt: new Date().toISOString(),
+        category: customNews.category || 'general',
+      }
+
+      const relatedInfo = await newsService.gatherRelatedInformation(customArticle)
+      newsResult = {
+        articles: [customArticle],
+        relatedInfo
+      }
+    } else {
+      // Fetch latest famous news automatically
+      newsResult = await newsService.processLatestNews()
+    }
+
+    const selectedArticle = newsResult.articles[0]
+    const relatedInfo = newsResult.relatedInfo
+
+    // Generate the comprehensive article
+    const generatedArticle = await articleGenerator.generateArticle(
+      selectedArticle,
+      relatedInfo
+    )
+
+    // Save the generated article to database
+    const [savedArticle] = await db.insert(generatedArticles).values({
+      userId: session.user.id,
+      title: generatedArticle.title,
+      content: generatedArticle.content,
+      summary: generatedArticle.summary,
+      keyPoints: generatedArticle.keyPoints,
+      marketAnalysis: generatedArticle.marketAnalysis,
+      investmentImplications: generatedArticle.investmentImplications,
+
+      // Source information
+      sourceTitle: selectedArticle.title,
+      sourceContent: selectedArticle.content,
+      sourceUrl: selectedArticle.url,
+      sourcePublisher: selectedArticle.source,
+      sourceCategory: selectedArticle.category,
+
+      // Analysis metadata
+      sentiment: relatedInfo.sentiment,
+      keywords: relatedInfo.keywords,
+      entities: relatedInfo.entities,
+      marketImpact: relatedInfo.marketImpact,
+
+      // Article metadata
+      wordCount: generatedArticle.metadata.wordCount,
+      readingTime: generatedArticle.metadata.readingTime,
+      aiModel: process.env.OPENAI_API_KEY ? 'gpt-4' : 'mock',
+      generationMethod: process.env.OPENAI_API_KEY ? 'ai' : 'mock',
+    }).returning()
+
+    console.log(`Generated and saved article: ${generatedArticle.title}`)
+    console.log(`Article ID: ${savedArticle.id}`)
+
+    // Return the complete result
+    return NextResponse.json({
+      success: true,
+      sourceNews: selectedArticle,
+      relatedInformation: relatedInfo,
+      generatedArticle: {
+        ...generatedArticle,
+        id: savedArticle.id,
+        savedAt: savedArticle.createdAt
+      },
+      metadata: {
+        processingTime: 'Real-time generation',
+        aiModel: process.env.OPENAI_API_KEY ? 'GPT-4' : 'Mock Generation',
+        sources: newsResult.articles.length,
+        generatedAt: new Date().toISOString(),
+        articleId: savedArticle.id
+      }
+    })
+
+  } catch (error) {
+    console.error('Failed to generate article:', error)
+
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Invalid input format', details: error.errors },
+        { status: 400 }
+      )
+    }
+
+    return NextResponse.json(
+      {
+        error: 'Failed to generate article',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      },
+      { status: 500 }
+    )
+  }
+}
+
+export async function GET(request: NextRequest) {
+  try {
+    const session = await auth()
+
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { searchParams } = new URL(request.url)
+    const category = searchParams.get('category')
+    const limit = parseInt(searchParams.get('limit') || '1')
+
+    const newsService = new NewsService()
+
+    // Fetch latest news
+    const articles = await newsService.fetchLatestNews()
+
+    // Filter by category if specified
+    const filteredArticles = category
+      ? articles.filter(article => article.category === category)
+      : articles
+
+    // Select the specified number of articles
+    const selectedArticles = filteredArticles.slice(0, limit)
+
+    // Get related information for each article
+    const articlesWithInfo = await Promise.all(
+      selectedArticles.map(async (article) => {
+        const relatedInfo = await newsService.gatherRelatedInformation(article)
+        return {
+          article,
+          relatedInfo
+        }
+      })
+    )
+
+    return NextResponse.json({
+      success: true,
+      count: articlesWithInfo.length,
+      articles: articlesWithInfo,
+      availableCategories: [
+        'monetary-policy',
+        'technology',
+        'energy',
+        'cryptocurrency',
+        'business',
+        'financial'
+      ]
+    })
+
+  } catch (error) {
+    console.error('Failed to fetch news:', error)
+    return NextResponse.json(
+      {
+        error: 'Failed to fetch news',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      },
+      { status: 500 }
+    )
+  }
+}

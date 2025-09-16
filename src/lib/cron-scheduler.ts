@@ -1,6 +1,6 @@
+import { and, eq, isNotNull, lte } from 'drizzle-orm'
 import { db } from './db'
-import { cronJobs, cronJobLogs } from './schema'
-import { eq, and, lte, isNotNull } from 'drizzle-orm'
+import { cronJobLogs, cronJobs } from './schema'
 
 export class CronScheduler {
   private intervalId: NodeJS.Timeout | null = null
@@ -59,7 +59,14 @@ export class CronScheduler {
     }
   }
 
-  private async executeJob(job: any) {
+  private async executeJob(job: {
+    id: string
+    name: string
+    type: string
+    cronExpression: string
+    runCount: string
+    taskConfig?: Record<string, unknown>
+  }) {
     const startTime = new Date()
     let status = 'SUCCESS'
     let output = ''
@@ -134,7 +141,7 @@ export class CronScheduler {
     })
   }
 
-  private async executeMarketAnalysis(job: any): Promise<string> {
+  private async executeMarketAnalysis(job: { id: string; name: string }): Promise<string> {
     // Simulate market analysis
     console.log(`Executing market analysis for job ${job.id}`)
 
@@ -149,7 +156,7 @@ export class CronScheduler {
     return `Market analysis completed. Processed ${Math.floor(Math.random() * 1000)} data points.`
   }
 
-  private async executePortfolioUpdate(job: any): Promise<string> {
+  private async executePortfolioUpdate(job: { id: string; name: string }): Promise<string> {
     // Simulate portfolio update
     console.log(`Executing portfolio update for job ${job.id}`)
 
@@ -164,7 +171,7 @@ export class CronScheduler {
     return `Portfolio update completed. Updated ${Math.floor(Math.random() * 50)} portfolios.`
   }
 
-  private async executePredictionRefresh(job: any): Promise<string> {
+  private async executePredictionRefresh(job: { id: string; name: string }): Promise<string> {
     // Simulate prediction refresh
     console.log(`Executing prediction refresh for job ${job.id}`)
 
@@ -179,7 +186,7 @@ export class CronScheduler {
     return `Prediction refresh completed. Generated ${Math.floor(Math.random() * 200)} new predictions.`
   }
 
-  private async executeDataSync(job: any): Promise<string> {
+  private async executeDataSync(job: { id: string; name: string }): Promise<string> {
     // Simulate data synchronization
     console.log(`Executing data sync for job ${job.id}`)
 
@@ -194,7 +201,7 @@ export class CronScheduler {
     return `Data sync completed. Synchronized ${Math.floor(Math.random() * 500)} records.`
   }
 
-  private async executeCustomTask(job: any): Promise<string> {
+  private async executeCustomTask(job: { id: string; name: string; taskConfig?: Record<string, unknown> }): Promise<string> {
     // Execute custom task based on job configuration
     console.log(`Executing custom task for job ${job.id}`)
 
@@ -217,7 +224,7 @@ export class CronScheduler {
         throw new Error('Invalid cron expression')
       }
 
-      const [minute, hour, day, month, dayOfWeek] = parts
+      const [minute, hour, , , dayOfWeek] = parts
 
       // Handle hourly jobs (most common case)
       if (minute === '0' && hour === '*') {
