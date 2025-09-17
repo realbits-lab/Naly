@@ -13,8 +13,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 	],
 	callbacks: {
 		async session({ session, token }) {
-			if (session.user && token && token.sub) {
-				session.user.id = token.sub;
+			if (session.user && token) {
+				// Use the database user ID instead of token.sub
+				session.user.id = (typeof token.dbUserId === "string" ? token.dbUserId : null) || token.sub;
 				// Get user role from token
 				session.user.role = (typeof token.role === "string" ? token.role : null) || "user";
 			}
@@ -22,16 +23,22 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 		},
 		async jwt({ token, user, account }) {
 			if (user && account) {
-				// When user signs in, fetch their role from the database
+				// When user signs in, fetch their ID and role from the database
 				try {
 					const result = await db.execute(
-						sql`SELECT role FROM users WHERE email = ${user.email} LIMIT 1`,
+						sql`SELECT id, role FROM users WHERE email = ${user.email} LIMIT 1`,
 					);
 
-					const userRole = result[0]?.role;
-					token.role = userRole === "ADMIN" ? "admin" : "user";
+					if (result[0]) {
+						const dbUser = result[0];
+						token.dbUserId = dbUser.id;
+						token.role = dbUser.role === "ADMIN" ? "admin" : "user";
+					} else {
+						console.error("User not found in database:", user.email);
+						token.role = "user";
+					}
 				} catch (error) {
-					console.error("Error fetching user role:", error);
+					console.error("Error fetching user from database:", error);
 					token.role = "user";
 				}
 			}

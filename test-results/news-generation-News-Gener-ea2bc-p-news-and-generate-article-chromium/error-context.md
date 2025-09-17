@@ -22,8 +22,8 @@
             - generic: Email or phone
           - button "Forgot email?" [ref=e49] [cursor=pointer]
         - generic [ref=e51]:
-          - button "Next" [ref=e55]:
-            - generic [ref=e58]: Next
+          - button "Next" [ref=e55] [cursor=pointer]:
+            - generic [ref=e58] [cursor=pointer]: Next
           - button "Create account" [ref=e63]:
             - generic [ref=e66]: Create account
     - contentinfo [ref=e69]:
