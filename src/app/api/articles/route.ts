@@ -1,187 +1,234 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
-import { db } from '@/lib/db'
-import { generatedArticles } from '@/lib/schema'
-import { eq, desc, and, like, inArray } from 'drizzle-orm'
+import { and, count, desc, eq, inArray, like, sql } from "drizzle-orm";
+import { type NextRequest, NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { generatedArticles } from "@/lib/schema";
 
 export async function GET(request: NextRequest) {
-  try {
-    const session = await auth()
+	try {
+		const { searchParams } = new URL(request.url);
+		const limit = parseInt(searchParams.get("limit") || "10");
+		const offset = parseInt(searchParams.get("offset") || "0");
+		const category = searchParams.get("category");
+		const sentiment = searchParams.get("sentiment");
+		const search = searchParams.get("search");
 
-    const { searchParams } = new URL(request.url)
-    const limit = parseInt(searchParams.get('limit') || '10')
-    const offset = parseInt(searchParams.get('offset') || '0')
-    const category = searchParams.get('category')
-    const sentiment = searchParams.get('sentiment')
-    const search = searchParams.get('search')
+		// Build where conditions - show all public articles
+		const whereConditions = [];
 
-    // Build where conditions - show all public articles or user's own articles
-    let whereConditions = []
+		if (category && category !== "all") {
+			whereConditions.push(eq(generatedArticles.sourceCategory, category));
+		}
 
-    if (session?.user?.id) {
-      // For logged in users, show all articles but mark which ones are theirs
-      // No additional filtering needed for now
-    } else {
-      // For non-logged in users, show all public articles
-      // No additional filtering needed for now since all generated articles are public
-    }
+		if (sentiment && sentiment !== "all") {
+			whereConditions.push(eq(generatedArticles.sentiment, sentiment));
+		}
 
-    if (category && category !== 'all') {
-      whereConditions.push(eq(generatedArticles.sourceCategory, category))
-    }
+		if (search && search.trim()) {
+			whereConditions.push(like(generatedArticles.title, `%${search.trim()}%`));
+		}
 
-    if (sentiment && sentiment !== 'all') {
-      whereConditions.push(eq(generatedArticles.sentiment, sentiment))
-    }
+		const articles = await db
+			.select({
+				id: generatedArticles.id,
+				title: generatedArticles.title,
+				summary: generatedArticles.summary,
+				keyPoints: generatedArticles.keyPoints,
+				marketAnalysis: generatedArticles.marketAnalysis,
+				investmentImplications: generatedArticles.investmentImplications,
+				sourceTitle: generatedArticles.sourceTitle,
+				sourcePublisher: generatedArticles.sourcePublisher,
+				sourceCategory: generatedArticles.sourceCategory,
+				sentiment: generatedArticles.sentiment,
+				keywords: generatedArticles.keywords,
+				entities: generatedArticles.entities,
+				wordCount: generatedArticles.wordCount,
+				readingTime: generatedArticles.readingTime,
+				aiModel: generatedArticles.aiModel,
+				createdAt: generatedArticles.createdAt,
+			})
+			.from(generatedArticles)
+			.where(whereConditions.length > 0 ? and(...whereConditions) : undefined)
+			.orderBy(desc(generatedArticles.createdAt))
+			.limit(limit)
+			.offset(offset);
 
-    if (search && search.trim()) {
-      whereConditions.push(
-        like(generatedArticles.title, `%${search.trim()}%`)
-      )
-    }
+		// Get total count for pagination
+		const totalCountResult = await db
+			.select({ count: count() })
+			.from(generatedArticles)
+			.where(whereConditions.length > 0 ? and(...whereConditions) : undefined);
 
-    const articles = await db
-      .select({
-        id: generatedArticles.id,
-        title: generatedArticles.title,
-        summary: generatedArticles.summary,
-        keyPoints: generatedArticles.keyPoints,
-        marketAnalysis: generatedArticles.marketAnalysis,
-        investmentImplications: generatedArticles.investmentImplications,
-        sourceTitle: generatedArticles.sourceTitle,
-        sourcePublisher: generatedArticles.sourcePublisher,
-        sourceCategory: generatedArticles.sourceCategory,
-        sentiment: generatedArticles.sentiment,
-        keywords: generatedArticles.keywords,
-        entities: generatedArticles.entities,
-        wordCount: generatedArticles.wordCount,
-        readingTime: generatedArticles.readingTime,
-        aiModel: generatedArticles.aiModel,
-        createdAt: generatedArticles.createdAt,
-      })
-      .from(generatedArticles)
-      .where(whereConditions.length > 0 ? and(...whereConditions) : undefined)
-      .orderBy(desc(generatedArticles.createdAt))
-      .limit(limit)
-      .offset(offset)
+		const totalCount = totalCountResult[0]?.count || 0;
 
-    // Get total count for pagination
-    const totalCountResult = await db
-      .select({ count: generatedArticles.id })
-      .from(generatedArticles)
-      .where(whereConditions.length > 0 ? and(...whereConditions) : undefined)
-
-    const totalCount = totalCountResult.length
-
-    return NextResponse.json({
-      articles,
-      pagination: {
-        total: totalCount,
-        limit,
-        offset,
-        hasMore: offset + limit < totalCount
-      },
-      filters: {
-        category,
-        sentiment,
-        search
-      }
-    })
-
-  } catch (error) {
-    console.error('Failed to fetch articles:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch articles' },
-      { status: 500 }
-    )
-  }
+		return NextResponse.json({
+			articles,
+			pagination: {
+				total: totalCount,
+				limit,
+				offset,
+				hasMore: offset + limit < totalCount,
+			},
+			filters: {
+				category,
+				sentiment,
+				search,
+			},
+		});
+	} catch (error) {
+		console.error("Failed to fetch articles:", error);
+		return NextResponse.json(
+			{ error: "Failed to fetch articles" },
+			{ status: 500 },
+		);
+	}
 }
 
-// Get article statistics
+// Get article statistics (public access)
 export async function POST(request: NextRequest) {
-  try {
-    const session = await auth()
+	try {
+		const body = await request.json();
+		const { action } = body;
 
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+		if (action === "stats") {
+			// Get article statistics for all articles
+			const stats = await db
+				.select({
+					sourceCategory: generatedArticles.sourceCategory,
+					sentiment: generatedArticles.sentiment,
+					aiModel: generatedArticles.aiModel,
+					wordCount: generatedArticles.wordCount,
+					readingTime: generatedArticles.readingTime,
+					createdAt: generatedArticles.createdAt,
+				})
+				.from(generatedArticles)
+				.orderBy(desc(generatedArticles.createdAt));
 
-    const body = await request.json()
-    const { action } = body
+			// Process statistics
+			const categoryCounts = stats.reduce(
+				(acc, article) => {
+					const category = article.sourceCategory || "unknown";
+					acc[category] = (acc[category] || 0) + 1;
+					return acc;
+				},
+				{} as Record<string, number>,
+			);
 
-    if (action === 'stats') {
-      // Get article statistics
-      const stats = await db
-        .select({
-          sourceCategory: generatedArticles.sourceCategory,
-          sentiment: generatedArticles.sentiment,
-          aiModel: generatedArticles.aiModel,
-          wordCount: generatedArticles.wordCount,
-          readingTime: generatedArticles.readingTime,
-          createdAt: generatedArticles.createdAt,
-        })
-        .from(generatedArticles)
-        .where(eq(generatedArticles.userId, session.user.id))
-        .orderBy(desc(generatedArticles.createdAt))
+			const sentimentCounts = stats.reduce(
+				(acc, article) => {
+					const sentiment = article.sentiment || "neutral";
+					acc[sentiment] = (acc[sentiment] || 0) + 1;
+					return acc;
+				},
+				{} as Record<string, number>,
+			);
 
-      // Process statistics
-      const categoryCounts = stats.reduce((acc, article) => {
-        const category = article.sourceCategory || 'unknown'
-        acc[category] = (acc[category] || 0) + 1
-        return acc
-      }, {} as Record<string, number>)
+			const modelCounts = stats.reduce(
+				(acc, article) => {
+					const model = article.aiModel || "unknown";
+					acc[model] = (acc[model] || 0) + 1;
+					return acc;
+				},
+				{} as Record<string, number>,
+			);
 
-      const sentimentCounts = stats.reduce((acc, article) => {
-        const sentiment = article.sentiment || 'neutral'
-        acc[sentiment] = (acc[sentiment] || 0) + 1
-        return acc
-      }, {} as Record<string, number>)
+			const avgWordCount =
+				stats.length > 0
+					? Math.round(
+							stats.reduce(
+								(sum, article) => sum + (article.wordCount || 0),
+								0,
+							) / stats.length,
+						)
+					: 0;
 
-      const modelCounts = stats.reduce((acc, article) => {
-        const model = article.aiModel || 'unknown'
-        acc[model] = (acc[model] || 0) + 1
-        return acc
-      }, {} as Record<string, number>)
+			const avgReadingTime =
+				stats.length > 0
+					? Math.round(
+							stats.reduce(
+								(sum, article) => sum + (article.readingTime || 0),
+								0,
+							) / stats.length,
+						)
+					: 0;
 
-      const avgWordCount = stats.length > 0
-        ? Math.round(stats.reduce((sum, article) => sum + (article.wordCount || 0), 0) / stats.length)
-        : 0
+			// Get articles created in the last 7 days
+			const sevenDaysAgo = new Date();
+			sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-      const avgReadingTime = stats.length > 0
-        ? Math.round(stats.reduce((sum, article) => sum + (article.readingTime || 0), 0) / stats.length)
-        : 0
+			const recentArticles = stats.filter(
+				(article) =>
+					article.createdAt && new Date(article.createdAt) > sevenDaysAgo,
+			);
 
-      // Get articles created in the last 7 days
-      const sevenDaysAgo = new Date()
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+			return NextResponse.json({
+				totalArticles: stats.length,
+				categoryCounts,
+				sentimentCounts,
+				modelCounts,
+				averages: {
+					wordCount: avgWordCount,
+					readingTime: avgReadingTime,
+				},
+				recent: {
+					last7Days: recentArticles.length,
+					thisWeek: recentArticles.length,
+				},
+			});
+		}
 
-      const recentArticles = stats.filter(article =>
-        article.createdAt && new Date(article.createdAt) > sevenDaysAgo
-      )
+		return NextResponse.json({ error: "Invalid action" }, { status: 400 });
+	} catch (error) {
+		console.error("Failed to process request:", error);
+		return NextResponse.json(
+			{ error: "Failed to process request" },
+			{ status: 500 },
+		);
+	}
+}
 
-      return NextResponse.json({
-        totalArticles: stats.length,
-        categoryCounts,
-        sentimentCounts,
-        modelCounts,
-        averages: {
-          wordCount: avgWordCount,
-          readingTime: avgReadingTime
-        },
-        recent: {
-          last7Days: recentArticles.length,
-          thisWeek: recentArticles.length
-        }
-      })
-    }
+export async function DELETE(request: NextRequest) {
+	try {
+		const session = await auth();
 
-    return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
+		if (!session?.user || session.user.role !== "admin") {
+			return NextResponse.json(
+				{ error: "Unauthorized - Admin access required" },
+				{ status: 403 },
+			);
+		}
 
-  } catch (error) {
-    console.error('Failed to process request:', error)
-    return NextResponse.json(
-      { error: 'Failed to process request' },
-      { status: 500 }
-    )
-  }
+		const body = await request.json();
+		const { action, articleIds } = body;
+
+		if (
+			action !== "delete" ||
+			!Array.isArray(articleIds) ||
+			articleIds.length === 0
+		) {
+			return NextResponse.json(
+				{
+					error:
+						'Invalid request - action must be "delete" and articleIds must be a non-empty array',
+				},
+				{ status: 400 },
+			);
+		}
+
+		await db
+			.delete(generatedArticles)
+			.where(inArray(generatedArticles.id, articleIds));
+
+		return NextResponse.json({
+			success: true,
+			deletedCount: articleIds.length,
+			message: `Successfully deleted ${articleIds.length} article(s)`,
+		});
+	} catch (error) {
+		console.error("Failed to delete articles:", error);
+		return NextResponse.json(
+			{ error: "Failed to delete articles" },
+			{ status: 500 },
+		);
+	}
 }

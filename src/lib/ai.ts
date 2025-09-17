@@ -1,117 +1,117 @@
-import { openai } from '@ai-sdk/openai'
-import { generateText, generateObject, streamText } from 'ai'
+import { createOpenAI } from "@ai-sdk/openai";
+import { generateObject, generateText, streamText } from "ai";
 
 if (!process.env.AI_GATEWAY_API_KEY) {
-  throw new Error('AI_GATEWAY_API_KEY is not defined')
+	throw new Error("AI_GATEWAY_API_KEY is not defined");
 }
 
 // Configure OpenAI client with Vercel AI Gateway
-const ai = openai({
-  apiKey: process.env.AI_GATEWAY_API_KEY,
-  baseURL: 'https://gateway.ai.cloudflare.com/v1/naly/openai',
-})
+export const openai = createOpenAI({
+	apiKey: process.env.AI_GATEWAY_API_KEY,
+	baseURL: "https://gateway.ai.cloudflare.com/v1/naly/openai",
+});
 
 // Model configuration
 export const AI_MODELS = {
-  GPT_4O_MINI: 'gpt-4o-mini',
-  GPT_4O: 'gpt-4o',
-  GPT_4_TURBO: 'gpt-4-turbo-preview',
-} as const
+	GPT_4O_MINI: "gpt-4o-mini",
+	GPT_4O: "gpt-4o",
+	GPT_4_TURBO: "gpt-4-turbo-preview",
+} as const;
 
 // Default model for most operations
-export const DEFAULT_MODEL = AI_MODELS.GPT_4O_MINI
+export const DEFAULT_MODEL = "GPT_4O_MINI" as keyof typeof AI_MODELS;
 
 /**
  * Generate text using AI with configurable parameters
  */
 export async function generateAIText({
-  prompt,
-  model = DEFAULT_MODEL,
-  temperature = 0.7,
-  maxTokens = 2000,
+	prompt,
+	model = DEFAULT_MODEL,
+	temperature = 0.7,
+	maxTokens = 2000,
 }: {
-  prompt: string
-  model?: keyof typeof AI_MODELS
-  temperature?: number
-  maxTokens?: number
+	prompt: string;
+	model?: keyof typeof AI_MODELS;
+	temperature?: number;
+	maxTokens?: number;
 }) {
-  const modelName = AI_MODELS[model]
+	const modelName = AI_MODELS[model];
 
-  const result = await generateText({
-    model: ai(modelName),
-    prompt,
-    temperature,
-    maxTokens,
-  })
+	const result = await generateText({
+		model: openai(modelName),
+		prompt,
+		temperature,
+		maxTokens,
+	});
 
-  return result.text
+	return result.text;
 }
 
 /**
  * Generate structured object using AI
  */
 export async function generateAIObject<T>({
-  prompt,
-  schema,
-  model = DEFAULT_MODEL,
-  temperature = 0.3,
+	prompt,
+	schema,
+	model = DEFAULT_MODEL,
+	temperature = 0.3,
 }: {
-  prompt: string
-  schema: any
-  model?: keyof typeof AI_MODELS
-  temperature?: number
+	prompt: string;
+	schema: any;
+	model?: keyof typeof AI_MODELS;
+	temperature?: number;
 }) {
-  const modelName = AI_MODELS[model]
+	const modelName = AI_MODELS[model];
 
-  const result = await generateObject({
-    model: ai(modelName),
-    prompt,
-    schema,
-    temperature,
-  })
+	const result = await generateObject({
+		model: openai(modelName),
+		prompt,
+		schema,
+		temperature,
+	});
 
-  return result.object as T
+	return result.object as T;
 }
 
 /**
  * Stream text generation for real-time responses
  */
 export async function streamAIText({
-  prompt,
-  model = DEFAULT_MODEL,
-  temperature = 0.7,
-  maxTokens = 2000,
+	prompt,
+	model = DEFAULT_MODEL,
+	temperature = 0.7,
+	maxTokens = 2000,
 }: {
-  prompt: string
-  model?: keyof typeof AI_MODELS
-  temperature?: number
-  maxTokens?: number
+	prompt: string;
+	model?: keyof typeof AI_MODELS;
+	temperature?: number;
+	maxTokens?: number;
 }) {
-  const modelName = AI_MODELS[model]
+	const modelName = AI_MODELS[model];
 
-  const result = await streamText({
-    model: ai(modelName),
-    prompt,
-    temperature,
-    maxTokens,
-  })
+	const result = await streamText({
+		model: openai(modelName),
+		prompt,
+		temperature,
+		maxTokens,
+	});
 
-  return result.textStream
+	return result.textStream;
 }
 
 /**
  * Generate market narrative from event data
  */
 export async function generateMarketNarrative({
-  eventData,
-  analysisData,
-  userContext,
+	eventData,
+	analysisData,
+	userContext,
 }: {
-  eventData: any
-  analysisData: any
-  userContext?: any
+	eventData: any;
+	analysisData: any;
+	userContext?: any;
 }) {
-  const prompt = `
+	const prompt = `
 As a financial intelligence platform, generate an intelligent narrative for the following market event:
 
 EVENT DATA:
@@ -121,7 +121,7 @@ ANALYSIS DATA:
 ${JSON.stringify(analysisData, null, 2)}
 
 USER CONTEXT:
-${userContext ? JSON.stringify(userContext, null, 2) : 'General audience'}
+${userContext ? JSON.stringify(userContext, null, 2) : "General audience"}
 
 Generate a comprehensive narrative that includes:
 
@@ -139,28 +139,28 @@ Style guidelines:
 - Present uncertainty transparently
 
 Format as JSON with sections: headline, summary, explanation, prediction, keyInsights
-`
+`;
 
-  return await generateAIText({
-    prompt,
-    temperature: 0.6,
-    maxTokens: 3000,
-  })
+	return await generateAIText({
+		prompt,
+		temperature: 0.6,
+		maxTokens: 3000,
+	});
 }
 
 /**
  * Generate causal analysis explanation
  */
 export async function generateCausalExplanation({
-  eventData,
-  evidenceChain,
-  historicalContext,
+	eventData,
+	evidenceChain,
+	historicalContext,
 }: {
-  eventData: any
-  evidenceChain: any[]
-  historicalContext?: any
+	eventData: any;
+	evidenceChain: any[];
+	historicalContext?: any;
 }) {
-  const prompt = `
+	const prompt = `
 Analyze the causal factors behind this market event and generate a clear explanation:
 
 EVENT DATA:
@@ -170,7 +170,7 @@ EVIDENCE CHAIN:
 ${JSON.stringify(evidenceChain, null, 2)}
 
 HISTORICAL CONTEXT:
-${historicalContext ? JSON.stringify(historicalContext, null, 2) : 'Limited historical data available'}
+${historicalContext ? JSON.stringify(historicalContext, null, 2) : "Limited historical data available"}
 
 Generate a causal analysis that:
 1. Identifies the primary root cause
@@ -183,28 +183,28 @@ Use the "5 Whys" methodology to trace the event back to its fundamental causes.
 Present findings objectively with appropriate caveats about uncertainty.
 
 Format as structured analysis with clear reasoning.
-`
+`;
 
-  return await generateAIText({
-    prompt,
-    temperature: 0.4,
-    maxTokens: 2500,
-  })
+	return await generateAIText({
+		prompt,
+		temperature: 0.4,
+		maxTokens: 2500,
+	});
 }
 
 /**
  * Generate probabilistic forecast scenarios
  */
 export async function generatePredictionScenarios({
-  marketData,
-  historicalPatterns,
-  currentContext,
+	marketData,
+	historicalPatterns,
+	currentContext,
 }: {
-  marketData: any
-  historicalPatterns: any[]
-  currentContext: any
+	marketData: any;
+	historicalPatterns: any[];
+	currentContext: any;
 }) {
-  const prompt = `
+	const prompt = `
 Based on the provided data, generate probabilistic forecast scenarios:
 
 CURRENT MARKET DATA:
@@ -234,11 +234,11 @@ Ensure scenarios are mutually exclusive and collectively exhaustive.
 Communicate uncertainty transparently.
 
 Format as structured JSON with scenarios array.
-`
+`;
 
-  return await generateAIText({
-    prompt,
-    temperature: 0.5,
-    maxTokens: 2500,
-  })
+	return await generateAIText({
+		prompt,
+		temperature: 0.5,
+		maxTokens: 2500,
+	});
 }

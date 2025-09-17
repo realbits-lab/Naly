@@ -1,17 +1,21 @@
-"use client"
+"use client";
 
-import { SessionProvider } from "next-auth/react"
-import { ReactNode } from "react"
+import type { ReactNode } from "react";
+import { Toaster } from "sonner";
+import { AuthSessionProvider } from "@/components/auth/session-provider";
+import { ThemeProvider } from "@/components/theme-provider";
 
 interface ProvidersProps {
-  children: ReactNode
-  session?: any
+	children: ReactNode;
 }
 
-export function Providers({ children, session }: ProvidersProps) {
-  return (
-    <SessionProvider session={session}>
-      {children}
-    </SessionProvider>
-  )
+export function Providers({ children }: ProvidersProps) {
+	return (
+		<AuthSessionProvider>
+			<ThemeProvider defaultTheme="light" storageKey="naly-ui-theme">
+				{children}
+				<Toaster position="top-right" richColors />
+			</ThemeProvider>
+		</AuthSessionProvider>
+	);
 }

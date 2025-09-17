@@ -140,3 +140,5 @@ vite.config.ts.timestamp-*
 
 # Playwright MCP directories
 .playwright-mcp/
+.vercel
+.env*.local
