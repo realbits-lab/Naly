@@ -1,24 +1,21 @@
-"use client"
+"use client";
 
-import { ReactNode } from "react"
-import { ThemeProvider } from "@/components/theme-provider"
-import { AuthSessionProvider } from "@/components/auth/session-provider"
-import { Toaster } from "sonner"
+import type { ReactNode } from "react";
+import { Toaster } from "sonner";
+import { AuthSessionProvider } from "@/components/auth/session-provider";
+import { ThemeProvider } from "@/components/theme-provider";
 
 interface ProvidersProps {
-  children: ReactNode
+	children: ReactNode;
 }
 
 export function Providers({ children }: ProvidersProps) {
-  return (
-    <AuthSessionProvider>
-      <ThemeProvider
-        defaultTheme="light"
-        storageKey="naly-ui-theme"
-      >
-        {children}
-        <Toaster position="top-right" richColors />
-      </ThemeProvider>
-    </AuthSessionProvider>
-  )
+	return (
+		<AuthSessionProvider>
+			<ThemeProvider defaultTheme="light" storageKey="naly-ui-theme">
+				{children}
+				<Toaster position="top-right" richColors />
+			</ThemeProvider>
+		</AuthSessionProvider>
+	);
 }

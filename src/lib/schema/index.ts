@@ -1,21 +1,22 @@
 // Export all schema definitions
-export * from './events'
-export * from './analytics'
-export * from './cron'
-export * from './articles'
-export * from './users'
 
+export * from "./analytics";
+export * from "./articles";
+export * from "./cron";
+export * from "./events";
+export * from "./users";
+
+import * as analyticsSchema from "./analytics";
+import * as articlesSchema from "./articles";
+import * as cronSchema from "./cron";
 // Re-export all tables for easier access
-import * as eventsSchema from './events'
-import * as analyticsSchema from './analytics'
-import * as cronSchema from './cron'
-import * as articlesSchema from './articles'
-import * as usersSchema from './users'
+import * as eventsSchema from "./events";
+import * as usersSchema from "./users";
 
 export const schema = {
-  ...eventsSchema,
-  ...analyticsSchema,
-  ...cronSchema,
-  ...articlesSchema,
-  ...usersSchema,
-}
+	...eventsSchema,
+	...analyticsSchema,
+	...cronSchema,
+	...articlesSchema,
+	...usersSchema,
+};
