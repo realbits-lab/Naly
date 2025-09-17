@@ -3,6 +3,7 @@ import { pgTable, uuid, varchar, timestamp, jsonb, text, integer, index } from '
 // Generated Articles table
 export const generatedArticles = pgTable('generated_articles', {
   id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').notNull(), // User who generated this article
   title: varchar('title', { length: 500 }).notNull(),
   content: text('content').notNull(),
   summary: text('summary'),
