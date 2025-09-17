@@ -10,6 +10,7 @@ import {
 	Search,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { ArticleListSkeleton } from "@/components/articles/article-skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -100,12 +101,7 @@ export function NewsSidebar({
 	};
 
 	return (
-		<div
-			className={cn(
-				"flex flex-col bg-card border-r border-border h-full transition-all duration-300",
-				isCollapsed ? "w-16" : "w-80",
-			)}
-		>
+		<div className="flex flex-col bg-card border-r border-border h-full w-full">
 			{/* Header */}
 			<div className="flex items-center justify-between p-4 border-b border-border">
 				{!isCollapsed && (
@@ -171,14 +167,7 @@ export function NewsSidebar({
 					{/* Articles List */}
 					<div className="flex-1 overflow-y-auto">
 						{loading ? (
-							<div className="p-4 space-y-3">
-								{[...Array(5)].map((_, i) => (
-									<div
-										key={i}
-										className="h-20 bg-muted rounded animate-pulse"
-									/>
-								))}
-							</div>
+							<ArticleListSkeleton />
 						) : (
 							<div className="p-2">
 								{filteredArticles.map((article) => (

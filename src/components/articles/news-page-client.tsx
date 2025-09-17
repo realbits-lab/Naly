@@ -29,17 +29,21 @@ export function NewsPageClient() {
 	};
 
 	return (
-		<div className="flex h-[calc(100vh-4rem)] max-w-7xl mx-auto px-4">
-			{/* Sidebar */}
-			<NewsSidebar
-				selectedArticleId={selectedArticle?.id || null}
-				onArticleSelect={handleArticleSelect}
-				isCollapsed={isCollapsed}
-				onToggleCollapse={handleToggleCollapse}
-			/>
+		<div className="flex h-[calc(100vh-4rem)] max-w-7xl mx-auto px-4 relative">
+			{/* Sidebar - Fixed width to prevent shifting */}
+			<div className={`flex-shrink-0 transition-all duration-300 ${isCollapsed ? 'w-16' : 'w-80'}`}>
+				<NewsSidebar
+					selectedArticleId={selectedArticle?.id || null}
+					onArticleSelect={handleArticleSelect}
+					isCollapsed={isCollapsed}
+					onToggleCollapse={handleToggleCollapse}
+				/>
+			</div>
 
-			{/* Main Content Area */}
-			<ArticleContentPanel article={selectedArticle} />
+			{/* Main Content Area - Fixed flex-grow to prevent shifting */}
+			<div className="flex-1 min-w-0">
+				<ArticleContentPanel article={selectedArticle} />
+			</div>
 		</div>
 	);
 }

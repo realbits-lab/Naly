@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { ArticleContentSkeleton, EmptyArticleState } from "@/components/articles/article-skeleton";
 import { MarkdownContent } from "@/components/articles/markdown-content";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -93,41 +94,18 @@ export function ArticleContentPanel({ article }: ArticleContentPanelProps) {
 	};
 
 	if (!article) {
-		return (
-			<div className="flex-1 flex items-center justify-center bg-muted/20">
-				<div className="text-center space-y-4">
-					<div className="w-16 h-16 mx-auto bg-muted rounded-full flex items-center justify-center">
-						<Eye className="h-8 w-8 text-muted-foreground" />
-					</div>
-					<div>
-						<h3 className="text-lg font-medium text-foreground">
-							Select an Article
-						</h3>
-						<p className="text-muted-foreground">
-							Choose an article from the sidebar to view its content
-						</p>
-					</div>
-				</div>
-			</div>
-		);
+		return <EmptyArticleState />;
 	}
 
 	const displayArticle = fullArticle || article;
 
 	return (
-		<div className="flex-1 overflow-y-auto bg-background">
-			<div className="max-w-4xl mx-auto p-6">
-				{loading && (
-					<div className="mb-6">
-						<div className="h-8 bg-muted rounded animate-pulse mb-4" />
-						<div className="h-4 bg-muted rounded animate-pulse mb-2" />
-						<div className="h-4 bg-muted rounded animate-pulse w-3/4" />
-					</div>
-				)}
-
-				{!loading && displayArticle && (
-					<>
-						{/* Article Header */}
+		<div className="h-full overflow-y-auto bg-background">
+			{loading ? (
+				<ArticleContentSkeleton />
+			) : displayArticle ? (
+				<div className="max-w-4xl mx-auto p-6 min-h-full">
+					{/* Article Header */}
 						<div className="mb-8">
 							<h1 className="text-3xl font-bold text-foreground mb-4 leading-tight">
 								{displayArticle.title}
@@ -237,9 +215,10 @@ export function ArticleContentPanel({ article }: ArticleContentPanelProps) {
 								</CardContent>
 							</Card>
 						)}
-					</>
-				)}
-			</div>
+				</div>
+			) : (
+				<EmptyArticleState />
+			)}
 		</div>
 	);
 }
