@@ -17,7 +17,7 @@ import {
 	X,
 	Zap,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -47,11 +47,7 @@ export function RecommendationWidget({
 	const [loading, setLoading] = useState(true);
 	const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
 
-	useEffect(() => {
-		loadRecommendations();
-	}, [userId, types, limit]);
-
-	const loadRecommendations = async () => {
+	const loadRecommendations = useCallback(async () => {
 		try {
 			setLoading(true);
 
@@ -74,7 +70,11 @@ export function RecommendationWidget({
 		} finally {
 			setLoading(false);
 		}
-	};
+	}, [types, limit, dismissedIds]);
+
+	useEffect(() => {
+		loadRecommendations();
+	}, [loadRecommendations, userId]);
 
 	const handleDismiss = async (recommendationId: string) => {
 		setDismissedIds((prev) => new Set([...prev, recommendationId]));

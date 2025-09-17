@@ -11,7 +11,7 @@ import {
 	TrendingUp,
 	User,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { MarkdownContent } from "@/components/articles/markdown-content";
 import { Badge } from "@/components/ui/badge";
@@ -38,13 +38,7 @@ export function ArticleContentPanel({ article }: ArticleContentPanelProps) {
 	const [fullArticle, setFullArticle] = useState<Article | null>(null);
 	const [loading, setLoading] = useState(false);
 
-	useEffect(() => {
-		if (article) {
-			fetchFullArticle(article.id);
-		}
-	}, [article]);
-
-	const fetchFullArticle = async (articleId: string) => {
+	const fetchFullArticle = useCallback(async (articleId: string) => {
 		try {
 			setLoading(true);
 			const response = await fetch(`/api/articles/${articleId}`);
@@ -60,7 +54,13 @@ export function ArticleContentPanel({ article }: ArticleContentPanelProps) {
 		} finally {
 			setLoading(false);
 		}
-	};
+	}, [article]);
+
+	useEffect(() => {
+		if (article) {
+			fetchFullArticle(article.id);
+		}
+	}, [article, fetchFullArticle]);
 
 	const getSentimentColor = (sentiment?: string) => {
 		switch (sentiment) {

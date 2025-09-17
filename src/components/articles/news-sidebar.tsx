@@ -9,7 +9,7 @@ import {
 	RefreshCw,
 	Search,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -45,7 +45,7 @@ export function NewsSidebar({
 	const [searchQuery, setSearchQuery] = useState("");
 	const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
-	const fetchArticles = async () => {
+	const fetchArticles = useCallback(async () => {
 		try {
 			setLoading(true);
 			const response = await fetch("/api/articles?limit=100&offset=0");
@@ -64,11 +64,11 @@ export function NewsSidebar({
 		} finally {
 			setLoading(false);
 		}
-	};
+	}, [selectedArticleId, onArticleSelect]);
 
 	useEffect(() => {
 		fetchArticles();
-	}, []);
+	}, [fetchArticles]);
 
 	const filteredArticles = articles.filter((article) => {
 		const matchesSearch = article.title

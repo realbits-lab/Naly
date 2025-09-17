@@ -15,7 +15,7 @@ import {
 	Trash2,
 	TrendingUp,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -90,7 +90,7 @@ export function ArticleList({
 	const [selectedSentiment, setSelectedSentiment] = useState("all");
 	const [deleteArticleId, setDeleteArticleId] = useState<string | null>(null);
 
-	const fetchArticles = async () => {
+	const fetchArticles = useCallback(async () => {
 		setLoading(true);
 		try {
 			const params = new URLSearchParams({
@@ -120,11 +120,11 @@ export function ArticleList({
 		} finally {
 			setLoading(false);
 		}
-	};
+	}, [selectedCategory, selectedSentiment, searchTerm]);
 
 	useEffect(() => {
 		fetchArticles();
-	}, [selectedCategory, selectedSentiment, searchTerm, refreshTrigger]);
+	}, [fetchArticles, refreshTrigger]);
 
 	const handleDeleteArticle = async (articleId: string) => {
 		try {
