@@ -190,7 +190,10 @@ export function Navigation() {
 
 					{/* Language Switcher */}
 					<div className="flex items-center space-x-2">
-						<LanguageSwitcherCompact />
+						{/* Temporarily disabled: <LanguageSwitcherCompact /> */}
+						<button className="flex items-center space-x-2 px-3 py-2 text-sm font-medium transition-colors hover:text-primary text-muted-foreground">
+							🌐 Language
+						</button>
 					</div>
 
 					{/* Settings Menu */}
