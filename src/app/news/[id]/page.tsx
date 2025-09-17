@@ -5,6 +5,7 @@ import { eq } from 'drizzle-orm'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ArrowLeft, Clock, Calendar, Tag, TrendingUp, User } from 'lucide-react'
 import Link from 'next/link'
+import { MarkdownContent } from '@/components/articles/markdown-content'
 
 interface ArticlePageProps {
   params: {
@@ -111,11 +112,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
           </Card>
         )}
 
-        <div className="prose prose-gray max-w-none dark:prose-invert">
-          <div className="whitespace-pre-wrap leading-relaxed">
-            {article.content}
-          </div>
-        </div>
+        <MarkdownContent content={article.content} />
 
         {article.keyPoints && Array.isArray(article.keyPoints) && article.keyPoints.length > 0 && (
           <Card>
