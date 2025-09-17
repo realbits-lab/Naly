@@ -26,6 +26,10 @@ const selectedArticlesSchema = z.array(z.object({
 
 export async function POST(request: NextRequest) {
   try {
+    // Debug request headers
+    console.log('Request headers:', Object.fromEntries(request.headers.entries()))
+    console.log('Request cookies:', request.cookies.getAll())
+
     const session = await auth()
 
     console.log('Session object:', JSON.stringify(session, null, 2))
