@@ -2,7 +2,8 @@ import { redirect } from 'next/navigation'
 import { auth } from '@/lib/auth'
 import { ArticleGenerator } from '@/components/articles/article-generator'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { PenTool, Shield } from 'lucide-react'
+import { PenTool, Shield, FileText, BarChart3, TrendingUp, Bot } from 'lucide-react'
+import { ArticleStatsCards } from '@/components/articles/article-stats-cards'
 
 export default async function WritePage() {
   const session = await auth()
@@ -22,6 +23,9 @@ export default async function WritePage() {
         <h1 className="text-3xl font-bold">Article Writing Studio</h1>
         <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">ADMIN</span>
       </div>
+
+      {/* Statistics Cards */}
+      <ArticleStatsCards />
 
       <Card>
         <CardHeader>
