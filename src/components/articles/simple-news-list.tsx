@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Newspaper, Clock } from 'lucide-react'
+import Link from 'next/link'
 
 interface Article {
   id: string
@@ -69,20 +70,22 @@ export function SimpleNewsList() {
       <CardContent>
         <div className="space-y-3 max-h-96 overflow-y-auto">
           {articles.map((article) => (
-            <div key={article.id} className="flex items-start space-x-3 py-2 border-b border-border/50 last:border-0">
-              <div className="flex-shrink-0 mt-1">
-                <div className="w-2 h-2 bg-primary rounded-full" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="text-sm font-medium leading-5 text-foreground line-clamp-2">
-                  {article.title}
-                </h3>
-                <div className="flex items-center mt-1 text-xs text-muted-foreground">
-                  <Clock className="h-3 w-3 mr-1" />
-                  <span>{new Date(article.createdAt).toLocaleDateString()}</span>
+            <Link key={article.id} href={`/news/${article.id}`}>
+              <div className="flex items-start space-x-3 py-2 border-b border-border/50 last:border-0 hover:bg-muted/50 rounded-md px-2 transition-colors cursor-pointer">
+                <div className="flex-shrink-0 mt-1">
+                  <div className="w-2 h-2 bg-primary rounded-full" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-sm font-medium leading-5 text-foreground line-clamp-2 hover:text-primary transition-colors">
+                    {article.title}
+                  </h3>
+                  <div className="flex items-center mt-1 text-xs text-muted-foreground">
+                    <Clock className="h-3 w-3 mr-1" />
+                    <span>{new Date(article.createdAt).toLocaleDateString()}</span>
+                  </div>
                 </div>
               </div>
-            </div>
+            </Link>
           ))}
           {articles.length === 0 && (
             <div className="text-center py-8 text-muted-foreground">
