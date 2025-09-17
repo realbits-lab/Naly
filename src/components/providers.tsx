@@ -13,7 +13,7 @@ export function Providers({ children, session }: ProvidersProps) {
   return (
     <SessionProvider session={session}>
       <ThemeProvider
-        defaultTheme="system"
+        defaultTheme="light"
         storageKey="naly-ui-theme"
       >
         {children}
