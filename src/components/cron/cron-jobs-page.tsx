@@ -396,7 +396,7 @@ export function CronJobsPage({ userId }: CronJobsPageProps) {
 					if (!open) setEditingJob(null);
 				}}
 				onSubmit={editingJob ? handleEditJob : handleCreateJob}
-				initialData={editingJob || undefined}
+				initialData={editingJob as any || undefined}
 				mode={editingJob ? "edit" : "create"}
 			/>
 		</div>

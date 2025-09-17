@@ -1,4 +1,4 @@
-import { openai } from "@ai-sdk/openai";
+import { createOpenAI } from "@ai-sdk/openai";
 import { generateObject, generateText, streamText } from "ai";
 
 if (!process.env.AI_GATEWAY_API_KEY) {
@@ -6,7 +6,7 @@ if (!process.env.AI_GATEWAY_API_KEY) {
 }
 
 // Configure OpenAI client with Vercel AI Gateway
-const ai = openai({
+const openai = createOpenAI({
 	apiKey: process.env.AI_GATEWAY_API_KEY,
 	baseURL: "https://gateway.ai.cloudflare.com/v1/naly/openai",
 });
@@ -19,7 +19,7 @@ export const AI_MODELS = {
 } as const;
 
 // Default model for most operations
-export const DEFAULT_MODEL = AI_MODELS.GPT_4O_MINI;
+export const DEFAULT_MODEL = "GPT_4O_MINI" as keyof typeof AI_MODELS;
 
 /**
  * Generate text using AI with configurable parameters
@@ -38,7 +38,7 @@ export async function generateAIText({
 	const modelName = AI_MODELS[model];
 
 	const result = await generateText({
-		model: ai(modelName),
+		model: openai(modelName),
 		prompt,
 		temperature,
 		maxTokens,
@@ -64,7 +64,7 @@ export async function generateAIObject<T>({
 	const modelName = AI_MODELS[model];
 
 	const result = await generateObject({
-		model: ai(modelName),
+		model: openai(modelName),
 		prompt,
 		schema,
 		temperature,
@@ -90,7 +90,7 @@ export async function streamAIText({
 	const modelName = AI_MODELS[model];
 
 	const result = await streamText({
-		model: ai(modelName),
+		model: openai(modelName),
 		prompt,
 		temperature,
 		maxTokens,

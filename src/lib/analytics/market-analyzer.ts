@@ -5,7 +5,7 @@ import {
 } from "@/types/errors";
 import { DataType, type MarketDataPoint, MarketEvent } from "@/types/market";
 
-interface TechnicalIndicators {
+export interface TechnicalIndicators {
 	sma20: number;
 	sma50: number;
 	rsi: number;
@@ -21,7 +21,7 @@ interface TechnicalIndicators {
 	};
 }
 
-interface MarketStatistics {
+export interface MarketStatistics {
 	mean: number;
 	median: number;
 	standardDeviation: number;
@@ -38,7 +38,7 @@ interface MarketStatistics {
 	};
 }
 
-interface TrendAnalysis {
+export interface TrendAnalysis {
 	direction: "upward" | "downward" | "sideways";
 	strength: number;
 	duration: number;
@@ -46,7 +46,7 @@ interface TrendAnalysis {
 	momentum: number;
 }
 
-interface AnomalyDetection {
+export interface AnomalyDetection {
 	isAnomaly: boolean;
 	score: number;
 	type: "price" | "volume" | "volatility" | "correlation";

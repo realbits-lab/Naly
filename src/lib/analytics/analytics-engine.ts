@@ -12,7 +12,7 @@ import {
 import { EventDetectionEngine } from "./event-detection";
 import { MarketDataAnalyzer } from "./market-analyzer";
 
-interface AnalyticsConfig {
+export interface AnalyticsConfig {
 	eventDetection: {
 		priceThreshold: number;
 		volumeThreshold: number;
@@ -33,7 +33,7 @@ interface AnalyticsConfig {
 	};
 }
 
-interface AnalyticsResult {
+export interface AnalyticsResult {
 	events: MarketEvent[];
 	technicalAnalysis: {
 		ticker: string;
@@ -302,18 +302,24 @@ export class AnalyticsEngine {
 					continue;
 				}
 
-				// Get source data for this event
+				// Get source data for this event based on ticker and timestamp range
 				const sourceData = await db
 					.select()
 					.from(marketDataPoints)
-					.where(eq(marketDataPoints.eventId, event.id));
+					.where(
+						and(
+							eq(marketDataPoints.ticker, event.ticker),
+							gte(marketDataPoints.timestamp, new Date(event.timestamp.getTime() - 60000)), // 1 minute before
+							lte(marketDataPoints.timestamp, new Date(event.timestamp.getTime() + 60000)) // 1 minute after
+						)
+					);
 
 				const mappedEvent: MarketEvent = {
 					id: event.id,
 					eventType: event.eventType as EventType,
 					ticker: event.ticker,
 					timestamp: event.timestamp,
-					magnitude: event.magnitude,
+					magnitude: Number(event.magnitude) || 0,
 					significance: event.significance as SignificanceLevel,
 					sourceData: sourceData.map(
 						this.mapDatabaseDataPointToMarketDataPoint,
@@ -368,18 +374,24 @@ export class AnalyticsEngine {
 					continue;
 				}
 
-				// Get source data for this event
+				// Get source data for this event based on ticker and timestamp range
 				const sourceData = await db
 					.select()
 					.from(marketDataPoints)
-					.where(eq(marketDataPoints.eventId, event.id));
+					.where(
+						and(
+							eq(marketDataPoints.ticker, event.ticker),
+							gte(marketDataPoints.timestamp, new Date(event.timestamp.getTime() - 60000)), // 1 minute before
+							lte(marketDataPoints.timestamp, new Date(event.timestamp.getTime() + 60000)) // 1 minute after
+						)
+					);
 
 				const mappedEvent: MarketEvent = {
 					id: event.id,
 					eventType: event.eventType as EventType,
 					ticker: event.ticker,
 					timestamp: event.timestamp,
-					magnitude: event.magnitude,
+					magnitude: Number(event.magnitude) || 0,
 					significance: event.significance as SignificanceLevel,
 					sourceData: sourceData.map(
 						this.mapDatabaseDataPointToMarketDataPoint,

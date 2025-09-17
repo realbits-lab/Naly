@@ -65,6 +65,7 @@ export interface CausalAnalysisConfig {
 	confidenceThreshold: number;
 	maxFactors: number;
 	enableAlternativeExplanations: boolean;
+	useCache?: boolean;
 }
 
 export interface CausalAnalysisService {
@@ -102,6 +103,8 @@ export interface NarrativeConfig {
 	complexityLevel: string;
 	maxLength: number;
 	includeVisualizations: boolean;
+	autoValidate?: boolean;
+	qualityThreshold?: number;
 }
 
 export interface NarrativeService {

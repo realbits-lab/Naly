@@ -1,6 +1,6 @@
 import { generateText } from "ai";
 import { and, desc, eq, sql } from "drizzle-orm";
-import { openai } from "@/lib/ai/openai-client";
+import { openai } from "@ai-sdk/openai";
 import { db } from "@/lib/db";
 import {
 	achievementCategoryEnum,
@@ -15,7 +15,7 @@ import {
 	userChallengeProgress,
 } from "@/lib/schema/community";
 import { users } from "@/lib/schema/users";
-import { ApplicationError, ErrorCode, ErrorSeverity } from "@/types/errors";
+import { ApplicationError, ErrorCode, ErrorSeverity, isApplicationError, createApplicationError } from "@/types/errors";
 
 export interface CommunityService {
 	// Discussion methods
@@ -266,11 +266,11 @@ export class CommunityServiceImpl implements CommunityService {
 
 			return this.mapDiscussion(discussion);
 		} catch (error) {
-			throw new ApplicationError({
-				code: ErrorCode.DATABASE_ERROR,
-				message: "Failed to create discussion",
-				severity: ErrorSeverity.MEDIUM,
-				metadata: {
+			throw createApplicationError(
+				ErrorCode.DATABASE_QUERY_ERROR,
+				"Failed to create discussion",
+				ErrorSeverity.MEDIUM,
+				{
 					timestamp: new Date(),
 					service: "community-service",
 					operation: "createDiscussion",
@@ -278,8 +278,9 @@ export class CommunityServiceImpl implements CommunityService {
 						error: error instanceof Error ? error.message : String(error),
 					},
 				},
-				retryable: true,
-			});
+				error instanceof Error ? error : undefined,
+				true,
+			);
 		}
 	}
 
@@ -319,7 +320,7 @@ export class CommunityServiceImpl implements CommunityService {
 					author: {
 						id: users.id,
 						name: users.name,
-						avatarUrl: users.avatarUrl,
+						avatarUrl: users.image,
 						role: users.role,
 					},
 				})
@@ -335,16 +336,16 @@ export class CommunityServiceImpl implements CommunityService {
 				author: {
 					id: author?.id || "",
 					name: author?.name || "Unknown User",
-					avatarUrl: author?.avatarUrl,
+					avatarUrl: author?.avatarUrl || undefined,
 					role: author?.role,
 				},
 			}));
 		} catch (error) {
-			throw new ApplicationError({
-				code: ErrorCode.DATABASE_ERROR,
-				message: "Failed to fetch discussions",
-				severity: ErrorSeverity.MEDIUM,
-				metadata: {
+			throw createApplicationError(
+				ErrorCode.DATABASE_QUERY_ERROR,
+				"Failed to fetch discussions",
+				ErrorSeverity.MEDIUM,
+				{
 					timestamp: new Date(),
 					service: "community-service",
 					operation: "getDiscussions",
@@ -352,8 +353,9 @@ export class CommunityServiceImpl implements CommunityService {
 						error: error instanceof Error ? error.message : String(error),
 					},
 				},
-				retryable: true,
-			});
+				error instanceof Error ? error : undefined,
+				true,
+			);
 		}
 	}
 
@@ -365,7 +367,7 @@ export class CommunityServiceImpl implements CommunityService {
 					author: {
 						id: users.id,
 						name: users.name,
-						avatarUrl: users.avatarUrl,
+						avatarUrl: users.image,
 						role: users.role,
 					},
 				})
@@ -382,7 +384,7 @@ export class CommunityServiceImpl implements CommunityService {
 					author: {
 						id: users.id,
 						name: users.name,
-						avatarUrl: users.avatarUrl,
+						avatarUrl: users.image,
 						role: users.role,
 					},
 				})
@@ -396,7 +398,7 @@ export class CommunityServiceImpl implements CommunityService {
 				author: {
 					id: mainDiscussion.author?.id || "",
 					name: mainDiscussion.author?.name || "Unknown User",
-					avatarUrl: mainDiscussion.author?.avatarUrl,
+					avatarUrl: mainDiscussion.author?.avatarUrl || undefined,
 					role: mainDiscussion.author?.role,
 				},
 				replies: replies.map(({ discussion, author }) => ({
@@ -404,17 +406,17 @@ export class CommunityServiceImpl implements CommunityService {
 					author: {
 						id: author?.id || "",
 						name: author?.name || "Unknown User",
-						avatarUrl: author?.avatarUrl,
+						avatarUrl: author?.avatarUrl || undefined,
 						role: author?.role,
 					},
 				})),
 			};
 		} catch (error) {
-			throw new ApplicationError({
-				code: ErrorCode.DATABASE_ERROR,
-				message: "Failed to fetch discussion",
-				severity: ErrorSeverity.MEDIUM,
-				metadata: {
+			throw createApplicationError(
+				ErrorCode.DATABASE_QUERY_ERROR,
+				"Failed to fetch discussion",
+				ErrorSeverity.MEDIUM,
+				{
 					timestamp: new Date(),
 					service: "community-service",
 					operation: "getDiscussion",
@@ -422,8 +424,9 @@ export class CommunityServiceImpl implements CommunityService {
 						error: error instanceof Error ? error.message : String(error),
 					},
 				},
-				retryable: true,
-			});
+				error instanceof Error ? error : undefined,
+				true,
+			);
 		}
 	}
 
@@ -459,11 +462,11 @@ export class CommunityServiceImpl implements CommunityService {
 
 			return this.mapDiscussion(reply);
 		} catch (error) {
-			throw new ApplicationError({
-				code: ErrorCode.DATABASE_ERROR,
-				message: "Failed to create reply",
-				severity: ErrorSeverity.MEDIUM,
-				metadata: {
+			throw createApplicationError(
+				ErrorCode.DATABASE_QUERY_ERROR,
+				"Failed to create reply",
+				ErrorSeverity.MEDIUM,
+				{
 					timestamp: new Date(),
 					service: "community-service",
 					operation: "replyToDiscussion",
@@ -471,8 +474,9 @@ export class CommunityServiceImpl implements CommunityService {
 						error: error instanceof Error ? error.message : String(error),
 					},
 				},
-				retryable: true,
-			});
+				error instanceof Error ? error : undefined,
+				true,
+			);
 		}
 	}
 
@@ -497,11 +501,11 @@ export class CommunityServiceImpl implements CommunityService {
 				},
 			});
 		} catch (error) {
-			throw new ApplicationError({
-				code: ErrorCode.DATABASE_ERROR,
-				message: "Failed to vote on discussion",
-				severity: ErrorSeverity.MEDIUM,
-				metadata: {
+			throw createApplicationError(
+				ErrorCode.DATABASE_QUERY_ERROR,
+				"Failed to vote on discussion",
+				ErrorSeverity.MEDIUM,
+				{
 					timestamp: new Date(),
 					service: "community-service",
 					operation: "voteOnDiscussion",
@@ -509,8 +513,9 @@ export class CommunityServiceImpl implements CommunityService {
 						error: error instanceof Error ? error.message : String(error),
 					},
 				},
-				retryable: true,
-			});
+				error instanceof Error ? error : undefined,
+				true,
+			);
 		}
 	}
 
@@ -532,11 +537,11 @@ export class CommunityServiceImpl implements CommunityService {
 				})
 				.where(eq(communityDiscussions.id, params.contentId));
 		} catch (error) {
-			throw new ApplicationError({
-				code: ErrorCode.DATABASE_ERROR,
-				message: "Failed to moderate content",
-				severity: ErrorSeverity.MEDIUM,
-				metadata: {
+			throw createApplicationError(
+				ErrorCode.DATABASE_QUERY_ERROR,
+				"Failed to moderate content",
+				ErrorSeverity.MEDIUM,
+				{
 					timestamp: new Date(),
 					service: "community-service",
 					operation: "moderateContent",
@@ -544,8 +549,9 @@ export class CommunityServiceImpl implements CommunityService {
 						error: error instanceof Error ? error.message : String(error),
 					},
 				},
-				retryable: true,
-			});
+				error instanceof Error ? error : undefined,
+				true,
+			);
 		}
 	}
 
@@ -559,22 +565,22 @@ export class CommunityServiceImpl implements CommunityService {
 
 			return achievements.map((achievement) => ({
 				id: achievement.id,
-				userId: achievement.userId,
-				achievementId: achievement.achievementId,
-				achievementName: achievement.achievementName,
+				userId: achievement.userId || "",
+				achievementId: achievement.achievementId || "",
+				achievementName: achievement.achievementName || "",
 				description: achievement.description || undefined,
-				category: achievement.category,
-				rarity: achievement.rarity,
+				category: achievement.category || "",
+				rarity: achievement.rarity || "",
 				points: achievement.points || 0,
 				unlockedAt: achievement.unlockedAt || new Date(),
 				metadata: achievement.metadata,
 			}));
 		} catch (error) {
-			throw new ApplicationError({
-				code: ErrorCode.DATABASE_ERROR,
-				message: "Failed to fetch user achievements",
-				severity: ErrorSeverity.MEDIUM,
-				metadata: {
+			throw createApplicationError(
+				ErrorCode.DATABASE_QUERY_ERROR,
+				"Failed to fetch user achievements",
+				ErrorSeverity.MEDIUM,
+				{
 					timestamp: new Date(),
 					service: "community-service",
 					operation: "getUserAchievements",
@@ -582,8 +588,9 @@ export class CommunityServiceImpl implements CommunityService {
 						error: error instanceof Error ? error.message : String(error),
 					},
 				},
-				retryable: true,
-			});
+				error instanceof Error ? error : undefined,
+				true,
+			);
 		}
 	}
 
@@ -627,7 +634,7 @@ export class CommunityServiceImpl implements CommunityService {
 			}
 
 			if (filters?.difficulty) {
-				conditions.push(eq(challenges.difficulty, filters.difficulty));
+				conditions.push(eq(challenges.difficulty, filters.difficulty as "EASY" | "MEDIUM" | "HARD"));
 			}
 
 			if (filters?.isActive !== undefined) {
@@ -642,10 +649,10 @@ export class CommunityServiceImpl implements CommunityService {
 
 			return challengeList.map((challenge) => ({
 				id: challenge.id,
-				title: challenge.title,
-				description: challenge.description,
-				category: challenge.category,
-				difficulty: challenge.difficulty,
+				title: challenge.title || "",
+				description: challenge.description || "",
+				category: challenge.category || "",
+				difficulty: challenge.difficulty || "EASY",
 				objectives: challenge.objectives,
 				rewards: challenge.rewards,
 				startDate: challenge.startDate || undefined,
@@ -658,11 +665,11 @@ export class CommunityServiceImpl implements CommunityService {
 				updatedAt: challenge.updatedAt || new Date(),
 			}));
 		} catch (error) {
-			throw new ApplicationError({
-				code: ErrorCode.DATABASE_ERROR,
-				message: "Failed to fetch challenges",
-				severity: ErrorSeverity.MEDIUM,
-				metadata: {
+			throw createApplicationError(
+				ErrorCode.DATABASE_QUERY_ERROR,
+				"Failed to fetch challenges",
+				ErrorSeverity.MEDIUM,
+				{
 					timestamp: new Date(),
 					service: "community-service",
 					operation: "getChallenges",
@@ -670,8 +677,9 @@ export class CommunityServiceImpl implements CommunityService {
 						error: error instanceof Error ? error.message : String(error),
 					},
 				},
-				retryable: true,
-			});
+				error instanceof Error ? error : undefined,
+				true,
+			);
 		}
 	}
 
@@ -712,8 +720,8 @@ export class CommunityServiceImpl implements CommunityService {
 
 			return {
 				id: progress.id,
-				userId: progress.userId,
-				challengeId: progress.challengeId,
+				userId: progress.userId || "",
+				challengeId: progress.challengeId || "",
 				progress: Number(progress.progress),
 				currentObjectives: progress.currentObjectives,
 				completedObjectives: progress.completedObjectives,
@@ -723,11 +731,11 @@ export class CommunityServiceImpl implements CommunityService {
 				lastProgressAt: progress.lastProgressAt || new Date(),
 			};
 		} catch (error) {
-			throw new ApplicationError({
-				code: ErrorCode.DATABASE_ERROR,
-				message: "Failed to join challenge",
-				severity: ErrorSeverity.MEDIUM,
-				metadata: {
+			throw createApplicationError(
+				ErrorCode.DATABASE_QUERY_ERROR,
+				"Failed to join challenge",
+				ErrorSeverity.MEDIUM,
+				{
 					timestamp: new Date(),
 					service: "community-service",
 					operation: "joinChallenge",
@@ -735,8 +743,9 @@ export class CommunityServiceImpl implements CommunityService {
 						error: error instanceof Error ? error.message : String(error),
 					},
 				},
-				retryable: true,
-			});
+				error instanceof Error ? error : undefined,
+				true,
+			);
 		}
 	}
 
@@ -764,8 +773,8 @@ export class CommunityServiceImpl implements CommunityService {
 
 			return {
 				id: progress.id,
-				userId: progress.userId,
-				challengeId: progress.challengeId,
+				userId: progress.userId || "",
+				challengeId: progress.challengeId || "",
 				progress: Number(progress.progress),
 				currentObjectives: progress.currentObjectives,
 				completedObjectives: progress.completedObjectives,
@@ -775,11 +784,11 @@ export class CommunityServiceImpl implements CommunityService {
 				lastProgressAt: progress.lastProgressAt || new Date(),
 			};
 		} catch (error) {
-			throw new ApplicationError({
-				code: ErrorCode.DATABASE_ERROR,
-				message: "Failed to update challenge progress",
-				severity: ErrorSeverity.MEDIUM,
-				metadata: {
+			throw createApplicationError(
+				ErrorCode.DATABASE_QUERY_ERROR,
+				"Failed to update challenge progress",
+				ErrorSeverity.MEDIUM,
+				{
 					timestamp: new Date(),
 					service: "community-service",
 					operation: "updateChallengeProgress",
@@ -787,8 +796,9 @@ export class CommunityServiceImpl implements CommunityService {
 						error: error instanceof Error ? error.message : String(error),
 					},
 				},
-				retryable: true,
-			});
+				error instanceof Error ? error : undefined,
+				true,
+			);
 		}
 	}
 
@@ -804,7 +814,7 @@ export class CommunityServiceImpl implements CommunityService {
 					user: {
 						id: users.id,
 						name: users.name,
-						avatarUrl: users.avatarUrl,
+						avatarUrl: users.image,
 					},
 				})
 				.from(leaderboards)
@@ -820,22 +830,22 @@ export class CommunityServiceImpl implements CommunityService {
 
 			return leaderboard.map(({ entry, user }) => ({
 				id: entry.id,
-				userId: entry.userId,
+				userId: entry.userId || "",
 				user: {
 					id: user?.id || "",
 					name: user?.name || "Unknown User",
-					avatarUrl: user?.avatarUrl,
+					avatarUrl: user?.avatarUrl || undefined,
 				},
 				score: Number(entry.score),
-				rank: entry.rank,
+				rank: entry.rank || 0,
 				metadata: entry.metadata,
 			}));
 		} catch (error) {
-			throw new ApplicationError({
-				code: ErrorCode.DATABASE_ERROR,
-				message: "Failed to fetch leaderboards",
-				severity: ErrorSeverity.MEDIUM,
-				metadata: {
+			throw createApplicationError(
+				ErrorCode.DATABASE_QUERY_ERROR,
+				"Failed to fetch leaderboards",
+				ErrorSeverity.MEDIUM,
+				{
 					timestamp: new Date(),
 					service: "community-service",
 					operation: "getLeaderboards",
@@ -843,8 +853,9 @@ export class CommunityServiceImpl implements CommunityService {
 						error: error instanceof Error ? error.message : String(error),
 					},
 				},
-				retryable: true,
-			});
+				error instanceof Error ? error : undefined,
+				true,
+			);
 		}
 	}
 
@@ -922,11 +933,11 @@ export class CommunityServiceImpl implements CommunityService {
 				topContributors,
 			};
 		} catch (error) {
-			throw new ApplicationError({
-				code: ErrorCode.DATABASE_ERROR,
-				message: "Failed to fetch community stats",
-				severity: ErrorSeverity.MEDIUM,
-				metadata: {
+			throw createApplicationError(
+				ErrorCode.DATABASE_QUERY_ERROR,
+				"Failed to fetch community stats",
+				ErrorSeverity.MEDIUM,
+				{
 					timestamp: new Date(),
 					service: "community-service",
 					operation: "getCommunityStats",
@@ -934,8 +945,9 @@ export class CommunityServiceImpl implements CommunityService {
 						error: error instanceof Error ? error.message : String(error),
 					},
 				},
-				retryable: true,
-			});
+				error instanceof Error ? error : undefined,
+				true,
+			);
 		}
 	}
 
@@ -988,8 +1000,8 @@ export class CommunityServiceImpl implements CommunityService {
 					difficulty: challenge?.difficulty || "EASY",
 					objectives: challenge?.objectives || {},
 					rewards: challenge?.rewards || {},
-					startDate: challenge?.startDate,
-					endDate: challenge?.endDate,
+					startDate: challenge?.startDate || undefined,
+					endDate: challenge?.endDate || undefined,
 					isActive: challenge?.isActive || false,
 					participantCount: challenge?.participantCount || 0,
 					completionCount: challenge?.completionCount || 0,
@@ -999,11 +1011,11 @@ export class CommunityServiceImpl implements CommunityService {
 				})),
 			};
 		} catch (error) {
-			throw new ApplicationError({
-				code: ErrorCode.DATABASE_ERROR,
-				message: "Failed to fetch user community profile",
-				severity: ErrorSeverity.MEDIUM,
-				metadata: {
+			throw createApplicationError(
+				ErrorCode.DATABASE_QUERY_ERROR,
+				"Failed to fetch user community profile",
+				ErrorSeverity.MEDIUM,
+				{
 					timestamp: new Date(),
 					service: "community-service",
 					operation: "getUserCommunityProfile",
@@ -1011,8 +1023,9 @@ export class CommunityServiceImpl implements CommunityService {
 						error: error instanceof Error ? error.message : String(error),
 					},
 				},
-				retryable: true,
-			});
+				error instanceof Error ? error : undefined,
+				true,
+			);
 		}
 	}
 
@@ -1173,12 +1186,12 @@ Return only the title, no quotes or additional text.`;
 
 		return {
 			id: achievement.id,
-			userId: achievement.userId,
-			achievementId: achievement.achievementId,
-			achievementName: achievement.achievementName,
+			userId: achievement.userId || "",
+			achievementId: achievement.achievementId || "",
+			achievementName: achievement.achievementName || "",
 			description: achievement.description || undefined,
-			category: achievement.category,
-			rarity: achievement.rarity,
+			category: achievement.category || "",
+			rarity: achievement.rarity || "",
 			points: achievement.points || 0,
 			unlockedAt: achievement.unlockedAt || new Date(),
 			metadata: achievement.metadata,

@@ -52,7 +52,14 @@ export class CronScheduler {
 
 			for (const job of dueJobs) {
 				console.log(`Running cron job: ${job.name} (${job.id})`);
-				await this.executeJob(job);
+				await this.executeJob({
+					id: job.id,
+					name: job.name,
+					type: job.type,
+					cronExpression: job.cronExpression,
+					runCount: job.runCount || "0",
+					taskConfig: job.taskConfig as Record<string, unknown> || undefined,
+				});
 			}
 		} catch (error) {
 			console.error("Error checking cron jobs:", error);

@@ -56,6 +56,7 @@ interface Article {
 	id: string;
 	title: string;
 	summary: string;
+	content: string;
 	keyPoints: string[];
 	marketAnalysis: string;
 	investmentImplications: string;
@@ -74,11 +75,13 @@ interface Article {
 interface ArticleListProps {
 	refreshTrigger?: number;
 	onArticleSelect?: (article: Article) => void;
+	isPublic?: boolean;
 }
 
 export function ArticleList({
 	refreshTrigger,
 	onArticleSelect,
+	isPublic,
 }: ArticleListProps) {
 	const [articles, setArticles] = useState<Article[]>([]);
 	const [loading, setLoading] = useState(true);

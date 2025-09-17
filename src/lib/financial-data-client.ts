@@ -3,6 +3,7 @@ import {
 	ApplicationError,
 	ErrorCode,
 	ErrorSeverity,
+	isApplicationError,
 } from "@/types/errors";
 import {
 	DataSource,

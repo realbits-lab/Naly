@@ -15,6 +15,7 @@ import {
 	AudienceType,
 	type BiasAssessment,
 	ComplexityLevel,
+	ContentLength,
 	type ContentSection,
 	ContentStatus,
 	type ContentTemplate,
@@ -31,6 +32,7 @@ import {
 	ErrorSeverity,
 } from "@/types/errors";
 import type { MarketEvent } from "@/types/market";
+import { DataSource } from "@/types/market";
 import type { NarrativeConfig, NarrativeService } from "@/types/services";
 import type { UserProfile } from "@/types/user";
 
@@ -109,8 +111,8 @@ export class NarrativeGenerator implements NarrativeService {
 
 			// Validate narrative quality
 			if (this.config!.autoValidate) {
-				const validation = await this.validateNarrative(narrative);
-				if (validation.qualityScore >= this.config!.qualityThreshold) {
+				const qualityScore = await this.validateNarrative(narrative);
+				if (qualityScore >= (this.config!.qualityThreshold || 0.7)) {
 					narrative.status = ContentStatus.PUBLISHED;
 				}
 			}
@@ -239,7 +241,7 @@ export class NarrativeGenerator implements NarrativeService {
 			},
 			targetAudience: AudienceType.RETAIL,
 			complexity: ComplexityLevel.BASIC,
-			length: "MEDIUM",
+			length: ContentLength.MEDIUM,
 		};
 
 		// Professional template
@@ -264,7 +266,7 @@ export class NarrativeGenerator implements NarrativeService {
 			},
 			targetAudience: AudienceType.PROFESSIONAL,
 			complexity: ComplexityLevel.ADVANCED,
-			length: "LONG",
+			length: ContentLength.LONG,
 		};
 
 		this.templates.set("retail", retailTemplate);
@@ -282,7 +284,11 @@ export class NarrativeGenerator implements NarrativeService {
 			SectionType.SUMMARY,
 			context,
 		);
-		const summaryContent = await generateAIText(summaryPrompt);
+		const summaryContent = await generateAIText({
+			prompt: summaryPrompt.userPrompt,
+			temperature: summaryPrompt.temperature,
+			maxTokens: summaryPrompt.maxTokens,
+		});
 
 		sections.push({
 			type: SectionType.SUMMARY,
@@ -290,17 +296,7 @@ export class NarrativeGenerator implements NarrativeService {
 			bulletPoints: await this.extractBulletPoints(summaryContent),
 			confidence: 0.85,
 			sources: context.causalAnalysis
-				? [
-						{
-							source: "CAUSAL_ANALYSIS",
-							timestamp: new Date(),
-							ticker: context.event.ticker,
-							dataType: "ANALYSIS_RESULT",
-							value: "analysis",
-							confidence: context.causalAnalysis.confidenceScore,
-							metadata: {},
-						},
-					]
+				? [DataSource.FINANCIAL_DATASETS_API]
 				: [],
 			visualizations: [],
 		});
@@ -310,7 +306,11 @@ export class NarrativeGenerator implements NarrativeService {
 			SectionType.EXPLANATION,
 			context,
 		);
-		const explanationContent = await generateAIText(explanationPrompt);
+		const explanationContent = await generateAIText({
+			prompt: explanationPrompt.userPrompt,
+			temperature: explanationPrompt.temperature,
+			maxTokens: explanationPrompt.maxTokens,
+		});
 
 		sections.push({
 			type: SectionType.EXPLANATION,
@@ -319,8 +319,9 @@ export class NarrativeGenerator implements NarrativeService {
 			confidence: context.causalAnalysis
 				? context.causalAnalysis.confidenceScore
 				: 0.7,
-			sources:
-				context.causalAnalysis?.evidenceChain.map((e) => e.dataPoint) || [],
+			sources: context.causalAnalysis
+				? [DataSource.FINANCIAL_DATASETS_API]
+				: [],
 			visualizations: [],
 		});
 
@@ -329,7 +330,11 @@ export class NarrativeGenerator implements NarrativeService {
 			SectionType.PREDICTION,
 			context,
 		);
-		const predictionContent = await generateAIText(predictionPrompt);
+		const predictionContent = await generateAIText({
+			prompt: predictionPrompt.userPrompt,
+			temperature: predictionPrompt.temperature,
+			maxTokens: predictionPrompt.maxTokens,
+		});
 
 		sections.push({
 			type: SectionType.PREDICTION,
@@ -348,7 +353,11 @@ export class NarrativeGenerator implements NarrativeService {
 				SectionType.DEEP_DIVE,
 				context,
 			);
-			const deepDiveContent = await generateAIText(deepDivePrompt);
+			const deepDiveContent = await generateAIText({
+				prompt: deepDivePrompt.userPrompt,
+				temperature: deepDivePrompt.temperature,
+				maxTokens: deepDivePrompt.maxTokens,
+			});
 
 			sections.push({
 				type: SectionType.DEEP_DIVE,

@@ -217,7 +217,7 @@ export function CronJobForm({
 		];
 
 		for (const field of fields) {
-			if (!validateField(field.value, field.name, field.range)) {
+			if (!validateField(field.value, field.name, field.range as [number, number])) {
 				return `Invalid ${field.name} field: ${field.value}`;
 			}
 		}

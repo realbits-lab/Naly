@@ -19,7 +19,7 @@ import type {
 	EventDetectionService,
 } from "@/types/services";
 
-interface PriceAnalysis {
+export interface PriceAnalysis {
 	currentPrice: number;
 	previousPrice: number;
 	percentChange: number;
@@ -27,14 +27,14 @@ interface PriceAnalysis {
 	isSignificant: boolean;
 }
 
-interface VolumeAnalysis {
+export interface VolumeAnalysis {
 	currentVolume: number;
 	averageVolume: number;
 	volumeRatio: number;
 	isUnusual: boolean;
 }
 
-interface DetectionRule {
+export interface DetectionRule {
 	type: EventType;
 	condition: (data: MarketDataPoint[], context: any) => boolean;
 	scoreCalculator: (data: MarketDataPoint[], context: any) => number;
@@ -153,11 +153,17 @@ export class EventDetectionEngine implements EventDetectionService {
 
 			const event = result[0];
 
-			// Get source data
+			// Get source data based on ticker and timestamp range
 			const sourceData = await db
 				.select()
 				.from(marketDataPoints)
-				.where(eq(marketDataPoints.eventId, eventId));
+				.where(
+					and(
+						eq(marketDataPoints.ticker, event.ticker),
+						gte(marketDataPoints.timestamp, new Date(event.timestamp.getTime() - 60000)), // 1 minute before
+						lte(marketDataPoints.timestamp, new Date(event.timestamp.getTime() + 60000)) // 1 minute after
+					)
+				);
 
 			return this.mapDatabaseEventToMarketEvent(event, sourceData);
 		} catch (error) {
@@ -382,11 +388,10 @@ export class EventDetectionEngine implements EventDetectionService {
 			for (const event of events) {
 				// Store the event
 				await db.insert(marketEvents).values({
-					id: event.id,
 					eventType: event.eventType,
 					ticker: event.ticker,
 					timestamp: event.timestamp,
-					magnitude: event.magnitude,
+					magnitude: event.magnitude.toString(),
 					significance: event.significance,
 					metadata: event.metadata,
 					relatedEventIds: event.relatedEvents,
@@ -397,17 +402,13 @@ export class EventDetectionEngine implements EventDetectionService {
 				// Store source data points
 				for (const dataPoint of event.sourceData) {
 					await db.insert(marketDataPoints).values({
-						id: crypto.randomUUID(),
-						eventId: event.id,
 						source: dataPoint.source,
 						timestamp: dataPoint.timestamp,
 						ticker: dataPoint.ticker,
 						dataType: dataPoint.dataType,
 						value: dataPoint.value,
-						confidence: dataPoint.confidence,
+						confidence: dataPoint.confidence?.toString(),
 						metadata: dataPoint.metadata,
-						createdAt: new Date(),
-						updatedAt: new Date(),
 					});
 				}
 			}

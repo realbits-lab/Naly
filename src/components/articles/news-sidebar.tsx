@@ -220,7 +220,6 @@ export function NewsSidebar({
 
 												{article.sentiment && (
 													<Badge
-														size="sm"
 														className={getSentimentColor(article.sentiment)}
 													>
 														{article.sentiment}

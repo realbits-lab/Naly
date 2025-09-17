@@ -86,7 +86,7 @@ export class CausalAnalyzer implements CausalAnalysisService {
 			const alternativeExplanations =
 				await this.generateAlternativeExplanations(
 					event,
-					evaluatedHypotheses,
+					hypotheses,
 					rootCause,
 				);
 
@@ -103,7 +103,7 @@ export class CausalAnalyzer implements CausalAnalysisService {
 				rootCause,
 				contributingFactors,
 				confidenceScore,
-				methodology: this.config!.analysisMethod,
+				methodology: this.config!.analysisMethod as AnalysisMethod,
 				evidenceChain,
 				alternativeExplanations,
 			};
@@ -713,14 +713,15 @@ Format as JSON array with objects containing 'description' and 'likelihood' (0-1
 			const dbAnalysis = result[0];
 
 			// Convert database record back to CausalAnalysis
+			const causalData = dbAnalysis.causalAnalysis as any;
 			return {
-				eventId: dbAnalysis.eventId,
-				rootCause: dbAnalysis.rootCause as any,
-				contributingFactors: dbAnalysis.contributingFactors as any,
-				confidenceScore: dbAnalysis.confidenceScore,
-				methodology: dbAnalysis.methodology as any,
-				evidenceChain: dbAnalysis.evidenceChain as any,
-				alternativeExplanations: dbAnalysis.alternativeExplanations as any,
+				eventId: dbAnalysis.eventId!,
+				rootCause: causalData.rootCause,
+				contributingFactors: causalData.contributingFactors,
+				confidenceScore: Number(dbAnalysis.confidenceScore) || 0,
+				methodology: dbAnalysis.methodology as AnalysisMethod,
+				evidenceChain: causalData.evidenceChain,
+				alternativeExplanations: causalData.alternativeExplanations,
 			};
 		} catch (error) {
 			console.warn("Failed to retrieve existing analysis:", error);
@@ -730,17 +731,17 @@ Format as JSON array with objects containing 'description' and 'likelihood' (0-1
 
 	private async storeAnalysis(analysis: CausalAnalysis): Promise<void> {
 		try {
-			await db.insert(causalAnalyses).values({
-				id: crypto.randomUUID(),
+			await db.insert(analysisResults).values({
 				eventId: analysis.eventId,
-				rootCause: analysis.rootCause,
-				contributingFactors: analysis.contributingFactors,
-				confidenceScore: analysis.confidenceScore,
+				analysisType: "CAUSAL_ANALYSIS",
+				causalAnalysis: {
+					rootCause: analysis.rootCause,
+					contributingFactors: analysis.contributingFactors,
+					evidenceChain: analysis.evidenceChain,
+					alternativeExplanations: analysis.alternativeExplanations,
+				},
+				confidenceScore: analysis.confidenceScore.toString(),
 				methodology: analysis.methodology,
-				evidenceChain: analysis.evidenceChain,
-				alternativeExplanations: analysis.alternativeExplanations,
-				createdAt: new Date(),
-				updatedAt: new Date(),
 			});
 		} catch (error) {
 			console.error("Failed to store causal analysis:", error);

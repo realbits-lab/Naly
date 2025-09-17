@@ -13,10 +13,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 	],
 	callbacks: {
 		async session({ session, token }) {
-			if (session.user && token) {
+			if (session.user && token && token.sub) {
 				session.user.id = token.sub;
 				// Get user role from token
-				session.user.role = token.role || "user";
+				session.user.role = (typeof token.role === "string" ? token.role : null) || "user";
 			}
 			return session;
 		},
