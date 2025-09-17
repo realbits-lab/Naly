@@ -1,13 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { generatedArticles } from '@/lib/schema'
-import { eq, desc, and, like, inArray } from 'drizzle-orm'
+import { eq, desc, and, like, sql, count } from 'drizzle-orm'
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth()
-
     const { searchParams } = new URL(request.url)
     const limit = parseInt(searchParams.get('limit') || '10')
     const offset = parseInt(searchParams.get('offset') || '0')
@@ -15,16 +12,8 @@ export async function GET(request: NextRequest) {
     const sentiment = searchParams.get('sentiment')
     const search = searchParams.get('search')
 
-    // Build where conditions - show all public articles or user's own articles
+    // Build where conditions - show all public articles
     let whereConditions = []
-
-    if (session?.user?.id) {
-      // For logged in users, show all articles but mark which ones are theirs
-      // No additional filtering needed for now
-    } else {
-      // For non-logged in users, show all public articles
-      // No additional filtering needed for now since all generated articles are public
-    }
 
     if (category && category !== 'all') {
       whereConditions.push(eq(generatedArticles.sourceCategory, category))
@@ -67,11 +56,11 @@ export async function GET(request: NextRequest) {
 
     // Get total count for pagination
     const totalCountResult = await db
-      .select({ count: generatedArticles.id })
+      .select({ count: count() })
       .from(generatedArticles)
       .where(whereConditions.length > 0 ? and(...whereConditions) : undefined)
 
-    const totalCount = totalCountResult.length
+    const totalCount = totalCountResult[0]?.count || 0
 
     return NextResponse.json({
       articles,
@@ -97,20 +86,14 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// Get article statistics
+// Get article statistics (public access)
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth()
-
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
     const body = await request.json()
     const { action } = body
 
     if (action === 'stats') {
-      // Get article statistics
+      // Get article statistics for all articles
       const stats = await db
         .select({
           sourceCategory: generatedArticles.sourceCategory,
@@ -121,7 +104,6 @@ export async function POST(request: NextRequest) {
           createdAt: generatedArticles.createdAt,
         })
         .from(generatedArticles)
-        .where(eq(generatedArticles.userId, session.user.id))
         .orderBy(desc(generatedArticles.createdAt))
 
       // Process statistics

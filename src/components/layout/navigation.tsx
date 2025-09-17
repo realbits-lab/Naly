@@ -27,11 +27,6 @@ import { useTheme } from "@/components/theme-provider"
 
 const navigationItems = [
   {
-    name: "Analytics",
-    href: "/analytics",
-    icon: BarChart3,
-  },
-  {
     name: "News",
     href: "/news",
     icon: Newspaper,
@@ -56,7 +51,7 @@ export function Navigation() {
       <div className="container flex h-16 items-center">
         {/* Logo */}
         <div className="mr-4 flex">
-          <Link href="/" className="mr-6 flex items-center space-x-2">
+          <Link href="/news" className="mr-6 flex items-center space-x-2">
             <BarChart3 className="h-6 w-6 text-primary" />
             <span className="hidden font-bold sm:inline-block">
               Naly

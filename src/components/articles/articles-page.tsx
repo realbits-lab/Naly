@@ -51,11 +51,10 @@ interface ArticleStats {
 }
 
 interface ArticlesPageProps {
-  userId?: string
   isLoggedIn: boolean
 }
 
-export function ArticlesPage({ userId, isLoggedIn }: ArticlesPageProps) {
+export function ArticlesPage({ isLoggedIn }: ArticlesPageProps) {
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null)
   const [showArticleViewer, setShowArticleViewer] = useState(false)
   const [stats, setStats] = useState<ArticleStats | null>(null)
@@ -168,50 +167,33 @@ export function ArticlesPage({ userId, isLoggedIn }: ArticlesPageProps) {
       )}
 
       {/* Main Content */}
-      <Tabs defaultValue="generate" className="space-y-4">
+      <Tabs defaultValue="articles" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="generate" className="flex items-center space-x-2">
-            <Sparkles className="h-4 w-4" />
-            <span>Generate</span>
-          </TabsTrigger>
           <TabsTrigger value="articles" className="flex items-center space-x-2">
             <FileText className="h-4 w-4" />
-            <span>My Articles</span>
+            <span>Latest Articles</span>
             {stats && stats.totalArticles > 0 && (
               <span className="ml-1 bg-primary text-primary-foreground text-xs px-1.5 py-0.5 rounded-full">
                 {stats.totalArticles}
               </span>
             )}
           </TabsTrigger>
+          <TabsTrigger value="generate" className="flex items-center space-x-2">
+            <Sparkles className="h-4 w-4" />
+            <span>Generate New</span>
+          </TabsTrigger>
         </TabsList>
-
-        <TabsContent value="generate" className="space-y-6">
-          {isLoggedIn ? (
-            <ArticleGenerator onArticleGenerated={handleArticleGenerated} />
-          ) : (
-            <Card>
-              <CardContent className="pt-6">
-                <div className="text-center space-y-4">
-                  <div className="mx-auto w-12 h-12 bg-muted rounded-lg flex items-center justify-center">
-                    <Sparkles className="h-6 w-6 text-muted-foreground" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold">Login Required</h3>
-                    <p className="text-muted-foreground">
-                      You need to be logged in to generate articles
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
 
         <TabsContent value="articles" className="space-y-6">
           <ArticleList
             refreshTrigger={refreshTrigger}
             onArticleSelect={handleArticleSelect}
+            isPublic={true}
           />
+        </TabsContent>
+
+        <TabsContent value="generate" className="space-y-6">
+          <ArticleGenerator onArticleGenerated={handleArticleGenerated} />
         </TabsContent>
       </Tabs>
 
