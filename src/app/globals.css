@@ -47,72 +47,6 @@
     --input: 240 3.7% 15.9%;
     --ring: 240 4.9% 83.9%;
   }
-
-  .blue {
-    --background: 210 40% 98%;
-    --foreground: 212 84% 10%;
-    --card: 210 40% 98%;
-    --card-foreground: 212 84% 10%;
-    --popover: 210 40% 98%;
-    --popover-foreground: 212 84% 10%;
-    --primary: 214 84% 56%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 212 84% 10%;
-    --muted: 210 40% 96%;
-    --muted-foreground: 212 20% 45%;
-    --accent: 210 40% 94%;
-    --accent-foreground: 212 84% 10%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 214 84% 56%;
-  }
-
-  .green {
-    --background: 120 40% 98%;
-    --foreground: 122 84% 10%;
-    --card: 120 40% 98%;
-    --card-foreground: 122 84% 10%;
-    --popover: 120 40% 98%;
-    --popover-foreground: 122 84% 10%;
-    --primary: 122 84% 42%;
-    --primary-foreground: 120 40% 98%;
-    --secondary: 120 40% 96%;
-    --secondary-foreground: 122 84% 10%;
-    --muted: 120 40% 96%;
-    --muted-foreground: 122 20% 45%;
-    --accent: 120 40% 94%;
-    --accent-foreground: 122 84% 10%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 120 40% 98%;
-    --border: 120 32% 91%;
-    --input: 120 32% 91%;
-    --ring: 122 84% 42%;
-  }
-
-  .purple {
-    --background: 280 40% 98%;
-    --foreground: 282 84% 10%;
-    --card: 280 40% 98%;
-    --card-foreground: 282 84% 10%;
-    --popover: 280 40% 98%;
-    --popover-foreground: 282 84% 10%;
-    --primary: 262 84% 58%;
-    --primary-foreground: 280 40% 98%;
-    --secondary: 280 40% 96%;
-    --secondary-foreground: 282 84% 10%;
-    --muted: 280 40% 96%;
-    --muted-foreground: 282 20% 45%;
-    --accent: 280 40% 94%;
-    --accent-foreground: 282 84% 10%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 280 40% 98%;
-    --border: 280 32% 91%;
-    --input: 280 32% 91%;
-    --ring: 262 84% 58%;
-  }
 }
 
 @layer base {
@@ -122,6 +56,7 @@
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
+    font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
 
@@ -137,16 +72,6 @@
 
   .price-neutral {
     color: hsl(43, 74%, 66%);
-  }
-
-  /* Chart animation styles */
-  .chart-fade-in {
-    animation: fadeIn 0.6s ease-in-out;
-  }
-
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
   }
 
   /* Interactive element styles */
