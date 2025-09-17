@@ -13,7 +13,7 @@ import {
 	TrendingUp,
 } from "lucide-react";
 import { useState } from "react";
-import { useTranslations } from "next-intl";
+// import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -88,7 +88,9 @@ export function ArticleGenerator({
 	onGenerationStart,
 	onGenerationEnd,
 }: ArticleGeneratorProps) {
-	const t = useTranslations("articles");
+	// const t = useTranslations("articles");
+	// Temporary fallback for translations
+	const t = (key: string) => key;
 	const [isGenerating, setIsGenerating] = useState(false);
 	const [progress, setProgress] = useState(0);
 	const [currentStep, setCurrentStep] = useState("");
