@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { Navigation } from "@/components/layout/navigation";
 import { Providers } from "@/components/providers";
 
 // Initialize services (including cron scheduler)
@@ -46,12 +45,7 @@ export default function RootLayout({
 		<html lang="en" suppressHydrationWarning>
 			<body className={inter.className}>
 				<Providers>
-					<div className="min-h-screen bg-background font-sans antialiased">
-						<Navigation />
-						<main className="relative flex min-h-screen flex-col">
-							{children}
-						</main>
-					</div>
+					{children}
 				</Providers>
 			</body>
 		</html>

@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 test.describe('Multi-language functionality', () => {
   test.beforeEach(async ({ page }) => {
     // Navigate to the application
-    await page.goto('/');
+    await page.goto('/en/news');
 
     // Wait for the page to load
     await page.waitForLoadState('networkidle');

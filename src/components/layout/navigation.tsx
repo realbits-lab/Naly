@@ -14,6 +14,7 @@ import {
 	Sun,
 	User,
 } from "lucide-react";
+import { LanguageSwitcherCompact } from "@/components/language-switcher";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signIn, signOut, useSession } from "next-auth/react";
@@ -185,6 +186,11 @@ export function Navigation() {
 								Sign in with Google
 							</Button>
 						)}
+					</div>
+
+					{/* Language Switcher */}
+					<div className="flex items-center space-x-2">
+						<LanguageSwitcherCompact />
 					</div>
 
 					{/* Settings Menu */}
