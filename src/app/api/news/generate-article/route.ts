@@ -14,6 +14,16 @@ const customNewsSchema = z.object({
   category: z.string().optional(),
 }).optional()
 
+// Schema for selected articles
+const selectedArticlesSchema = z.array(z.object({
+  id: z.string(),
+  title: z.string(),
+  summary: z.string().optional(),
+  content: z.string().optional(),
+  source: z.string().optional(),
+  publishedAt: z.string().optional(),
+})).optional()
+
 export async function POST(request: NextRequest) {
   try {
     const session = await auth()
@@ -24,13 +34,45 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json()
     const customNews = customNewsSchema.parse(body.customNews)
+    const selectedArticles = selectedArticlesSchema.parse(body.selectedArticles)
 
     const newsService = new NewsService()
     const articleGenerator = new ArticleGenerator()
 
     let newsResult
 
-    if (customNews && customNews.title && customNews.content) {
+    if (selectedArticles && selectedArticles.length > 0) {
+      // Use selected articles provided by user
+      console.log(`Processing ${selectedArticles.length} selected articles`)
+
+      // Convert selected articles to the format expected by the news service
+      const processedArticles = selectedArticles.map(article => ({
+        title: article.title,
+        content: article.content || article.summary || '',
+        url: `selected://article-${article.id}`,
+        source: article.source || 'Selected Article',
+        publishedAt: article.publishedAt || new Date().toISOString(),
+        category: 'selected',
+      }))
+
+      // Use the first article as primary and gather related info
+      const primaryArticle = processedArticles[0]
+      const relatedInfo = await newsService.gatherRelatedInformation(primaryArticle)
+
+      // Add information about other selected articles to related info
+      if (processedArticles.length > 1) {
+        relatedInfo.additionalSources = processedArticles.slice(1).map(article => ({
+          title: article.title,
+          source: article.source,
+          summary: article.content.substring(0, 200) + '...'
+        }))
+      }
+
+      newsResult = {
+        articles: processedArticles,
+        relatedInfo
+      }
+    } else if (customNews && customNews.title && customNews.content) {
       // Use custom news provided by user
       const customArticle = {
         title: customNews.title,
@@ -70,7 +112,7 @@ export async function POST(request: NextRequest) {
       marketAnalysis: generatedArticle.marketAnalysis,
       investmentImplications: generatedArticle.investmentImplications,
 
-      // Source information
+      // Source information - use primary article
       sourceTitle: selectedArticle.title,
       sourceContent: selectedArticle.content,
       sourceUrl: selectedArticle.url,
@@ -87,7 +129,8 @@ export async function POST(request: NextRequest) {
       wordCount: generatedArticle.metadata.wordCount,
       readingTime: generatedArticle.metadata.readingTime,
       aiModel: process.env.OPENAI_API_KEY ? 'gpt-4' : 'mock',
-      generationMethod: process.env.OPENAI_API_KEY ? 'ai' : 'mock',
+      generationMethod: selectedArticles && selectedArticles.length > 0 ? 'selected-articles' :
+                        (customNews && customNews.title ? 'custom' : 'auto'),
     }).returning()
 
     console.log(`Generated and saved article: ${generatedArticle.title}`)

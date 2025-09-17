@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { LatestNewsPanel } from '@/components/articles/latest-news-panel'
+import { toast } from 'sonner'
 
 interface Article {
   id: string
@@ -20,15 +21,52 @@ export function NewsPanel() {
   const [selectedArticles, setSelectedArticles] = useState<Article[]>([])
   const [isGenerating, setIsGenerating] = useState(false)
 
-  const handleGenerateFromSelected = (articles: Article[]) => {
+  const handleGenerateFromSelected = async (articles: Article[]) => {
     setSelectedArticles(articles)
     setIsGenerating(true)
 
-    // Simulate generation process
-    setTimeout(() => {
+    try {
+      console.log(`Generating article from ${articles.length} selected articles`)
+
+      const response = await fetch('/api/news/generate-article', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          selectedArticles: articles.map(article => ({
+            id: article.id,
+            title: article.title,
+            summary: article.summary,
+            content: article.content,
+            source: article.source,
+            publishedAt: article.publishedAt
+          }))
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error(`Failed to generate article: ${response.statusText}`)
+      }
+
+      const result = await response.json()
+      console.log('Article generated successfully:', result.generatedArticle.title)
+      console.log('Article saved with ID:', result.metadata.articleId)
+
+      // Show success message
+      toast.success(`Successfully generated article: "${result.generatedArticle.title}"`, {
+        description: `Article saved with ID: ${result.metadata.articleId}`,
+        duration: 5000
+      })
+
+    } catch (error) {
+      console.error('Failed to generate article:', error)
+      toast.error('Failed to generate article', {
+        description: 'Please try again or check the console for more details.',
+        duration: 5000
+      })
+    } finally {
       setIsGenerating(false)
       setSelectedArticles([])
-    }, 3000)
+    }
   }
 
   return (
