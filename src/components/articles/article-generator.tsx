@@ -7,11 +7,13 @@ import {
 	Clock,
 	Eye,
 	FileText,
+	Languages,
 	Loader2,
 	Sparkles,
 	TrendingUp,
 } from "lucide-react";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -49,12 +51,16 @@ interface GeneratedArticle {
 	keyPoints: string[];
 	marketAnalysis: string;
 	investmentImplications: string;
+	sourceLanguage?: string;
+	hasTranslations?: boolean;
 	metadata: {
 		wordCount: number;
 		readingTime: number;
 		sentiment: string;
 		categories: string[];
 		generatedAt: string;
+		supportedLanguages?: string[];
+		translationStatus?: string;
 	};
 }
 
@@ -82,6 +88,7 @@ export function ArticleGenerator({
 	onGenerationStart,
 	onGenerationEnd,
 }: ArticleGeneratorProps) {
+	const t = useTranslations("articles");
 	const [isGenerating, setIsGenerating] = useState(false);
 	const [progress, setProgress] = useState(0);
 	const [currentStep, setCurrentStep] = useState("");
@@ -106,16 +113,16 @@ export function ArticleGenerator({
 		onGenerationStart?.();
 		setIsGenerating(true);
 		setProgress(0);
-		setCurrentStep("Analyzing selected articles...");
+		setCurrentStep(t("analysisSteps.analyzing"));
 
 		try {
 			// Simulate progress steps
 			const steps = [
-				"Analyzing selected articles...",
-				"Extracting key information...",
-				"Gathering related context...",
-				"Generating comprehensive article...",
-				"Finalizing and saving...",
+				t("analysisSteps.analyzing"),
+				t("analysisSteps.extracting"),
+				t("analysisSteps.gathering"),
+				t("analysisSteps.generating"),
+				t("analysisSteps.finalizing"),
 			];
 
 			for (let i = 0; i < steps.length; i++) {

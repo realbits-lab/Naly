@@ -41,6 +41,10 @@ export const generatedArticles = pgTable(
 		aiModel: varchar("ai_model", { length: 100 }), // e.g., 'gpt-4', 'mock'
 		generationMethod: varchar("generation_method", { length: 50 }), // 'ai', 'mock', 'hybrid'
 
+		// Multi-language support
+		sourceLanguage: varchar("source_language", { length: 5 }).notNull().default("en"), // 'en', 'ko'
+		hasTranslations: text("has_translations").notNull().default("false"), // 'true', 'false'
+
 		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
 		updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 	},
@@ -52,6 +56,7 @@ export const generatedArticles = pgTable(
 			table.sourceCategory,
 		),
 		sentimentIdx: index("idx_generated_articles_sentiment").on(table.sentiment),
+		sourceLanguageIdx: index("idx_generated_articles_source_language").on(table.sourceLanguage),
 	}),
 );
 

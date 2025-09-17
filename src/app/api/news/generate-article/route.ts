@@ -4,7 +4,9 @@ import { ArticleGenerator } from "@/lib/article-generator";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { NewsService } from "@/lib/news-service";
-import { generatedArticles } from "@/lib/schema";
+import { translationService } from "@/lib/translation-service";
+import { generatedArticles, articleTranslations } from "@/lib/schema";
+import { eq } from "drizzle-orm";
 
 // Schema for optional custom news input
 const customNewsSchema = z
@@ -184,11 +186,56 @@ export async function POST(request: NextRequest) {
 						: customNews && customNews.title
 							? "custom"
 							: "auto",
+
+				// Multi-language support
+				sourceLanguage: "en",
+				hasTranslations: "false", // Will be updated to "true" after translation
 			})
 			.returning();
 
 		console.log(`Generated and saved article: ${generatedArticle.title}`);
 		console.log(`Article ID: ${savedArticle.id}`);
+
+		// Generate Korean translation
+		let koreanTranslation = null;
+		try {
+			console.log("Generating Korean translation...");
+			koreanTranslation = await translationService.translateArticle(
+				{
+					title: generatedArticle.title,
+					content: generatedArticle.content,
+					summary: generatedArticle.summary,
+					marketAnalysis: generatedArticle.marketAnalysis,
+					investmentImplications: generatedArticle.investmentImplications,
+				},
+				"en",
+				"ko"
+			);
+
+			// Save Korean translation to database
+			await db.insert(articleTranslations).values({
+				articleId: savedArticle.id,
+				languageCode: "ko",
+				title: koreanTranslation.title,
+				content: koreanTranslation.content,
+				summary: koreanTranslation.summary,
+				marketAnalysis: koreanTranslation.marketAnalysis,
+				investmentImplications: koreanTranslation.investmentImplications,
+				translatedBy: koreanTranslation.translatedBy,
+				translationQuality: koreanTranslation.translationQuality,
+			});
+
+			// Update article to indicate it has translations
+			await db
+				.update(generatedArticles)
+				.set({ hasTranslations: "true" })
+				.where(eq(generatedArticles.id, savedArticle.id));
+
+			console.log("Korean translation saved successfully");
+		} catch (translationError) {
+			console.error("Failed to generate Korean translation:", translationError);
+			// Continue without translation - don't fail the entire request
+		}
 
 		// Return the complete result
 		return NextResponse.json({
@@ -199,13 +246,29 @@ export async function POST(request: NextRequest) {
 				...generatedArticle,
 				id: savedArticle.id,
 				savedAt: savedArticle.createdAt,
+				sourceLanguage: "en",
+				hasTranslations: koreanTranslation ? true : false,
 			},
+			translations: koreanTranslation ? {
+				ko: {
+					title: koreanTranslation.title,
+					content: koreanTranslation.content,
+					summary: koreanTranslation.summary,
+					marketAnalysis: koreanTranslation.marketAnalysis,
+					investmentImplications: koreanTranslation.investmentImplications,
+					languageCode: "ko",
+					translationQuality: koreanTranslation.translationQuality,
+					translatedBy: koreanTranslation.translatedBy,
+				}
+			} : null,
 			metadata: {
 				processingTime: "Real-time generation",
 				aiModel: process.env.OPENAI_API_KEY ? "GPT-4" : "Mock Generation",
 				sources: newsResult.articles.length,
 				generatedAt: new Date().toISOString(),
 				articleId: savedArticle.id,
+				supportedLanguages: ["en", ...(koreanTranslation ? ["ko"] : [])],
+				translationStatus: koreanTranslation ? "completed" : "failed",
 			},
 		});
 	} catch (error) {
