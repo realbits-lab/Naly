@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
+import { randomUUID } from 'crypto';
 import { db } from '../src/lib/db';
 import { generatedArticles } from '../src/lib/schema';
 import { NewsService } from '../src/lib/news-service';
@@ -132,11 +133,9 @@ describe('Article Generation Core Functionality Test', () => {
 
       console.log('📝 Saving article to database...');
 
-      // Save to database (using a mock user ID since we don't have auth in this test)
-      const mockUserId = 'test-user-' + Date.now();
-
+      // Save to database (using null for userId since we don't have a test user)
       const [savedArticle] = await db.insert(generatedArticles).values({
-        userId: mockUserId,
+        userId: null,
         title: generatedArticle.title,
         content: generatedArticle.content,
         summary: generatedArticle.summary,
@@ -170,7 +169,7 @@ describe('Article Generation Core Functionality Test', () => {
       console.log('✅ Article saved successfully:');
       console.log(`   🆔 ID: ${savedArticle.id}`);
       console.log(`   📄 Title: ${savedArticle.title}`);
-      console.log(`   👤 User ID: ${savedArticle.userId}`);
+      console.log(`   👤 User ID: ${savedArticle.userId || 'test-user'}`);
       console.log(`   📅 Created At: ${savedArticle.createdAt}`);
       console.log(`   📊 Word Count: ${savedArticle.wordCount}`);
       console.log(`   💭 Sentiment: ${savedArticle.sentiment}`);
