@@ -28,8 +28,19 @@ export async function POST(request: NextRequest) {
   try {
     const session = await auth()
 
+    console.log('Session object:', JSON.stringify(session, null, 2))
+    console.log('User ID:', session?.user?.id)
+
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      console.error('Authentication failed - no user ID found')
+      return NextResponse.json({
+        error: 'Unauthorized',
+        debug: {
+          hasSession: !!session,
+          hasUser: !!session?.user,
+          userId: session?.user?.id
+        }
+      }, { status: 401 })
     }
 
     const body = await request.json()
@@ -101,6 +112,17 @@ export async function POST(request: NextRequest) {
       selectedArticle,
       relatedInfo
     )
+
+    // Verify we still have a valid user ID before saving
+    if (!session.user?.id) {
+      console.error('Lost user session during article generation')
+      return NextResponse.json({
+        error: 'Session expired during processing',
+        message: 'Please sign in again and try the operation again'
+      }, { status: 401 })
+    }
+
+    console.log('About to save article with user ID:', session.user.id)
 
     // Save the generated article to database
     const [savedArticle] = await db.insert(generatedArticles).values({

@@ -4,6 +4,7 @@ import { db } from "./db"
 import { sql } from "drizzle-orm"
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
+  secret: process.env.NEXTAUTH_SECRET,
   providers: [
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID!,
