@@ -1,10 +1,8 @@
 import { pgTable, uuid, varchar, timestamp, jsonb, text, integer, index } from 'drizzle-orm/pg-core'
-import { users } from './users'
 
 // Generated Articles table
 export const generatedArticles = pgTable('generated_articles', {
   id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').references(() => users.id).notNull(),
   title: varchar('title', { length: 500 }).notNull(),
   content: text('content').notNull(),
   summary: text('summary'),
@@ -34,37 +32,22 @@ export const generatedArticles = pgTable('generated_articles', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 }, (table) => ({
-  userIdIdx: index('idx_generated_articles_user_id').on(table.userId),
   createdAtIdx: index('idx_generated_articles_created_at').on(table.createdAt),
   categoryIdx: index('idx_generated_articles_category').on(table.sourceCategory),
   sentimentIdx: index('idx_generated_articles_sentiment').on(table.sentiment),
 }))
 
-// Article Feedback table (for user ratings and comments)
-export const articleFeedback = pgTable('article_feedback', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  articleId: uuid('article_id').references(() => generatedArticles.id, { onDelete: 'cascade' }).notNull(),
-  userId: uuid('user_id').references(() => users.id).notNull(),
-  rating: integer('rating'), // 1-5 scale
-  feedback: text('feedback'),
-  isHelpful: varchar('is_helpful', { length: 10 }), // 'yes', 'no', 'neutral'
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
-}, (table) => ({
-  articleIdIdx: index('idx_article_feedback_article_id').on(table.articleId),
-  userIdIdx: index('idx_article_feedback_user_id').on(table.userId),
-}))
-
-// Article Views table (for tracking engagement)
+// Article Views table (for tracking engagement without user authentication)
 export const articleViews = pgTable('article_views', {
   id: uuid('id').primaryKey().defaultRandom(),
   articleId: uuid('article_id').references(() => generatedArticles.id, { onDelete: 'cascade' }).notNull(),
-  userId: uuid('user_id').references(() => users.id),
   viewedAt: timestamp('viewed_at', { withTimezone: true }).defaultNow(),
   readingTime: integer('reading_time'), // time spent reading in seconds
   completionPercentage: integer('completion_percentage'), // 0-100
   sessionId: varchar('session_id', { length: 100 }),
+  ipAddress: varchar('ip_address', { length: 45 }), // For anonymous tracking
 }, (table) => ({
   articleIdIdx: index('idx_article_views_article_id').on(table.articleId),
-  userIdIdx: index('idx_article_views_user_id').on(table.userId),
   viewedAtIdx: index('idx_article_views_viewed_at').on(table.viewedAt),
+  sessionIdIdx: index('idx_article_views_session_id').on(table.sessionId),
 }))

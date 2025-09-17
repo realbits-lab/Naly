@@ -1,5 +1,4 @@
 import { pgTable, uuid, varchar, timestamp, jsonb, text, boolean, pgEnum, index } from 'drizzle-orm/pg-core'
-import { users } from './users'
 
 // Enums for cron job types and statuses
 export const cronJobStatusEnum = pgEnum('cron_job_status_enum', [
@@ -21,7 +20,6 @@ export const cronJobTypeEnum = pgEnum('cron_job_type_enum', [
 // Cron Jobs table
 export const cronJobs = pgTable('cron_jobs', {
   id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').references(() => users.id).notNull(),
   name: varchar('name', { length: 255 }).notNull(),
   description: text('description'),
   type: cronJobTypeEnum('type').notNull(),
@@ -35,7 +33,6 @@ export const cronJobs = pgTable('cron_jobs', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 }, (table) => ({
-  userIdIdx: index('idx_cron_jobs_user_id').on(table.userId),
   statusIdx: index('idx_cron_jobs_status').on(table.status),
   nextRunIdx: index('idx_cron_jobs_next_run').on(table.nextRun),
   activeIdx: index('idx_cron_jobs_active').on(table.isActive),
