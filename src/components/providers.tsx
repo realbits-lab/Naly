@@ -2,6 +2,7 @@
 
 import { ReactNode } from "react"
 import { ThemeProvider } from "@/components/theme-provider"
+import { AuthSessionProvider } from "@/components/auth/session-provider"
 
 interface ProvidersProps {
   children: ReactNode
@@ -9,11 +10,13 @@ interface ProvidersProps {
 
 export function Providers({ children }: ProvidersProps) {
   return (
-    <ThemeProvider
-      defaultTheme="light"
-      storageKey="naly-ui-theme"
-    >
-      {children}
-    </ThemeProvider>
+    <AuthSessionProvider>
+      <ThemeProvider
+        defaultTheme="light"
+        storageKey="naly-ui-theme"
+      >
+        {children}
+      </ThemeProvider>
+    </AuthSessionProvider>
   )
 }

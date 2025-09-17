@@ -52,9 +52,10 @@ interface ArticleStats {
 
 interface ArticlesPageProps {
   isLoggedIn: boolean
+  userRole: string | null
 }
 
-export function ArticlesPage({ isLoggedIn }: ArticlesPageProps) {
+export function ArticlesPage({ isLoggedIn, userRole }: ArticlesPageProps) {
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null)
   const [showArticleViewer, setShowArticleViewer] = useState(false)
   const [stats, setStats] = useState<ArticleStats | null>(null)
@@ -178,10 +179,12 @@ export function ArticlesPage({ isLoggedIn }: ArticlesPageProps) {
               </span>
             )}
           </TabsTrigger>
-          <TabsTrigger value="generate" className="flex items-center space-x-2">
-            <Sparkles className="h-4 w-4" />
-            <span>Generate New</span>
-          </TabsTrigger>
+          {userRole === 'admin' && (
+            <TabsTrigger value="generate" className="flex items-center space-x-2">
+              <Sparkles className="h-4 w-4" />
+              <span>Generate New</span>
+            </TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="articles" className="space-y-6">
@@ -192,9 +195,11 @@ export function ArticlesPage({ isLoggedIn }: ArticlesPageProps) {
           />
         </TabsContent>
 
-        <TabsContent value="generate" className="space-y-6">
-          <ArticleGenerator onArticleGenerated={handleArticleGenerated} />
-        </TabsContent>
+        {userRole === 'admin' && (
+          <TabsContent value="generate" className="space-y-6">
+            <ArticleGenerator onArticleGenerated={handleArticleGenerated} />
+          </TabsContent>
+        )}
       </Tabs>
 
       {/* Article Viewer Dialog */}

@@ -1,0 +1,42 @@
+import { redirect } from 'next/navigation'
+import { auth } from '@/lib/auth'
+import { ArticleGenerator } from '@/components/articles/article-generator'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { PenTool, Shield } from 'lucide-react'
+
+export default async function WritePage() {
+  const session = await auth()
+
+  if (!session?.user) {
+    redirect('/api/auth/signin')
+  }
+
+  if (session.user.role !== 'admin') {
+    redirect('/news')
+  }
+
+  return (
+    <div className="container mx-auto py-8 space-y-6">
+      <div className="flex items-center space-x-2 mb-8">
+        <Shield className="h-6 w-6 text-primary" />
+        <h1 className="text-3xl font-bold">Article Writing Studio</h1>
+        <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">ADMIN</span>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <PenTool className="h-5 w-5 text-primary" />
+            <span>Content Creation Tools</span>
+          </CardTitle>
+          <CardDescription>
+            Use AI-powered tools to generate comprehensive financial articles from news sources
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ArticleGenerator />
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
