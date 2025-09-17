@@ -10,7 +10,7 @@ const config = {
   ],
 
   // Module name mapping for path aliases
-  moduleNameMapping: {
+  moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
 
@@ -30,6 +30,11 @@ const config = {
     '^.+\\.(ts|tsx)$': 'ts-jest',
   },
 
+  // Transform ignore patterns for ES modules
+  transformIgnorePatterns: [
+    'node_modules/(?!(node-fetch|fetch-blob|data-uri-to-buffer|formdata-polyfill|ai|@ai-sdk)/)'
+  ],
+
   // Module file extensions
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
 
@@ -44,6 +49,14 @@ const config = {
 
   // Reset modules between tests
   resetModules: true,
+
+  // ES Module support
+  extensionsToTreatAsEsm: ['.ts'],
+  globals: {
+    'ts-jest': {
+      useESM: true
+    }
+  },
 }
 
 module.exports = config

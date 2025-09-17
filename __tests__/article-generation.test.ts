@@ -1,13 +1,12 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from '@jest/globals';
-import fetch from 'node-fetch';
 import { db } from '../src/lib/db';
 import { generatedArticles } from '../src/lib/schema';
 import { NewsService } from '../src/lib/news-service';
 import { eq } from 'drizzle-orm';
 
-// Configure fetch for Node.js
-if (!globalThis.fetch) {
-  globalThis.fetch = fetch as any;
+// Use Node.js 18+ built-in fetch
+declare global {
+  var fetch: typeof globalThis.fetch;
 }
 
 // Test configuration
