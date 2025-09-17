@@ -29,7 +29,7 @@ export function NewsPageClient() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-4rem)]">
+    <div className="flex h-[calc(100vh-4rem)] max-w-7xl mx-auto px-4">
       {/* Sidebar */}
       <NewsSidebar
         selectedArticleId={selectedArticle?.id || null}

@@ -29,7 +29,7 @@ const sidebarItems = [
   },
   {
     id: 'create' as SidebarTab,
-    label: 'Create',
+    label: 'Custom',
     icon: PenTool,
     description: 'Custom Content Creation'
   },

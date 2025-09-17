@@ -29,7 +29,6 @@ import {
   TrendingUp,
   Clock,
   Eye,
-  Newspaper,
   Bot,
   Loader2,
   CheckCircle,
@@ -91,55 +90,6 @@ export function ArticleGenerator({
     category: 'general'
   })
 
-  const handleGenerateFromLatestNews = async () => {
-    onGenerationStart?.()
-    setIsGenerating(true)
-    setProgress(0)
-    setCurrentStep('Fetching latest news...')
-
-    try {
-      // Simulate progress steps
-      const steps = [
-        'Fetching latest news...',
-        'Analyzing news content...',
-        'Gathering related information...',
-        'Generating comprehensive article...',
-        'Finalizing and saving...'
-      ]
-
-      for (let i = 0; i < steps.length; i++) {
-        setCurrentStep(steps[i])
-        setProgress((i + 1) * 20)
-        await new Promise(resolve => setTimeout(resolve, 1000))
-      }
-
-      const response = await fetch('/api/news/generate-article', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({})
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to generate article')
-      }
-
-      const result = await response.json()
-      const article = result.generatedArticle
-
-      setGeneratedArticle(article)
-      onArticleGenerated?.(article)
-      setProgress(100)
-      setCurrentStep('Article generated successfully!')
-
-    } catch (error) {
-      console.error('Failed to generate article:', error)
-      setCurrentStep('Failed to generate article')
-      setProgress(0)
-    } finally {
-      setIsGenerating(false)
-      onGenerationEnd?.()
-    }
-  }
 
   const handleGenerateFromSelected = async () => {
     if (preSelectedArticles.length === 0) {
@@ -280,22 +230,18 @@ export function ArticleGenerator({
             <span>AI Article Generator</span>
           </CardTitle>
           <CardDescription>
-            Generate comprehensive financial articles from latest news or custom content
+            Generate comprehensive financial articles from selected articles or custom content
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue={preSelectedArticles.length > 0 ? "selected-articles" : "latest-news"} className="space-y-4">
-            <TabsList className={`grid w-full ${preSelectedArticles.length > 0 ? 'grid-cols-3' : 'grid-cols-2'}`}>
+          <Tabs defaultValue={preSelectedArticles.length > 0 ? "selected-articles" : "custom-news"} className="space-y-4">
+            <TabsList className={`grid w-full ${preSelectedArticles.length > 0 ? 'grid-cols-2' : 'grid-cols-1'}`}>
               {preSelectedArticles.length > 0 && (
                 <TabsTrigger value="selected-articles" className="flex items-center space-x-2">
                   <CheckCircle className="h-4 w-4" />
                   <span>Selected ({preSelectedArticles.length})</span>
                 </TabsTrigger>
               )}
-              <TabsTrigger value="latest-news" className="flex items-center space-x-2">
-                <Newspaper className="h-4 w-4" />
-                <span>Latest News</span>
-              </TabsTrigger>
               <TabsTrigger value="custom-news" className="flex items-center space-x-2">
                 <FileText className="h-4 w-4" />
                 <span>Custom News</span>
@@ -362,34 +308,6 @@ export function ArticleGenerator({
               </TabsContent>
             )}
 
-            <TabsContent value="latest-news" className="space-y-4">
-              <div className="text-center py-8">
-                <Bot className="h-12 w-12 mx-auto mb-4 text-primary" />
-                <h3 className="text-lg font-semibold mb-2">Generate from Latest News</h3>
-                <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                  Our AI will automatically fetch the most important financial news
-                  and generate a comprehensive analysis article
-                </p>
-                <Button
-                  onClick={handleGenerateFromLatestNews}
-                  disabled={isGenerating}
-                  size="lg"
-                  className="min-w-32"
-                >
-                  {isGenerating ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Generating...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="h-4 w-4 mr-2" />
-                      Generate Article
-                    </>
-                  )}
-                </Button>
-              </div>
-            </TabsContent>
 
             <TabsContent value="custom-news" className="space-y-4">
               <div className="space-y-4">

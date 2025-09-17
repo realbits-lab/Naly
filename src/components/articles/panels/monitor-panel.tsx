@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { ArticleStatsCards } from '@/components/articles/article-stats-cards'
 import {
   Activity,
   TrendingUp,
@@ -12,7 +13,9 @@ import {
   Zap,
   Eye,
   RefreshCw,
-  BarChart3
+  BarChart3,
+  FileText,
+  Bot
 } from 'lucide-react'
 
 interface MarketData {
@@ -103,6 +106,22 @@ export function MonitorPanel() {
         </div>
 
         <div className="space-y-6">
+          {/* Article Statistics */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <FileText className="h-5 w-5 text-primary" />
+                <span>Article Analytics</span>
+              </CardTitle>
+              <CardDescription>
+                Performance metrics and statistics for generated articles
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ArticleStatsCards />
+            </CardContent>
+          </Card>
+
           {/* Market Overview */}
           <Card>
             <CardHeader>
@@ -218,34 +237,6 @@ export function MonitorPanel() {
             </CardContent>
           </Card>
 
-          {/* Quick Actions */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Eye className="h-5 w-5 text-primary" />
-                <span>Quick Actions</span>
-              </CardTitle>
-              <CardDescription>
-                Monitor specific symbols or create alerts
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2">
-                <Button variant="outline" size="sm">
-                  <Activity className="h-4 w-4 mr-2" />
-                  Add Symbol
-                </Button>
-                <Button variant="outline" size="sm">
-                  <AlertTriangle className="h-4 w-4 mr-2" />
-                  Create Alert
-                </Button>
-                <Button variant="outline" size="sm">
-                  <BarChart3 className="h-4 w-4 mr-2" />
-                  View Analytics
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
         </div>
       </div>
     </div>

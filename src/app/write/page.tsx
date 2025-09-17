@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation'
 import { auth } from '@/lib/auth'
 import { Shield } from 'lucide-react'
-import { ArticleStatsCards } from '@/components/articles/article-stats-cards'
 import { WritePageClient } from '@/components/articles/write-page-client'
 
 export default async function WritePage() {
@@ -16,15 +15,12 @@ export default async function WritePage() {
   }
 
   return (
-    <div className="container mx-auto py-8 space-y-6">
-      <div className="flex items-center space-x-2 mb-8">
+    <div className="h-screen flex flex-col max-w-7xl mx-auto px-4">
+      <div className="flex items-center space-x-2 p-4 border-b border-border bg-background">
         <Shield className="h-6 w-6 text-primary" />
-        <h1 className="text-3xl font-bold">Article Writing Studio</h1>
+        <h1 className="text-2xl font-bold">Article Writing Studio</h1>
         <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">ADMIN</span>
       </div>
-
-      {/* Statistics Cards */}
-      <ArticleStatsCards />
 
       <WritePageClient />
     </div>

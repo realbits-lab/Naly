@@ -35,7 +35,7 @@ export function WritePageClient() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-4rem)]">
+    <div className="flex flex-1">
       {/* Sidebar */}
       <WriteSidebar
         activeTab={activeTab}
