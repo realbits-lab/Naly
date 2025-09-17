@@ -10,12 +10,14 @@ import { PenTool } from 'lucide-react'
 interface Article {
   id: string
   title: string
-  summary?: string
-  sourcePublisher?: string
-  sourceCategory?: string
-  sentiment?: string
-  readingTime?: number
-  createdAt: string
+  summary: string
+  content: string
+  source: string
+  publishedAt: string
+  sentiment?: 'positive' | 'negative' | 'neutral'
+  category?: string
+  symbols?: string[]
+  url?: string
 }
 
 export function WritePageClient() {
@@ -37,35 +39,39 @@ export function WritePageClient() {
   }
 
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-      {/* Content Creation Tools */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <PenTool className="h-5 w-5 text-primary" />
-            <span>Content Creation Tools</span>
-          </CardTitle>
-          <CardDescription>
-            Use AI-powered tools to generate comprehensive financial articles from news sources
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ArticleGenerator
-            preSelectedArticles={selectedArticles}
-            onGenerationStart={handleGenerationStart}
-            onGenerationEnd={handleGenerationEnd}
-          />
-        </CardContent>
-      </Card>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Left Column: Content Creation Tools and Latest News */}
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <PenTool className="h-5 w-5 text-primary" />
+              <span>Content Creation Tools</span>
+            </CardTitle>
+            <CardDescription>
+              Use AI-powered tools to generate comprehensive financial articles from news sources
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ArticleGenerator
+              preSelectedArticles={selectedArticles}
+              onGenerationStart={handleGenerationStart}
+              onGenerationEnd={handleGenerationEnd}
+            />
+          </CardContent>
+        </Card>
 
-      {/* Latest News Panel */}
-      <LatestNewsPanel
-        onGenerateFromSelected={handleGenerateFromSelected}
-        isGenerating={isGenerating}
-      />
+        {/* Latest News Panel - positioned under generator */}
+        <LatestNewsPanel
+          onGenerateFromSelected={handleGenerateFromSelected}
+          isGenerating={isGenerating}
+        />
+      </div>
 
-      {/* Article Management */}
-      <ArticleManagement />
+      {/* Right Column: Article Management */}
+      <div>
+        <ArticleManagement />
+      </div>
     </div>
   )
 }

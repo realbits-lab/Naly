@@ -21,12 +21,14 @@ import { toast } from 'sonner'
 interface Article {
   id: string
   title: string
-  summary?: string
-  sourcePublisher?: string
-  sourceCategory?: string
-  sentiment?: string
-  readingTime?: number
-  createdAt: string
+  summary: string
+  content: string
+  source: string
+  publishedAt: string
+  sentiment?: 'positive' | 'negative' | 'neutral'
+  category?: string
+  symbols?: string[]
+  url?: string
 }
 
 interface LatestNewsPanelProps {
@@ -42,16 +44,16 @@ export function LatestNewsPanel({ onGenerateFromSelected, isGenerating = false }
   const fetchArticles = async () => {
     try {
       setLoading(true)
-      const response = await fetch('/api/articles?limit=100&offset=0')
+      const response = await fetch('/api/financial-news?limit=100')
       if (response.ok) {
         const data = await response.json()
         setArticles(Array.isArray(data.articles) ? data.articles : [])
       } else {
-        toast.error('Failed to fetch latest news')
+        toast.error('Failed to fetch financial news')
       }
     } catch (error) {
-      console.error('Failed to fetch articles:', error)
-      toast.error('Failed to fetch latest news')
+      console.error('Failed to fetch financial news:', error)
+      toast.error('Failed to fetch financial news')
     } finally {
       setLoading(false)
     }
@@ -209,20 +211,21 @@ export function LatestNewsPanel({ onGenerateFromSelected, isGenerating = false }
                     <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground mb-2">
                       <div className="flex items-center">
                         <Calendar className="h-3 w-3 mr-1" />
-                        <span>{new Date(article.createdAt).toLocaleDateString()}</span>
+                        <span>{new Date(article.publishedAt).toLocaleDateString()}</span>
                       </div>
 
-                      {article.readingTime && (
+                      {article.source && (
                         <div className="flex items-center">
-                          <Clock className="h-3 w-3 mr-1" />
-                          <span>{article.readingTime} min</span>
+                          <User className="h-3 w-3 mr-1" />
+                          <span>{article.source}</span>
                         </div>
                       )}
 
-                      {article.sourcePublisher && (
+                      {article.symbols && article.symbols.length > 0 && (
                         <div className="flex items-center">
-                          <User className="h-3 w-3 mr-1" />
-                          <span>{article.sourcePublisher}</span>
+                          <TrendingUp className="h-3 w-3 mr-1" />
+                          <span>{article.symbols.slice(0, 2).join(', ')}</span>
+                          {article.symbols.length > 2 && <span> +{article.symbols.length - 2}</span>}
                         </div>
                       )}
                     </div>
@@ -235,10 +238,10 @@ export function LatestNewsPanel({ onGenerateFromSelected, isGenerating = false }
                         </Badge>
                       )}
 
-                      {article.sourceCategory && (
+                      {article.category && (
                         <Badge variant="secondary" className="text-xs">
                           <Tag className="h-3 w-3 mr-1" />
-                          {article.sourceCategory.replace('-', ' ')}
+                          {article.category.replace('-', ' ')}
                         </Badge>
                       )}
 
