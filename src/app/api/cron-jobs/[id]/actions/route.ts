@@ -13,6 +13,8 @@ export async function POST(
 	request: NextRequest,
 	{ params }: { params: { id: string } },
 ) {
+	let action: string = "unknown";
+
 	try {
 		const session = await auth();
 
@@ -21,15 +23,14 @@ export async function POST(
 		}
 
 		const body = await request.json();
-		const { action } = actionSchema.parse(body);
+		const parsedAction = actionSchema.parse(body);
+		action = parsedAction.action;
 
-		// Check if job exists and belongs to user
+		// Check if job exists
 		const [existingJob] = await db
 			.select()
 			.from(cronJobs)
-			.where(
-				and(eq(cronJobs.id, params.id), eq(cronJobs.userId, session.user.id)),
-			);
+			.where(eq(cronJobs.id, params.id));
 
 		if (!existingJob) {
 			return NextResponse.json(
@@ -64,9 +65,7 @@ export async function POST(
 		const [updatedJob] = await db
 			.update(cronJobs)
 			.set(updateData)
-			.where(
-				and(eq(cronJobs.id, params.id), eq(cronJobs.userId, session.user.id)),
-			)
+			.where(eq(cronJobs.id, params.id))
 			.returning();
 
 		return NextResponse.json({

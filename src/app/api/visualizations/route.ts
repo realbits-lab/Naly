@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { ChartGenerator } from "@/lib/visualization/chart-generator";
 import { createErrorResponse, createSuccessResponse } from "@/types";
 import { ChartTheme, VisualizationType } from "@/types/content";
-import { ApplicationError, ErrorCode, ErrorSeverity } from "@/types/errors";
+import { ApplicationError, ErrorCode, ErrorSeverity, isApplicationError } from "@/types/errors";
 
 // Singleton chart generator
 let chartGenerator: ChartGenerator | null = null;
@@ -11,15 +11,9 @@ async function getChartGenerator(): Promise<ChartGenerator> {
 	if (!chartGenerator) {
 		chartGenerator = new ChartGenerator();
 		await chartGenerator.configure({
-			defaultTheme: ChartTheme.AUTO,
+			defaultTheme: "AUTO",
 			interactivityLevel: "ADVANCED",
 			accessibilityLevel: "WCAG_AA",
-			responsiveness: {
-				mobile: true,
-				tablet: true,
-				desktop: true,
-				breakpoints: { sm: 640, md: 768, lg: 1024, xl: 1280 },
-			},
 			exportFormats: ["png", "svg", "pdf"],
 		});
 	}
@@ -120,7 +114,7 @@ export async function POST(request: NextRequest) {
 	} catch (error) {
 		console.error("Visualization generation API error:", error);
 
-		if (error instanceof ApplicationError || (error as any).code) {
+		if (isApplicationError(error) || (error as any).code) {
 			const appError = error as ApplicationError;
 			const status = getHttpStatusFromErrorCode(appError.code);
 			return NextResponse.json(createErrorResponse(appError, requestId), {
@@ -219,7 +213,7 @@ export async function PUT(request: NextRequest) {
 	} catch (error) {
 		console.error("Dashboard creation API error:", error);
 
-		if (error instanceof ApplicationError || (error as any).code) {
+		if (isApplicationError(error) || (error as any).code) {
 			const appError = error as ApplicationError;
 			const status = getHttpStatusFromErrorCode(appError.code);
 			return NextResponse.json(createErrorResponse(appError, requestId), {
@@ -347,11 +341,11 @@ export async function PATCH(request: NextRequest) {
 		);
 		headers.set("Content-Length", exportBuffer.length.toString());
 
-		return new NextResponse(exportBuffer, { headers });
+		return new NextResponse(new Uint8Array(exportBuffer), { headers });
 	} catch (error) {
 		console.error("Visualization export API error:", error);
 
-		if (error instanceof ApplicationError || (error as any).code) {
+		if (isApplicationError(error) || (error as any).code) {
 			const appError = error as ApplicationError;
 			const status = getHttpStatusFromErrorCode(appError.code);
 			return NextResponse.json(createErrorResponse(appError, requestId), {

@@ -173,7 +173,7 @@ export function ArticleManagement() {
 								checked={isAllSelected}
 								onCheckedChange={handleSelectAll}
 								ref={(el) => {
-									if (el) el.indeterminate = isPartiallySelected;
+									if (el) (el as any).indeterminate = isPartiallySelected;
 								}}
 							/>
 							<label htmlFor="select-all" className="text-sm font-medium">

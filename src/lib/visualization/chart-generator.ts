@@ -17,7 +17,7 @@ import {
 	type VisualizationData,
 	VisualizationType,
 } from "@/types/content";
-import { ApplicationError, ErrorCode, ErrorSeverity } from "@/types/errors";
+import { ApplicationError, ErrorCode, ErrorSeverity, isApplicationError } from "@/types/errors";
 import { type MarketDataPoint, MarketEvent } from "@/types/market";
 import type {
 	VisualizationConfig,
@@ -114,7 +114,7 @@ export class ChartGenerator implements VisualizationService {
 
 			return visualization;
 		} catch (error) {
-			if (error instanceof ApplicationError) {
+			if (isApplicationError(error)) {
 				throw error;
 			}
 

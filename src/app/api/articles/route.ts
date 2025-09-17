@@ -215,14 +215,14 @@ export async function DELETE(request: NextRequest) {
 			);
 		}
 
-		const result = await db
+		await db
 			.delete(generatedArticles)
 			.where(inArray(generatedArticles.id, articleIds));
 
 		return NextResponse.json({
 			success: true,
-			deletedCount: result.rowCount || 0,
-			message: `Successfully deleted ${result.rowCount || 0} article(s)`,
+			deletedCount: articleIds.length,
+			message: `Successfully deleted ${articleIds.length} article(s)`,
 		});
 	} catch (error) {
 		console.error("Failed to delete articles:", error);

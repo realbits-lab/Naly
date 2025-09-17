@@ -22,8 +22,7 @@ async function createTestArticle() {
 				id: testUserId,
 				email: "demo@example.com",
 				name: "Demo User",
-				role: "RETAIL_INDIVIDUAL",
-				subscriptionTier: "free",
+				role: "user",
 			})
 			.returning();
 

@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { CausalAnalyzer } from "@/lib/causal-analysis/causal-analyzer";
 import { createErrorResponse, createSuccessResponse } from "@/types";
-import { ApplicationError, ErrorCode, ErrorSeverity } from "@/types/errors";
+import { ApplicationError, ErrorCode, ErrorSeverity, isApplicationError } from "@/types/errors";
 import type { MarketEvent } from "@/types/market";
 
 // Singleton causal analyzer
@@ -15,7 +15,6 @@ async function getCausalAnalyzer(): Promise<CausalAnalyzer> {
 			confidenceThreshold: 0.6,
 			maxFactors: 5,
 			enableAlternativeExplanations: true,
-			useCache: true,
 		});
 	}
 	return causalAnalyzer;
@@ -113,7 +112,7 @@ export async function POST(request: NextRequest) {
 	} catch (error) {
 		console.error("Causal analysis API error:", error);
 
-		if (error instanceof ApplicationError || (error as any).code) {
+		if (isApplicationError(error) || (error as any).code) {
 			const appError = error as ApplicationError;
 			const status = getHttpStatusFromErrorCode(appError.code);
 			return NextResponse.json(createErrorResponse(appError, requestId), {

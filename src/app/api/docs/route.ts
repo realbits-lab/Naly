@@ -383,7 +383,7 @@ client = naly.Client(api_key='your-api-key')
 
 # Get market data
 quote = client.market_data.get_quote('AAPL')
-print(f"AAPL: ${quote.price}")
+print(f"AAPL: {quote.price}")
 
 # Generate narrative
 narrative = client.narratives.generate(
@@ -399,7 +399,7 @@ prediction = client.predictions.get(
     horizon='1w',
     type='price'
 )
-print(f"Predicted price: ${prediction.predicted_price}")
+print(f"Predicted price: {prediction.predicted_price}")
 `,
 			},
 			javascript: {

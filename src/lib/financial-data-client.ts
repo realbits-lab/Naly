@@ -136,7 +136,7 @@ export class FinancialDataAPIClient implements FinancialDataAPIService {
 
 			return marketDataPoints;
 		} catch (error) {
-			if (error instanceof ApplicationError) {
+			if (isApplicationError(error)) {
 				throw error;
 			}
 
@@ -203,7 +203,7 @@ export class FinancialDataAPIClient implements FinancialDataAPIService {
 				},
 			};
 		} catch (error) {
-			if (error instanceof ApplicationError) {
+			if (isApplicationError(error)) {
 				throw error;
 			}
 

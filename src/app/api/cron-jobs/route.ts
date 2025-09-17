@@ -29,8 +29,7 @@ export async function GET(request: NextRequest) {
 
 		const jobs = await db
 			.select()
-			.from(cronJobs)
-			.where(eq(cronJobs.userId, session.user.id));
+			.from(cronJobs);
 
 		return NextResponse.json({ jobs });
 	} catch (error) {
@@ -59,7 +58,6 @@ export async function POST(request: NextRequest) {
 		const [newJob] = await db
 			.insert(cronJobs)
 			.values({
-				userId: session.user.id,
 				name: validatedData.name,
 				description: validatedData.description,
 				type: validatedData.type,

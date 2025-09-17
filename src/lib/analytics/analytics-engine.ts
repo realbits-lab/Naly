@@ -2,7 +2,7 @@ import { and, asc, desc, eq, gte, lte } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { marketDataPoints, marketEvents } from "@/lib/schema/events";
 import { getFinancialDataAPI } from "@/lib/service-registry";
-import { ApplicationError, ErrorCode, ErrorSeverity } from "@/types/errors";
+import { ApplicationError, ErrorCode, ErrorSeverity, isApplicationError } from "@/types/errors";
 import {
 	EventType,
 	type MarketDataPoint,
@@ -160,7 +160,7 @@ export class AnalyticsEngine {
 				},
 			};
 		} catch (error) {
-			if (error instanceof ApplicationError) {
+			if (isApplicationError(error)) {
 				throw error;
 			}
 
@@ -259,7 +259,7 @@ export class AnalyticsEngine {
 				},
 			};
 		} catch (error) {
-			if (error instanceof ApplicationError) {
+			if (isApplicationError(error)) {
 				throw error;
 			}
 

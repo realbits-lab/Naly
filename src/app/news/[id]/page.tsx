@@ -63,7 +63,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
 					<div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
 						<div className="flex items-center">
 							<Calendar className="mr-1 h-4 w-4" />
-							{new Date(article.createdAt).toLocaleDateString("en-US", {
+							{article.createdAt && new Date(article.createdAt).toLocaleDateString("en-US", {
 								year: "numeric",
 								month: "long",
 								day: "numeric",
@@ -129,7 +129,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
 
 				{article.keyPoints &&
 					Array.isArray(article.keyPoints) &&
-					article.keyPoints.length > 0 && (
+					article.keyPoints.length > 0 ? (
 						<Card>
 							<CardHeader>
 								<CardTitle>Key Points</CardTitle>
@@ -145,7 +145,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
 								</ul>
 							</CardContent>
 						</Card>
-					)}
+					) : null}
 
 				{article.marketAnalysis && (
 					<Card>
@@ -175,7 +175,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
 
 				{article.keywords &&
 					Array.isArray(article.keywords) &&
-					article.keywords.length > 0 && (
+					article.keywords.length > 0 ? (
 						<Card>
 							<CardHeader>
 								<CardTitle>Keywords</CardTitle>
@@ -193,7 +193,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
 								</div>
 							</CardContent>
 						</Card>
-					)}
+					) : null}
 
 				{article.sourceUrl && (
 					<Card>

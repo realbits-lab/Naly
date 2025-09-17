@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { PredictionEngine } from "@/lib/prediction/prediction-engine";
 import { createErrorResponse, createSuccessResponse } from "@/types";
 import { ModelType } from "@/types/analytics";
-import { ApplicationError, ErrorCode, ErrorSeverity } from "@/types/errors";
+import { ApplicationError, ErrorCode, ErrorSeverity, isApplicationError } from "@/types/errors";
 import type { MarketEvent } from "@/types/market";
 
 // Singleton prediction engine
@@ -24,7 +24,6 @@ async function getPredictionEngine(): Promise<PredictionEngine> {
 				[ModelType.LINEAR_REGRESSION]: 0.2,
 				[ModelType.ARIMA]: 0.25,
 			},
-			aggregationMethod: "weighted_average",
 			confidenceThreshold: 0.6,
 			maxScenarios: 3,
 		});
@@ -130,7 +129,7 @@ export async function POST(request: NextRequest) {
 	} catch (error) {
 		console.error("Predictions API error:", error);
 
-		if (error instanceof ApplicationError || (error as any).code) {
+		if (isApplicationError(error) || (error as any).code) {
 			const appError = error as ApplicationError;
 			const status = getHttpStatusFromErrorCode(appError.code);
 			return NextResponse.json(createErrorResponse(appError, requestId), {
@@ -223,7 +222,7 @@ export async function PUT(request: NextRequest) {
 	} catch (error) {
 		console.error("Model calibration API error:", error);
 
-		if (error instanceof ApplicationError || (error as any).code) {
+		if (isApplicationError(error) || (error as any).code) {
 			const appError = error as ApplicationError;
 			const status = getHttpStatusFromErrorCode(appError.code);
 			return NextResponse.json(createErrorResponse(appError, requestId), {
@@ -340,7 +339,7 @@ export async function PATCH(request: NextRequest) {
 	} catch (error) {
 		console.error("Accuracy evaluation API error:", error);
 
-		if (error instanceof ApplicationError || (error as any).code) {
+		if (isApplicationError(error) || (error as any).code) {
 			const appError = error as ApplicationError;
 			const status = getHttpStatusFromErrorCode(appError.code);
 			return NextResponse.json(createErrorResponse(appError, requestId), {

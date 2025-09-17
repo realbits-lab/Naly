@@ -14,7 +14,7 @@ import {
 	ImpactLevel,
 	TemporalRelation,
 } from "@/types/analytics";
-import { ApplicationError, ErrorCode, ErrorSeverity } from "@/types/errors";
+import { ApplicationError, ErrorCode, ErrorSeverity, isApplicationError } from "@/types/errors";
 import type { MarketDataPoint, MarketEvent } from "@/types/market";
 import type {
 	CausalAnalysisConfig,
@@ -148,7 +148,7 @@ export class CausalAnalyzer implements CausalAnalysisService {
 
 			return explanation;
 		} catch (error) {
-			if (error instanceof ApplicationError) {
+			if (isApplicationError(error)) {
 				throw error;
 			}
 

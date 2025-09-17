@@ -39,9 +39,7 @@ export async function GET(
 		const [job] = await db
 			.select()
 			.from(cronJobs)
-			.where(
-				and(eq(cronJobs.id, params.id), eq(cronJobs.userId, session.user.id)),
-			);
+			.where(eq(cronJobs.id, params.id));
 
 		if (!job) {
 			return NextResponse.json(
@@ -78,9 +76,7 @@ export async function PUT(
 		const [existingJob] = await db
 			.select()
 			.from(cronJobs)
-			.where(
-				and(eq(cronJobs.id, params.id), eq(cronJobs.userId, session.user.id)),
-			);
+			.where(eq(cronJobs.id, params.id));
 
 		if (!existingJob) {
 			return NextResponse.json(
@@ -100,9 +96,7 @@ export async function PUT(
 		const [updatedJob] = await db
 			.update(cronJobs)
 			.set(updateData)
-			.where(
-				and(eq(cronJobs.id, params.id), eq(cronJobs.userId, session.user.id)),
-			)
+			.where(eq(cronJobs.id, params.id))
 			.returning();
 
 		return NextResponse.json({ job: updatedJob });
@@ -137,9 +131,7 @@ export async function DELETE(
 		const [existingJob] = await db
 			.select()
 			.from(cronJobs)
-			.where(
-				and(eq(cronJobs.id, params.id), eq(cronJobs.userId, session.user.id)),
-			);
+			.where(eq(cronJobs.id, params.id));
 
 		if (!existingJob) {
 			return NextResponse.json(
@@ -151,9 +143,7 @@ export async function DELETE(
 		// Delete the job
 		await db
 			.delete(cronJobs)
-			.where(
-				and(eq(cronJobs.id, params.id), eq(cronJobs.userId, session.user.id)),
-			);
+			.where(eq(cronJobs.id, params.id));
 
 		return NextResponse.json({ success: true });
 	} catch (error) {

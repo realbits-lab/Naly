@@ -5,7 +5,7 @@ import {
 	initializeServices,
 } from "@/lib/service-registry";
 import { createErrorResponse, createSuccessResponse } from "@/types";
-import { ApplicationError, ErrorCode, ErrorSeverity } from "@/types/errors";
+import { ApplicationError, ErrorCode, ErrorSeverity, isApplicationError } from "@/types/errors";
 
 // Initialize services on first load
 let servicesInitialized = false;
@@ -102,7 +102,7 @@ export async function GET(request: NextRequest) {
 	} catch (error) {
 		console.error("Historical data API error:", error);
 
-		if (error instanceof ApplicationError || (error as any).code) {
+		if (isApplicationError(error) || (error as any).code) {
 			const appError = error as ApplicationError;
 			const status = getHttpStatusFromErrorCode(appError.code);
 			return NextResponse.json(createErrorResponse(appError, requestId), {

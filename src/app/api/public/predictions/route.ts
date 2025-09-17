@@ -1,6 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { predictionEngine } from "@/lib/prediction/prediction-engine";
 import { createErrorResponse, createSuccessResponse } from "@/types";
 import { ApplicationError, ErrorCode, ErrorSeverity } from "@/types/errors";
 

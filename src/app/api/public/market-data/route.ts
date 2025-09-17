@@ -1,6 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { financialDataClient } from "@/lib/financial-data-client";
 import { createErrorResponse, createSuccessResponse } from "@/types";
 import { ApplicationError, ErrorCode, ErrorSeverity } from "@/types/errors";
 
@@ -218,9 +217,9 @@ async function handleQuoteRequest(request: NextRequest, requestId: string) {
 
 	// Calculate derived values
 	quote.changePercent = quote.change / quote.previousClose;
-	quote.afterHoursPrice = quote.price * (1 + (Math.random() - 0.5) * 0.002);
-	quote.afterHoursChange = quote.afterHoursPrice - quote.price;
-	quote.afterHoursChangePercent = quote.afterHoursChange / quote.price;
+	(quote as any).afterHoursPrice = quote.price * (1 + (Math.random() - 0.5) * 0.002);
+	(quote as any).afterHoursChange = (quote as any).afterHoursPrice - quote.price;
+	(quote as any).afterHoursChangePercent = (quote as any).afterHoursChange / quote.price;
 
 	return NextResponse.json(
 		createSuccessResponse(

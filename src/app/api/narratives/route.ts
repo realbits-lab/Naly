@@ -2,7 +2,8 @@ import { type NextRequest, NextResponse } from "next/server";
 import { NarrativeGenerator } from "@/lib/narrative/narrative-generator";
 import { createErrorResponse, createSuccessResponse } from "@/types";
 import type { CausalAnalysis } from "@/types/analytics";
-import { ApplicationError, ErrorCode, ErrorSeverity } from "@/types/errors";
+import { FactorType, ImpactLevel, TemporalRelation, AnalysisMethod } from "@/types/analytics";
+import { ApplicationError, ErrorCode, ErrorSeverity, isApplicationError } from "@/types/errors";
 import type { MarketEvent } from "@/types/market";
 import { AudienceType, ComplexityLevel, type UserProfile } from "@/types/user";
 
@@ -17,8 +18,6 @@ async function getNarrativeGenerator(): Promise<NarrativeGenerator> {
 			complexityLevel: ComplexityLevel.INTERMEDIATE,
 			maxLength: 2000,
 			includeVisualizations: true,
-			autoValidate: true,
-			qualityThreshold: 70,
 		});
 	}
 	return narrativeGenerator;
@@ -129,7 +128,7 @@ export async function POST(request: NextRequest) {
 	} catch (error) {
 		console.error("Narrative generation API error:", error);
 
-		if (error instanceof ApplicationError || (error as any).code) {
+		if (isApplicationError(error) || (error as any).code) {
 			const appError = error as ApplicationError;
 			const status = getHttpStatusFromErrorCode(appError.code);
 			return NextResponse.json(createErrorResponse(appError, requestId), {
@@ -279,7 +278,7 @@ export async function PATCH(request: NextRequest) {
 	} catch (error) {
 		console.error("Narrative validation API error:", error);
 
-		if (error instanceof ApplicationError || (error as any).code) {
+		if (isApplicationError(error) || (error as any).code) {
 			const appError = error as ApplicationError;
 			const status = getHttpStatusFromErrorCode(appError.code);
 			return NextResponse.json(createErrorResponse(appError, requestId), {
@@ -314,16 +313,16 @@ function createDefaultCausalAnalysis(event: MarketEvent): CausalAnalysis {
 	return {
 		eventId: event.id,
 		rootCause: {
-			type: "MARKET_SENTIMENT",
+			type: FactorType.MARKET_SENTIMENT,
 			description: "Market sentiment shift detected",
-			impact: "MODERATE",
+			impact: ImpactLevel.MODERATE,
 			confidence: 0.7,
 			supportingEvidence: [],
-			temporalRelationship: "CONCURRENT",
+			temporalRelationship: TemporalRelation.CONCURRENT,
 		},
 		contributingFactors: [],
 		confidenceScore: 0.7,
-		methodology: "STATISTICAL_INFERENCE",
+		methodology: AnalysisMethod.STATISTICAL_INFERENCE,
 		evidenceChain: [],
 		alternativeExplanations: [],
 	};

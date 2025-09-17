@@ -99,8 +99,17 @@ export function createApplicationError(
 	};
 }
 
-// Export the ApplicationError interface explicitly
-export type { ApplicationError };
+// Type guard for ApplicationError
+export function isApplicationError(error: any): error is ApplicationError {
+	return (
+		error &&
+		typeof error === "object" &&
+		"code" in error &&
+		"severity" in error &&
+		"metadata" in error &&
+		"retryable" in error
+	);
+}
 
 export interface ValidationErrorDetail {
 	field: string;

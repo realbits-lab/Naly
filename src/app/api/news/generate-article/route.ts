@@ -89,16 +89,16 @@ export async function POST(request: NextRequest) {
 			const relatedInfo =
 				await newsService.gatherRelatedInformation(primaryArticle);
 
-			// Add information about other selected articles to related info
-			if (processedArticles.length > 1) {
-				relatedInfo.additionalSources = processedArticles
+			// Gather additional sources information
+			const additionalSources = processedArticles.length > 1
+				? processedArticles
 					.slice(1)
 					.map((article) => ({
 						title: article.title,
 						source: article.source,
 						summary: article.content.substring(0, 200) + "...",
-					}));
-			}
+					}))
+				: [];
 
 			newsResult = {
 				articles: processedArticles,
