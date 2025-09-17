@@ -53,11 +53,30 @@ interface GeneratedArticle {
   }
 }
 
-interface ArticleGeneratorProps {
-  onArticleGenerated?: (article: GeneratedArticle) => void
+interface PreSelectedArticle {
+  id: string
+  title: string
+  summary?: string
+  sourcePublisher?: string
+  sourceCategory?: string
+  sentiment?: string
+  readingTime?: number
+  createdAt: string
 }
 
-export function ArticleGenerator({ onArticleGenerated }: ArticleGeneratorProps) {
+interface ArticleGeneratorProps {
+  onArticleGenerated?: (article: GeneratedArticle) => void
+  preSelectedArticles?: PreSelectedArticle[]
+  onGenerationStart?: () => void
+  onGenerationEnd?: () => void
+}
+
+export function ArticleGenerator({
+  onArticleGenerated,
+  preSelectedArticles = [],
+  onGenerationStart,
+  onGenerationEnd
+}: ArticleGeneratorProps) {
   const [isGenerating, setIsGenerating] = useState(false)
   const [progress, setProgress] = useState(0)
   const [currentStep, setCurrentStep] = useState('')
@@ -73,6 +92,7 @@ export function ArticleGenerator({ onArticleGenerated }: ArticleGeneratorProps) 
   })
 
   const handleGenerateFromLatestNews = async () => {
+    onGenerationStart?.()
     setIsGenerating(true)
     setProgress(0)
     setCurrentStep('Fetching latest news...')
@@ -117,6 +137,68 @@ export function ArticleGenerator({ onArticleGenerated }: ArticleGeneratorProps) 
       setProgress(0)
     } finally {
       setIsGenerating(false)
+      onGenerationEnd?.()
+    }
+  }
+
+  const handleGenerateFromSelected = async () => {
+    if (preSelectedArticles.length === 0) {
+      alert('No articles selected')
+      return
+    }
+
+    onGenerationStart?.()
+    setIsGenerating(true)
+    setProgress(0)
+    setCurrentStep('Analyzing selected articles...')
+
+    try {
+      // Simulate progress steps
+      const steps = [
+        'Analyzing selected articles...',
+        'Extracting key information...',
+        'Gathering related context...',
+        'Generating comprehensive article...',
+        'Finalizing and saving...'
+      ]
+
+      for (let i = 0; i < steps.length; i++) {
+        setCurrentStep(steps[i])
+        setProgress((i + 1) * 20)
+        await new Promise(resolve => setTimeout(resolve, 1000))
+      }
+
+      const response = await fetch('/api/news/generate-article', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          selectedArticles: preSelectedArticles.map(article => ({
+            id: article.id,
+            title: article.title,
+            summary: article.summary
+          }))
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to generate article from selected articles')
+      }
+
+      const result = await response.json()
+      const article = result.generatedArticle
+
+      setGeneratedArticle(article)
+      onArticleGenerated?.(article)
+      setProgress(100)
+      setCurrentStep('Article generated successfully!')
+
+    } catch (error) {
+      console.error('Failed to generate article:', error)
+      setCurrentStep('Failed to generate article')
+      setProgress(0)
+    } finally {
+      setIsGenerating(false)
+      onGenerationEnd?.()
     }
   }
 
@@ -202,8 +284,14 @@ export function ArticleGenerator({ onArticleGenerated }: ArticleGeneratorProps) 
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="latest-news" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-2">
+          <Tabs defaultValue={preSelectedArticles.length > 0 ? "selected-articles" : "latest-news"} className="space-y-4">
+            <TabsList className={`grid w-full ${preSelectedArticles.length > 0 ? 'grid-cols-3' : 'grid-cols-2'}`}>
+              {preSelectedArticles.length > 0 && (
+                <TabsTrigger value="selected-articles" className="flex items-center space-x-2">
+                  <CheckCircle className="h-4 w-4" />
+                  <span>Selected ({preSelectedArticles.length})</span>
+                </TabsTrigger>
+              )}
               <TabsTrigger value="latest-news" className="flex items-center space-x-2">
                 <Newspaper className="h-4 w-4" />
                 <span>Latest News</span>
@@ -213,6 +301,66 @@ export function ArticleGenerator({ onArticleGenerated }: ArticleGeneratorProps) 
                 <span>Custom News</span>
               </TabsTrigger>
             </TabsList>
+
+            {preSelectedArticles.length > 0 && (
+              <TabsContent value="selected-articles" className="space-y-4">
+                <div className="space-y-4">
+                  <div className="text-center py-4">
+                    <CheckCircle className="h-12 w-12 mx-auto mb-4 text-primary" />
+                    <h3 className="text-lg font-semibold mb-2">Generate from Selected Articles</h3>
+                    <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                      Generate a comprehensive analysis article from {preSelectedArticles.length} selected news article{preSelectedArticles.length !== 1 ? 's' : ''}
+                    </p>
+                  </div>
+
+                  <div className="max-h-48 overflow-y-auto space-y-2 mb-4">
+                    {preSelectedArticles.map((article) => (
+                      <div key={article.id} className="border rounded-lg p-3 bg-muted/50">
+                        <h4 className="text-sm font-medium line-clamp-2 mb-1">{article.title}</h4>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <span>{new Date(article.createdAt).toLocaleDateString()}</span>
+                          {article.sourcePublisher && (
+                            <>
+                              <span>•</span>
+                              <span>{article.sourcePublisher}</span>
+                            </>
+                          )}
+                          {article.sentiment && (
+                            <>
+                              <span>•</span>
+                              <Badge variant="secondary" className="text-xs">
+                                {article.sentiment}
+                              </Badge>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="text-center">
+                    <Button
+                      onClick={handleGenerateFromSelected}
+                      disabled={isGenerating}
+                      size="lg"
+                      className="min-w-32"
+                    >
+                      {isGenerating ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Generating...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="h-4 w-4 mr-2" />
+                          Generate Article
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </TabsContent>
+            )}
 
             <TabsContent value="latest-news" className="space-y-4">
               <div className="text-center py-8">
