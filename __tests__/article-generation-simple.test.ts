@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
 import { randomUUID } from 'crypto';
 import { db } from '../src/lib/db';
-import { generatedArticles } from '../src/lib/schema';
+import { generatedArticles, users } from '../src/lib/schema';
 import { NewsService } from '../src/lib/news-service';
 import { ArticleGenerator } from '../src/lib/article-generator';
 import { eq } from 'drizzle-orm';
@@ -10,15 +10,43 @@ describe('Article Generation Core Functionality Test', () => {
   let newsService: NewsService;
   let articleGenerator: ArticleGenerator;
   let testArticleId: string | undefined;
+  let testUserId: string;
 
   beforeAll(async () => {
     console.log('🚀 Starting Article Generation Core Test');
+
+    // Create test user first
+    testUserId = randomUUID();
+    console.log(`📝 Creating test user with ID: ${testUserId}`);
+
+    try {
+      const [createdUser] = await db.insert(users).values({
+        id: testUserId,
+        email: 'test@example.com',
+        name: 'Test User',
+        role: 'RETAIL_INDIVIDUAL',
+        subscriptionTier: 'free',
+      }).returning();
+
+      console.log(`✅ Test user created successfully: ${createdUser.id}`);
+
+      // Verify user exists
+      const verifyUser = await db.select().from(users).where(eq(users.id, testUserId));
+      if (verifyUser.length === 0) {
+        throw new Error('User creation verification failed');
+      }
+      console.log(`✅ User verification passed: ${verifyUser[0].email}`);
+
+    } catch (error) {
+      console.error('❌ Failed to create test user:', error);
+      throw error;
+    }
 
     // Initialize services
     newsService = new NewsService();
     articleGenerator = new ArticleGenerator();
 
-    console.log('✅ Services initialized');
+    console.log('✅ Services initialized and test user created');
   });
 
   afterAll(async () => {
@@ -31,6 +59,17 @@ describe('Article Generation Core Functionality Test', () => {
         console.warn('⚠️  Failed to cleanup test article:', error);
       }
     }
+
+    // Cleanup test user
+    if (testUserId) {
+      try {
+        await db.delete(users).where(eq(users.id, testUserId));
+        console.log(`🧹 Cleaned up test user: ${testUserId}`);
+      } catch (error) {
+        console.warn('⚠️  Failed to cleanup test user:', error);
+      }
+    }
+
     console.log('🏁 Test cleanup completed');
   });
 
@@ -132,10 +171,18 @@ describe('Article Generation Core Functionality Test', () => {
       );
 
       console.log('📝 Saving article to database...');
+      console.log(`🔑 Using test user ID: ${testUserId}`);
 
-      // Save to database (using null for userId since we don't have a test user)
+      // Verify test user still exists before saving article
+      const userCheck = await db.select().from(users).where(eq(users.id, testUserId));
+      if (userCheck.length === 0) {
+        throw new Error(`Test user ${testUserId} not found in database before article save`);
+      }
+      console.log(`✅ Test user verified before save: ${userCheck[0].email}`);
+
+      // Save to database using the test user ID
       const [savedArticle] = await db.insert(generatedArticles).values({
-        userId: null,
+        userId: testUserId,
         title: generatedArticle.title,
         content: generatedArticle.content,
         summary: generatedArticle.summary,
