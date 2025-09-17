@@ -108,7 +108,7 @@ export const replyLikes = pgTable('reply_likes', {
 }))
 
 // Article views tracking
-export const articleViews = pgTable('community_article_views', {
+export const communityArticleViews = pgTable('community_article_views', {
   id: uuid('id').primaryKey().defaultRandom(),
   articleId: uuid('article_id').references(() => communityArticles.id, { onDelete: 'cascade' }).notNull(),
   userId: uuid('user_id').references(() => users.id), // Can be null for anonymous users
