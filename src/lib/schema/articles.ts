@@ -45,7 +45,6 @@ export const articleViews = pgTable('article_views', {
   readingTime: integer('reading_time'), // time spent reading in seconds
   completionPercentage: integer('completion_percentage'), // 0-100
   sessionId: varchar('session_id', { length: 100 }),
-  ipAddress: varchar('ip_address', { length: 45 }), // For anonymous tracking
 }, (table) => ({
   articleIdIdx: index('idx_article_views_article_id').on(table.articleId),
   viewedAtIdx: index('idx_article_views_viewed_at').on(table.viewedAt),
