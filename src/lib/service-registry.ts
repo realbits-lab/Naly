@@ -147,7 +147,7 @@ export const getFinancialDataAPI = (): FinancialDataAPIService => {
 
 // Configuration builder
 export const createServiceConfiguration = (
-	environment: "development" | "staging" | "production" | "test",
+	environment: "development" | "staging" | "production",
 ): ServiceConfiguration => {
 	const baseConfig: ServiceConfiguration = {
 		environment,
@@ -213,22 +213,6 @@ export const createServiceConfiguration = (
 				},
 			};
 
-		case "test":
-			return {
-				...baseConfig,
-				logging: {
-					level: "error",
-					destination: "console",
-				},
-				monitoring: {
-					enabled: false,
-				},
-				cache: {
-					enabled: false,
-					provider: "memory",
-					ttl: 0,
-				},
-			};
 
 		default:
 			return baseConfig;

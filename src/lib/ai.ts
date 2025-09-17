@@ -6,7 +6,7 @@ if (!process.env.AI_GATEWAY_API_KEY) {
 }
 
 // Configure OpenAI client with Vercel AI Gateway
-const openai = createOpenAI({
+export const openai = createOpenAI({
 	apiKey: process.env.AI_GATEWAY_API_KEY,
 	baseURL: "https://gateway.ai.cloudflare.com/v1/naly/openai",
 });

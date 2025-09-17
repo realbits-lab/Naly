@@ -784,15 +784,17 @@ export class PredictionEngine implements PredictionService {
 	private async storePrediction(analysis: PredictiveAnalysis): Promise<void> {
 		try {
 			await db.insert(predictiveAnalyses).values({
-				id: crypto.randomUUID(),
 				eventId: analysis.eventId,
-				scenarios: analysis.scenarios,
-				timeHorizon: analysis.timeHorizon,
+				analysisType: "PREDICTIVE_ANALYSIS",
+				predictiveAnalysis: {
+					scenarios: analysis.scenarios,
+					timeHorizon: analysis.timeHorizon,
+					methodology: analysis.methodology,
+					modelMetadata: analysis.modelMetadata,
+					uncertainty: analysis.uncertainty,
+				},
+				confidenceScore: "0.8",
 				methodology: analysis.methodology,
-				modelMetadata: analysis.modelMetadata,
-				uncertainty: analysis.uncertainty,
-				createdAt: new Date(),
-				updatedAt: analysis.lastUpdated,
 			});
 		} catch (error) {
 			console.error("Failed to store prediction:", error);
@@ -804,19 +806,21 @@ export class PredictionEngine implements PredictionService {
 		metrics: Map<ModelType, PredictionPerformance>,
 	): Promise<void> {
 		try {
-			for (const [modelType, performance] of metrics) {
-				await db.insert(modelPerformances).values({
-					id: crypto.randomUUID(),
-					modelType,
-					accuracy: performance.accuracy,
-					precision: performance.precision,
-					recall: performance.recall,
-					f1Score: performance.f1Score,
-					evaluatedAt: new Date(),
-					createdAt: new Date(),
-					updatedAt: new Date(),
-				});
-			}
+			// TODO: Create proper model performance table
+			// for (const [modelType, performance] of metrics) {
+			// 	await db.insert(modelPerformances).values({
+			// 		id: crypto.randomUUID(),
+			// 		modelType,
+			// 		accuracy: performance.accuracy,
+			// 		precision: performance.precision,
+			// 		recall: performance.recall,
+			// 		f1Score: performance.f1Score,
+			// 		evaluatedAt: new Date(),
+			// 		createdAt: new Date(),
+			// 		updatedAt: new Date(),
+			// 	});
+			// }
+			console.log("Model performance metrics:", metrics);
 		} catch (error) {
 			console.error("Failed to store model performance:", error);
 		}

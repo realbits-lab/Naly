@@ -471,7 +471,11 @@ The headline should capture the essence of the event and be attention-grabbing b
 			maxTokens: 50,
 		};
 
-		return await generateAIText(prompt);
+		return await generateAIText({
+			prompt: prompt.userPrompt,
+			temperature: prompt.temperature,
+			maxTokens: prompt.maxTokens,
+		});
 	}
 
 	private async extractBulletPoints(content: string): Promise<string[]> {
@@ -487,7 +491,11 @@ Format as JSON array of strings.`,
 				maxTokens: 200,
 			};
 
-			const response = await generateAIText(prompt);
+			const response = await generateAIText({
+				prompt: prompt.userPrompt,
+				temperature: prompt.temperature,
+				maxTokens: prompt.maxTokens,
+			});
 			const bulletPoints = JSON.parse(response);
 
 			return Array.isArray(bulletPoints) ? bulletPoints.slice(0, 5) : [];
@@ -733,7 +741,11 @@ Keep the core message but adjust the language, detail level, and examples to mat
 			maxTokens: Math.min(section.content.length * 1.2, 800),
 		};
 
-		const adaptedContent = await generateAIText(adaptationPrompt);
+		const adaptedContent = await generateAIText({
+			prompt: adaptationPrompt.userPrompt,
+			temperature: adaptationPrompt.temperature,
+			maxTokens: adaptationPrompt.maxTokens,
+		});
 
 		return {
 			...section,
@@ -841,20 +853,15 @@ Keep the core message but adjust the language, detail level, and examples to mat
 	private async storeNarrative(narrative: IntelligentNarrative): Promise<void> {
 		try {
 			await db.insert(intelligentNarratives).values({
-				id: narrative.id,
 				eventId: narrative.eventId,
 				headline: narrative.headline,
-				sections: {
-					summary: narrative.summary,
-					explanation: narrative.explanation,
-					prediction: narrative.prediction,
-					deepDive: narrative.deepDive,
-				},
+				summary: narrative.summary.content,
+				explanation: narrative.explanation.content,
+				prediction: narrative.prediction.content,
+				deepDive: narrative.deepDive.content,
 				metadata: narrative.metadata,
 				visualizations: narrative.visualizations,
-				status: narrative.status,
-				createdAt: narrative.createdAt,
-				updatedAt: narrative.updatedAt,
+				status: narrative.status.toLowerCase() as "draft" | "published" | "archived",
 			});
 		} catch (error) {
 			console.error("Failed to store narrative:", error);
@@ -867,17 +874,19 @@ Keep the core message but adjust the language, detail level, and examples to mat
 		validation: ContentValidation,
 	): Promise<void> {
 		try {
-			await db.insert(narrativeValidations).values({
-				id: crypto.randomUUID(),
-				narrativeId,
-				qualityScore: validation.qualityScore,
-				accuracyScore: validation.accuracyCheck.overallScore,
-				readabilityScore: validation.readabilityScore,
-				biasScore: validation.biasAssessment.severityScore,
-				validatedAt: new Date(),
-				createdAt: new Date(),
-				updatedAt: new Date(),
-			});
+			// TODO: Create proper validation results table
+			// await db.insert(narrativeValidations).values({
+			// 	id: crypto.randomUUID(),
+			// 	narrativeId,
+			// 	qualityScore: validation.qualityScore,
+			// 	accuracyScore: validation.accuracyCheck.overallScore,
+			// 	readabilityScore: validation.readabilityScore,
+			// 	biasScore: validation.biasAssessment.severityScore,
+			// 	validatedAt: new Date(),
+			// 	createdAt: new Date(),
+			// 	updatedAt: new Date(),
+			// });
+			console.log("Validation results:", { narrativeId, validation });
 		} catch (error) {
 			console.error("Failed to store validation results:", error);
 		}

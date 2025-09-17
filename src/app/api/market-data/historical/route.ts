@@ -15,8 +15,7 @@ async function ensureServicesInitialized() {
 		const environment = (process.env.NODE_ENV || "development") as
 			| "development"
 			| "staging"
-			| "production"
-			| "test";
+			| "production";
 		const config = createServiceConfiguration(environment);
 		await initializeServices(config);
 		servicesInitialized = true;

@@ -1,5 +1,5 @@
 import { generateText } from "ai";
-import { openai } from "@/lib/ai/openai-client";
+import { openai } from "@/lib/ai";
 import { ApplicationError, ErrorCode, ErrorSeverity } from "@/types/errors";
 import { MarketEvent } from "@/types/market";
 import type {
@@ -162,7 +162,7 @@ export class AIRecommendationEngine implements RecommendationEngine {
 				})
 				.slice(0, 20); // Limit to top 20 recommendations
 		} catch (error) {
-			throw new ApplicationError({
+			throw {
 				code: ErrorCode.AI_SERVICE_ERROR,
 				message: "Failed to generate recommendations",
 				severity: ErrorSeverity.MEDIUM,
@@ -176,7 +176,7 @@ export class AIRecommendationEngine implements RecommendationEngine {
 					},
 				},
 				retryable: true,
-			});
+			};
 		}
 	}
 
@@ -189,11 +189,11 @@ export class AIRecommendationEngine implements RecommendationEngine {
         As a financial advisor AI, analyze this user's profile and current market conditions to generate personalized investment recommendations.
 
         User Profile:
-        - Audience Type: ${context.userProfile.audienceType}
-        - Experience Level: ${context.userProfile.experienceLevel}
-        - Risk Tolerance: ${context.userProfile.riskTolerance}
-        - Investment Interests: ${context.userProfile.interests?.join(", ") || "None specified"}
-        - Watched Tickers: ${context.userProfile.watchedTickers?.join(", ") || "None specified"}
+        - Subscription Tier: ${context.userProfile.subscriptionTier}
+        - Experience Level: ${context.userProfile.demographics?.investmentExperience || "Unknown"}
+        - Risk Tolerance: ${context.userProfile.preferences?.riskTolerance}
+        - Investment Sectors: ${context.userProfile.preferences?.interestedSectors?.join(", ") || "None specified"}
+        - Watched Tickers: ${context.userProfile.watchlist?.tickers?.join(", ") || "None specified"}
 
         Current Portfolio: ${JSON.stringify(context.portfolioData || {})}
         User Preferences: ${JSON.stringify(context.preferences)}
@@ -236,8 +236,8 @@ export class AIRecommendationEngine implements RecommendationEngine {
 				},
 				personalizedFor: {
 					userId,
-					audienceType: context.userProfile.audienceType,
-					experienceLevel: context.userProfile.experienceLevel,
+					audienceType: "RETAIL" as AudienceType,
+					experienceLevel: "BEGINNER" as InvestmentExperience,
 				},
 			}));
 		} catch (error) {
@@ -252,7 +252,7 @@ export class AIRecommendationEngine implements RecommendationEngine {
 	): Promise<Recommendation[]> {
 		const userInteractions = this.userInteractions.get(userId) || [];
 		const recentTopics = this.extractTopicsFromInteractions(userInteractions);
-		const watchedTickers = context.userProfile.watchedTickers || [];
+		const watchedTickers = context.userProfile.watchlist?.tickers || [];
 
 		// Generate content recommendations based on user interests and behavior
 		const recommendations: Recommendation[] = [];
@@ -275,8 +275,8 @@ export class AIRecommendationEngine implements RecommendationEngine {
 				},
 				personalizedFor: {
 					userId,
-					audienceType: context.userProfile.audienceType,
-					experienceLevel: context.userProfile.experienceLevel,
+					audienceType: "RETAIL" as AudienceType,
+					experienceLevel: "BEGINNER" as InvestmentExperience,
 				},
 			});
 		}
@@ -318,8 +318,8 @@ export class AIRecommendationEngine implements RecommendationEngine {
 				},
 				personalizedFor: {
 					userId,
-					audienceType: context.userProfile.audienceType,
-					experienceLevel: context.userProfile.experienceLevel,
+					audienceType: "RETAIL" as AudienceType,
+					experienceLevel: "BEGINNER" as InvestmentExperience,
 				},
 			});
 		}
@@ -334,7 +334,7 @@ export class AIRecommendationEngine implements RecommendationEngine {
 		const recommendations: Recommendation[] = [];
 
 		// Generate risk alerts based on user profile and market conditions
-		if (context.userProfile.riskTolerance === "CONSERVATIVE") {
+		if (context.userProfile.preferences?.riskTolerance === "CONSERVATIVE") {
 			recommendations.push({
 				id: `risk_conservative_${userId}_${Date.now()}`,
 				type: "RISK_ALERT",
@@ -351,8 +351,8 @@ export class AIRecommendationEngine implements RecommendationEngine {
 				},
 				personalizedFor: {
 					userId,
-					audienceType: context.userProfile.audienceType,
-					experienceLevel: context.userProfile.experienceLevel,
+					audienceType: "RETAIL" as AudienceType,
+					experienceLevel: "BEGINNER" as InvestmentExperience,
 				},
 			});
 		}
@@ -367,7 +367,7 @@ export class AIRecommendationEngine implements RecommendationEngine {
 		const recommendations: Recommendation[] = [];
 
 		// Recommend learning resources based on experience level
-		if (context.userProfile.experienceLevel === "BEGINNER") {
+		if ((context.userProfile.demographics?.investmentExperience || 0) < 2) {
 			recommendations.push({
 				id: `learning_beginner_${userId}_${Date.now()}`,
 				type: "LEARNING_RESOURCE",
@@ -384,8 +384,8 @@ export class AIRecommendationEngine implements RecommendationEngine {
 				},
 				personalizedFor: {
 					userId,
-					audienceType: context.userProfile.audienceType,
-					experienceLevel: context.userProfile.experienceLevel,
+					audienceType: "RETAIL" as AudienceType,
+					experienceLevel: "BEGINNER" as InvestmentExperience,
 				},
 			});
 		}

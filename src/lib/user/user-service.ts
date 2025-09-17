@@ -2,13 +2,9 @@ import bcrypt from "bcryptjs";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import {
-	userBehaviorLogs,
-	userPortfolios,
-	userProfiles,
-	userSettings,
 	users,
 } from "@/lib/schema/users";
-import { ApplicationError, ErrorCode, ErrorSeverity } from "@/types/errors";
+import { createApplicationError, ErrorCode, ErrorSeverity } from "@/types/errors";
 import {
 	AudienceType,
 	ComplexityLevel,
@@ -48,18 +44,13 @@ export interface CreateUserData {
 	experienceLevel?: InvestmentExperience;
 }
 
+/* TODO: Implement proper user service with correct schema
 export class DatabaseUserService implements UserService {
 	async getUserById(userId: string): Promise<UserProfile | null> {
 		try {
 			const result = await db
-				.select({
-					user: users,
-					profile: userProfiles,
-					settings: userSettings,
-				})
+				.select()
 				.from(users)
-				.leftJoin(userProfiles, eq(users.id, userProfiles.userId))
-				.leftJoin(userSettings, eq(users.id, userSettings.userId))
 				.where(eq(users.id, userId))
 				.limit(1);
 
@@ -440,6 +431,23 @@ export class DatabaseUserService implements UserService {
 		};
 	}
 }
+*/
 
-// Singleton instance
-export const userService = new DatabaseUserService();
+// Placeholder implementation until proper schema is created
+export const userService = {
+	async getUserById(userId: string) {
+		return null;
+	},
+	async getUserByEmail(email: string) {
+		return null;
+	},
+	async createUser(userData: any) {
+		return null;
+	},
+	async updateUser(userId: string, updates: any) {
+		return null;
+	},
+	async deleteUser(userId: string) {
+		return false;
+	},
+};

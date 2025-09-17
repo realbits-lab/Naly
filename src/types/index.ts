@@ -9,7 +9,39 @@ export * from "./errors";
 export * from "./market";
 // Service Interface Types
 export * from "./services";
-export * from "./user";
+export type {
+	UserRole,
+	InvestmentExperience,
+	SubscriptionTier,
+	RiskTolerance,
+	NotificationChannel,
+	NotificationType,
+	Priority,
+	RecommendationType,
+	InvestmentRecommendationType,
+	RiskLevel,
+	UserActionType,
+	UserDemographics,
+	NotificationPreferences,
+	DashboardConfiguration,
+	UserPreferences,
+	Holding,
+	Portfolio,
+	Watchlist,
+	ReadingPattern,
+	EngagementMetrics,
+	AccuracyMetrics,
+	BiasIndicator,
+	LearningMetrics,
+	UserBehavior,
+	UserProfile,
+	RecommendationMetadata,
+	RecommendationContent,
+	Recommendation,
+	UserInteraction,
+	AudienceType,
+	ComplexityLevel,
+} from "./user";
 
 // Type Guards and Utilities
 export const isMarketEvent = (

@@ -73,7 +73,7 @@ async function testArticlesAPI() {
 					`   📝 Summary: ${article.summary ? article.summary.substring(0, 100) + "..." : "N/A"}`,
 				);
 
-				if (article.keyPoints && article.keyPoints.length > 0) {
+				if (article.keyPoints && Array.isArray(article.keyPoints) && article.keyPoints.length > 0) {
 					console.log(`   🔑 Key Points (${article.keyPoints.length}):`);
 					article.keyPoints.slice(0, 2).forEach((point, i) => {
 						console.log(`      ${i + 1}. ${point.substring(0, 60)}...`);
