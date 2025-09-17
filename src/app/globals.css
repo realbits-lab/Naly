@@ -1,6 +1,18 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@plugin "tailwindcss-animate";
+
+@theme {
+  --color-bull: #22c55e;
+  --color-bull-light: #4ade80;
+  --color-bull-dark: #16a34a;
+  --color-bear: #ef4444;
+  --color-bear-light: #f87171;
+  --color-bear-dark: #dc2626;
+  --color-neutral: #eab308;
+  --color-neutral-light: #facc15;
+  --color-neutral-dark: #ca8a04;
+}
 
 @layer base {
   :root {
