@@ -1,16 +1,9 @@
 import NextAuth from "next-auth"
 import Google from "next-auth/providers/google"
-import { DrizzleAdapter } from "@auth/drizzle-adapter"
 import { db } from "./db"
-import { users, accounts, sessions, verificationTokens } from "./schema"
+import { sql } from "drizzle-orm"
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
-  adapter: DrizzleAdapter(db, {
-    usersTable: users,
-    accountsTable: accounts,
-    sessionsTable: sessions,
-    verificationTokensTable: verificationTokens,
-  }),
   providers: [
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -18,25 +11,34 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     }),
   ],
   callbacks: {
-    async session({ session, user }) {
-      if (session.user) {
-        session.user.id = user.id
-        // Check if user is admin (for demo, using specific email)
-        session.user.role = user.email === 'jong95@gmail.com' ? 'admin' : 'user'
+    async session({ session, token }) {
+      if (session.user && token) {
+        session.user.id = token.sub
+        // Get user role from token
+        session.user.role = token.role || 'user'
       }
       return session
     },
-    async jwt({ token, user }) {
-      if (user) {
-        token.role = user.email === 'jong95@gmail.com' ? 'admin' : 'user'
+    async jwt({ token, user, account }) {
+      if (user && account) {
+        // When user signs in, fetch their role from the database
+        try {
+          const result = await db.execute(
+            sql`SELECT role FROM users WHERE email = ${user.email} LIMIT 1`
+          )
+
+          const userRole = result[0]?.role
+          token.role = userRole === 'ADMIN' ? 'admin' : 'user'
+        } catch (error) {
+          console.error('Error fetching user role:', error)
+          token.role = 'user'
+        }
       }
       return token
     },
   },
-  pages: {
-    signIn: '/auth/signin',
-  },
   session: {
-    strategy: "database",
+    strategy: "jwt",
   },
+  trustHost: true,
 })
