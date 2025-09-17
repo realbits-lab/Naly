@@ -50,25 +50,25 @@ export default auth((req: NextRequest & { auth: any }) => {
   }
 
   // Check admin route access
-  if (isAdminRoute && (!session || session.user.role !== UserRole.ADMIN)) {
+  if (isAdminRoute && (!session || !session.user || session.user.role !== UserRole.ADMIN)) {
     return NextResponse.redirect(new URL('/unauthorized', req.url))
   }
 
   // Check institutional route access
-  if (isInstitutionalRoute && (!session || ![UserRole.INSTITUTIONAL, UserRole.ADMIN].includes(session.user.role))) {
+  if (isInstitutionalRoute && (!session || !session.user || ![UserRole.INSTITUTIONAL, UserRole.ADMIN].includes(session.user.role))) {
     return NextResponse.redirect(new URL('/unauthorized', req.url))
   }
 
   // Redirect authenticated users from public routes to dashboard
-  if (isPublicRoute && session && pathname !== '/') {
+  if (isPublicRoute && session && session.user && pathname !== '/') {
     return NextResponse.redirect(new URL('/dashboard', req.url))
   }
 
   // Add authentication headers for API routes
-  if (pathname.startsWith('/api/') && session) {
+  if (pathname.startsWith('/api/') && session && session.user && session.user.id) {
     const requestHeaders = new Headers(req.headers)
     requestHeaders.set('x-user-id', session.user.id)
-    requestHeaders.set('x-user-role', session.user.role)
+    requestHeaders.set('x-user-role', session.user.role || '')
 
     return NextResponse.next({
       request: {
