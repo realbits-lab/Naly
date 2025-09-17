@@ -2,6 +2,7 @@
 
 import { SessionProvider } from "next-auth/react"
 import { ReactNode } from "react"
+import { ThemeProvider } from "@/components/theme-provider"
 
 interface ProvidersProps {
   children: ReactNode
@@ -11,7 +12,12 @@ interface ProvidersProps {
 export function Providers({ children, session }: ProvidersProps) {
   return (
     <SessionProvider session={session}>
-      {children}
+      <ThemeProvider
+        defaultTheme="system"
+        storageKey="naly-ui-theme"
+      >
+        {children}
+      </ThemeProvider>
     </SessionProvider>
   )
 }

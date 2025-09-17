@@ -21,9 +21,15 @@ import {
   User,
   Settings,
   LogOut,
-  Menu
+  Menu,
+  Palette,
+  Monitor,
+  Sun,
+  Moon,
+  Check
 } from "lucide-react"
 import { useSession, signIn, signOut } from "next-auth/react"
+import { useTheme } from "@/components/theme-provider"
 
 const navigationItems = [
   {
@@ -46,6 +52,16 @@ const navigationItems = [
 export function Navigation() {
   const pathname = usePathname()
   const { data: session, status } = useSession()
+  const { theme, setTheme } = useTheme()
+
+  const themes = [
+    { name: "Light", value: "light", icon: Sun },
+    { name: "Dark", value: "dark", icon: Moon },
+    { name: "System", value: "system", icon: Monitor },
+    { name: "Blue", value: "blue", icon: Palette },
+    { name: "Green", value: "green", icon: Palette },
+    { name: "Purple", value: "purple", icon: Palette },
+  ]
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -106,6 +122,40 @@ export function Navigation() {
                         <Icon className="h-4 w-4" />
                         <span>{item.name}</span>
                       </Link>
+                    </DropdownMenuItem>
+                  )
+                })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
+          {/* Settings Menu */}
+          <div className="flex items-center space-x-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <Settings className="h-4 w-4" />
+                  <span className="sr-only">Settings</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>Appearance</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {themes.map((themeOption) => {
+                  const Icon = themeOption.icon
+                  return (
+                    <DropdownMenuItem
+                      key={themeOption.value}
+                      onClick={() => setTheme(themeOption.value as any)}
+                      className="flex items-center justify-between cursor-pointer"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <Icon className="h-4 w-4" />
+                        <span>{themeOption.name}</span>
+                      </div>
+                      {theme === themeOption.value && (
+                        <Check className="h-4 w-4" />
+                      )}
                     </DropdownMenuItem>
                   )
                 })}
