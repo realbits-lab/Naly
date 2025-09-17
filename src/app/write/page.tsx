@@ -4,6 +4,7 @@ import { ArticleGenerator } from '@/components/articles/article-generator'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { PenTool, Shield, FileText, BarChart3, TrendingUp, Bot } from 'lucide-react'
 import { ArticleStatsCards } from '@/components/articles/article-stats-cards'
+import { ArticleManagement } from '@/components/articles/article-management'
 
 export default async function WritePage() {
   const session = await auth()
@@ -27,20 +28,24 @@ export default async function WritePage() {
       {/* Statistics Cards */}
       <ArticleStatsCards />
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <PenTool className="h-5 w-5 text-primary" />
-            <span>Content Creation Tools</span>
-          </CardTitle>
-          <CardDescription>
-            Use AI-powered tools to generate comprehensive financial articles from news sources
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ArticleGenerator />
-        </CardContent>
-      </Card>
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <PenTool className="h-5 w-5 text-primary" />
+              <span>Content Creation Tools</span>
+            </CardTitle>
+            <CardDescription>
+              Use AI-powered tools to generate comprehensive financial articles from news sources
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ArticleGenerator />
+          </CardContent>
+        </Card>
+
+        <ArticleManagement />
+      </div>
     </div>
   )
 }

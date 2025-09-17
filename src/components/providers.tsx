@@ -3,6 +3,7 @@
 import { ReactNode } from "react"
 import { ThemeProvider } from "@/components/theme-provider"
 import { AuthSessionProvider } from "@/components/auth/session-provider"
+import { Toaster } from "sonner"
 
 interface ProvidersProps {
   children: ReactNode
@@ -16,6 +17,7 @@ export function Providers({ children }: ProvidersProps) {
         storageKey="naly-ui-theme"
       >
         {children}
+        <Toaster position="top-right" richColors />
       </ThemeProvider>
     </AuthSessionProvider>
   )

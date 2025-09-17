@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { generatedArticles } from '@/lib/schema'
-import { eq, desc, and, like, sql, count } from 'drizzle-orm'
+import { eq, desc, and, like, sql, count, inArray } from 'drizzle-orm'
+import { auth } from '@/lib/auth'
 
 export async function GET(request: NextRequest) {
   try {
@@ -163,6 +164,46 @@ export async function POST(request: NextRequest) {
     console.error('Failed to process request:', error)
     return NextResponse.json(
       { error: 'Failed to process request' },
+      { status: 500 }
+    )
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const session = await auth()
+
+    if (!session?.user || session.user.role !== 'admin') {
+      return NextResponse.json(
+        { error: 'Unauthorized - Admin access required' },
+        { status: 403 }
+      )
+    }
+
+    const body = await request.json()
+    const { action, articleIds } = body
+
+    if (action !== 'delete' || !Array.isArray(articleIds) || articleIds.length === 0) {
+      return NextResponse.json(
+        { error: 'Invalid request - action must be "delete" and articleIds must be a non-empty array' },
+        { status: 400 }
+      )
+    }
+
+    const result = await db
+      .delete(generatedArticles)
+      .where(inArray(generatedArticles.id, articleIds))
+
+    return NextResponse.json({
+      success: true,
+      deletedCount: result.rowCount || 0,
+      message: `Successfully deleted ${result.rowCount || 0} article(s)`
+    })
+
+  } catch (error) {
+    console.error('Failed to delete articles:', error)
+    return NextResponse.json(
+      { error: 'Failed to delete articles' },
       { status: 500 }
     )
   }
