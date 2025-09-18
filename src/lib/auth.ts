@@ -32,14 +32,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 					if (result[0]) {
 						const dbUser = result[0];
 						token.dbUserId = dbUser.id;
-						token.role = dbUser.role === "ADMIN" ? "admin" : "user";
+						token.role = dbUser.role; // Use the role directly from the database
 					} else {
 						console.error("User not found in database:", user.email);
-						token.role = "user";
+						token.role = "reader"; // Default to reader for new users
 					}
 				} catch (error) {
 					console.error("Error fetching user from database:", error);
-					token.role = "user";
+					token.role = "reader";
 				}
 			}
 			return token;

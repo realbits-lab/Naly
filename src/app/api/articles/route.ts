@@ -191,9 +191,9 @@ export async function DELETE(request: NextRequest) {
 	try {
 		const session = await auth();
 
-		if (!session?.user || session.user.role !== "admin") {
+		if (!session?.user || (session.user.role !== "manager" && session.user.role !== "writer")) {
 			return NextResponse.json(
-				{ error: "Unauthorized - Admin access required" },
+				{ error: "Unauthorized - Manager or Writer access required" },
 				{ status: 403 },
 			);
 		}

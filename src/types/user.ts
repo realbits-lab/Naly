@@ -7,11 +7,9 @@ import { AudienceType, ComplexityLevel } from "./content";
 export { ComplexityLevel, AudienceType };
 
 export enum UserRole {
-	RETAIL_INDIVIDUAL = "RETAIL_INDIVIDUAL",
-	RETAIL_PROFESSIONAL = "RETAIL_PROFESSIONAL",
-	INSTITUTIONAL_ANALYST = "INSTITUTIONAL_ANALYST",
-	INSTITUTIONAL_MANAGER = "INSTITUTIONAL_MANAGER",
-	ADMIN = "ADMIN",
+	READER = "reader",
+	WRITER = "writer",
+	MANAGER = "manager",
 }
 
 export enum InvestmentExperience {

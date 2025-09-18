@@ -70,7 +70,10 @@ export function Navigation() {
   const currentLocale = getCurrentLocale();
 
   // Check if user is manager or admin
-  const isManagerOrAdmin = session?.user && session.user.role === "ADMIN";
+  const isManagerOrAdmin = session?.user && (
+    session.user.role === "manager" ||
+    session.user.role === "writer"
+  );
 
   const switchLanguage = (newLocale: Locale) => {
     startTransition(() => {
@@ -157,7 +160,7 @@ export function Navigation() {
                   </Link>
                 );
               })}
-              {session?.user?.role === "admin" &&
+              {(session?.user?.role === "manager" || session?.user?.role === "writer") &&
                 adminNavigationItems.map((item) => {
                   const Icon = item.icon;
                   return (
@@ -230,9 +233,19 @@ export function Navigation() {
                       <p className="text-xs text-muted-foreground">
                         {session.user.email}
                       </p>
-                      {session.user.role === "admin" && (
+                      {session.user.role === "manager" && (
                         <p className="text-xs text-blue-600 font-medium">
-                          ADMIN
+                          MANAGER
+                        </p>
+                      )}
+                      {session.user.role === "writer" && (
+                        <p className="text-xs text-green-600 font-medium">
+                          WRITER
+                        </p>
+                      )}
+                      {session.user.role === "reader" && (
+                        <p className="text-xs text-gray-600 font-medium">
+                          READER
                         </p>
                       )}
                     </div>
