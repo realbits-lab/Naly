@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
 	ArrowLeft,
 	Calendar,
@@ -10,6 +10,7 @@ import {
 	Clock,
 	ChevronDown,
 	ChevronUp,
+	Loader2,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -39,6 +40,9 @@ export function RssContentPanel({
 	isMobile = false,
 }: RssContentPanelProps) {
 	const [expandedArticleId, setExpandedArticleId] = useState<string | null>(null);
+	const [fullArticleContent, setFullArticleContent] = useState<string | null>(null);
+	const [isLoadingContent, setIsLoadingContent] = useState(false);
+	const [contentError, setContentError] = useState<string | null>(null);
 
 	const formatDate = (dateString?: string) => {
 		if (!dateString) return "Unknown date";
@@ -70,6 +74,39 @@ export function RssContentPanel({
 	const openExternalLink = (url: string) => {
 		window.open(url, "_blank", "noopener,noreferrer");
 	};
+
+	const fetchFullArticleContent = async (articleUrl: string) => {
+		setIsLoadingContent(true);
+		setContentError(null);
+		setFullArticleContent(null);
+
+		try {
+			const response = await fetch(`/api/monitor/article?url=${encodeURIComponent(articleUrl)}`);
+
+			if (!response.ok) {
+				const errorData = await response.json();
+				throw new Error(errorData.error || `HTTP ${response.status}`);
+			}
+
+			const articleData = await response.json();
+			setFullArticleContent(articleData.content);
+		} catch (error) {
+			console.error('Error fetching full article content:', error);
+			setContentError(error instanceof Error ? error.message : 'Failed to load article content');
+		} finally {
+			setIsLoadingContent(false);
+		}
+	};
+
+	// Fetch full content when a new article is selected (desktop only)
+	useEffect(() => {
+		if (selectedArticle && !isMobile) {
+			fetchFullArticleContent(selectedArticle.link);
+		} else {
+			setFullArticleContent(null);
+			setContentError(null);
+		}
+	}, [selectedArticle, isMobile]);
 
 	// Show placeholder when no source is selected
 	if (!source) {
@@ -229,11 +266,11 @@ export function RssContentPanel({
 		);
 	}
 
-	// Desktop layout - show articles list and selected article side by side
+	// Desktop layout - show articles list, article summary, and full content in three columns
 	return (
 		<div className="h-full flex">
 			{/* Articles List */}
-			<div className="w-1/2 border-r">
+			<div className="w-1/3 border-r">
 				<Card className="h-full border-none rounded-none">
 					<CardHeader className="border-b">
 						<CardTitle className="flex items-center gap-2">
@@ -320,8 +357,8 @@ export function RssContentPanel({
 				</Card>
 			</div>
 
-			{/* Article Content */}
-			<div className="w-1/2">
+			{/* Article Summary */}
+			<div className="w-1/3 border-r">
 				{selectedArticle ? (
 					<Card className="h-full border-none rounded-none">
 						<CardHeader className="border-b">
@@ -386,6 +423,80 @@ export function RssContentPanel({
 							<h3 className="text-lg font-medium mb-2">Select an Article</h3>
 							<p className="text-sm">
 								Choose an article from the list to view its content
+							</p>
+						</div>
+					</div>
+				)}
+			</div>
+
+			{/* Full Article Content */}
+			<div className="w-1/3">
+				{selectedArticle ? (
+					<Card className="h-full border-none rounded-none">
+						<CardHeader className="border-b">
+							<CardTitle className="text-sm font-medium">
+								Full Article Content
+							</CardTitle>
+							<div className="flex items-center gap-2">
+								{isLoadingContent && (
+									<div className="flex items-center gap-2 text-sm text-muted-foreground">
+										<Loader2 className="h-3 w-3 animate-spin" />
+										Loading content...
+									</div>
+								)}
+								{contentError && (
+									<div className="text-sm text-red-500">
+										{contentError}
+									</div>
+								)}
+							</div>
+						</CardHeader>
+						<CardContent className="p-0">
+							<ScrollArea className="h-[calc(100vh-12rem)]">
+								<div className="p-6">
+									{isLoadingContent ? (
+										<div className="flex items-center justify-center py-8">
+											<div className="text-center">
+												<Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-muted-foreground" />
+												<p className="text-sm text-muted-foreground">
+													Extracting article content...
+												</p>
+											</div>
+										</div>
+									) : contentError ? (
+										<div className="text-center py-8">
+											<div className="text-red-500 mb-4">
+												<ExternalLink className="h-8 w-8 mx-auto mb-2" />
+												<p className="text-sm font-medium">Failed to load content</p>
+												<p className="text-xs text-muted-foreground mt-1">
+													{contentError}
+												</p>
+											</div>
+											<Button
+												onClick={() => fetchFullArticleContent(selectedArticle.link)}
+												size="sm"
+												variant="outline"
+											>
+												Try Again
+											</Button>
+										</div>
+									) : fullArticleContent ? (
+										<div
+											className="prose prose-sm max-w-none"
+											dangerouslySetInnerHTML={{ __html: fullArticleContent }}
+										/>
+									) : null}
+								</div>
+							</ScrollArea>
+						</CardContent>
+					</Card>
+				) : (
+					<div className="h-full flex items-center justify-center">
+						<div className="text-center text-muted-foreground max-w-md">
+							<Rss className="h-16 w-16 mx-auto mb-4 opacity-50" />
+							<h3 className="text-lg font-medium mb-2">Full Article</h3>
+							<p className="text-sm">
+								Select an article to view its complete content
 							</p>
 						</div>
 					</div>
