@@ -1,254 +1,129 @@
-// Updated RSS sources with NASDAQ feeds
+#!/usr/bin/env node
+
+// Script to update the RSS sources with NASDAQ feeds
+const fs = require('fs');
+const path = require('path');
+
+// NASDAQ RSS URLs extracted from the feeds page
+const NASDAQ_RSS_FEEDS = [
+  "https://www.nasdaq.com/feed/nasdaq-original/rss.xml",
+  "https://www.nasdaq.com/feed/rssoutbound?category=Artificial+Intelligence",
+  "https://www.nasdaq.com/feed/rssoutbound?category=Blockchain",
+  "https://www.nasdaq.com/feed/rssoutbound?category=Commodities",
+  "https://www.nasdaq.com/feed/rssoutbound?category=Corporate+Governance",
+  "https://www.nasdaq.com/feed/rssoutbound?category=Cryptocurrencies",
+  "https://www.nasdaq.com/feed/rssoutbound?category=Dividends",
+  "https://www.nasdaq.com/feed/rssoutbound?category=ETFs",
+  "https://www.nasdaq.com/feed/rssoutbound?category=Earnings",
+  "https://www.nasdaq.com/feed/rssoutbound?category=FinTech",
+  "https://www.nasdaq.com/feed/rssoutbound?category=Financial+Advisors",
+  "https://www.nasdaq.com/feed/rssoutbound?category=IPOs",
+  "https://www.nasdaq.com/feed/rssoutbound?category=Innovation",
+  "https://www.nasdaq.com/feed/rssoutbound?category=Investing",
+  "https://www.nasdaq.com/feed/rssoutbound?category=Markets",
+  "https://www.nasdaq.com/feed/rssoutbound?category=Nasdaq",
+  "https://www.nasdaq.com/feed/rssoutbound?category=Options",
+  "https://www.nasdaq.com/feed/rssoutbound?category=Retirement",
+  "https://www.nasdaq.com/feed/rssoutbound?category=Saving%20Money",
+  "https://www.nasdaq.com/feed/rssoutbound?category=Stocks",
+  "https://www.nasdaq.com/feed/rssoutbound?category=Technology",
+  "https://www.nasdaq.com/feed/rssoutbound?symbol=AMD",
+  "https://www.nasdaq.com/feed/rssoutbound?symbol=AMZN",
+  "https://www.nasdaq.com/feed/rssoutbound?symbol=BABA",
+  "https://www.nasdaq.com/feed/rssoutbound?symbol=F",
+  "https://www.nasdaq.com/feed/rssoutbound?symbol=FB",
+  "https://www.nasdaq.com/feed/rssoutbound?symbol=MSFT",
+  "https://www.nasdaq.com/feed/rssoutbound?symbol=NFLX",
+  "https://www.nasdaq.com/feed/rssoutbound?symbol=NVDA",
+  "https://www.nasdaq.com/feed/rssoutbound?symbol=TSLA",
+  "https://www.nasdaq.com/feed/rssoutbound?symbol=aapl"
+];
+
+function createNasdaqRSSConfig() {
+  const nasdaqSources = [];
+
+  // Convert NASDAQ URLs to RSS source objects
+  NASDAQ_RSS_FEEDS.forEach(feedUrl => {
+    if (feedUrl === "https://www.nasdaq.com/nasdaq-RSS-Feeds") {
+      return; // Skip the main feeds page URL
+    }
+
+    let name, description, category;
+
+    if (feedUrl.includes('nasdaq-original')) {
+      name = "NASDAQ Original Content";
+      description = "NASDAQ's original financial content and analysis";
+      category = "markets";
+    } else if (feedUrl.includes('category=')) {
+      const categoryMatch = feedUrl.match(/category=([^&]+)/);
+      if (categoryMatch) {
+        const categoryName = decodeURIComponent(categoryMatch[1].replace(/\+/g, ' '));
+        name = `NASDAQ ${categoryName}`;
+        description = `NASDAQ news and analysis on ${categoryName.toLowerCase()}`;
+
+        // Map categories to our system
+        const categoryMap = {
+          'artificial intelligence': 'technology',
+          'blockchain': 'technology',
+          'commodities': 'markets',
+          'corporate governance': 'business',
+          'cryptocurrencies': 'cryptocurrency',
+          'dividends': 'investment',
+          'etfs': 'investment',
+          'earnings': 'markets',
+          'fintech': 'technology',
+          'financial advisors': 'finance',
+          'ipos': 'markets',
+          'innovation': 'technology',
+          'investing': 'investment',
+          'markets': 'markets',
+          'nasdaq': 'markets',
+          'options': 'investment',
+          'retirement': 'finance',
+          'saving money': 'finance',
+          'stocks': 'stocks',
+          'technology': 'technology'
+        };
+
+        category = categoryMap[categoryName.toLowerCase()] || 'markets';
+      }
+    } else if (feedUrl.includes('symbol=')) {
+      const symbolMatch = feedUrl.match(/symbol=([^&]+)/);
+      if (symbolMatch) {
+        const symbol = symbolMatch[1].toUpperCase();
+        name = `NASDAQ ${symbol}`;
+        description = `NASDAQ news and analysis for ${symbol} stock`;
+        category = 'stocks';
+      }
+    }
+
+    nasdaqSources.push({
+      name,
+      feedUrl,
+      description,
+      category,
+      isActive: true,
+      logoUrl: "https://www.nasdaq.com/favicon.ico"
+    });
+  });
+
+  return nasdaqSources;
+}
+
+function generateUpdatedRSSSourcesFile() {
+  const nasdaqSources = createNasdaqRSSConfig();
+
+  const fileContent = `// Updated RSS sources with NASDAQ feeds
 export const DEFAULT_RSS_SOURCES = [
   // NASDAQ RSS Feeds
-  {
-    name: "NASDAQ Original Content",
-    feedUrl: "https://www.nasdaq.com/feed/nasdaq-original/rss.xml",
-    description: "NASDAQ's original financial content and analysis",
-    category: "markets",
+${nasdaqSources.map(source => `  {
+    name: "${source.name}",
+    feedUrl: "${source.feedUrl}",
+    description: "${source.description}",
+    category: "${source.category}",
     isActive: true,
-    logoUrl: "https://www.nasdaq.com/favicon.ico"
-  },
-  {
-    name: "NASDAQ Artificial Intelligence",
-    feedUrl: "https://www.nasdaq.com/feed/rssoutbound?category=Artificial+Intelligence",
-    description: "NASDAQ news and analysis on artificial intelligence",
-    category: "technology",
-    isActive: true,
-    logoUrl: "https://www.nasdaq.com/favicon.ico"
-  },
-  {
-    name: "NASDAQ Blockchain",
-    feedUrl: "https://www.nasdaq.com/feed/rssoutbound?category=Blockchain",
-    description: "NASDAQ news and analysis on blockchain",
-    category: "technology",
-    isActive: true,
-    logoUrl: "https://www.nasdaq.com/favicon.ico"
-  },
-  {
-    name: "NASDAQ Commodities",
-    feedUrl: "https://www.nasdaq.com/feed/rssoutbound?category=Commodities",
-    description: "NASDAQ news and analysis on commodities",
-    category: "markets",
-    isActive: true,
-    logoUrl: "https://www.nasdaq.com/favicon.ico"
-  },
-  {
-    name: "NASDAQ Corporate Governance",
-    feedUrl: "https://www.nasdaq.com/feed/rssoutbound?category=Corporate+Governance",
-    description: "NASDAQ news and analysis on corporate governance",
-    category: "business",
-    isActive: true,
-    logoUrl: "https://www.nasdaq.com/favicon.ico"
-  },
-  {
-    name: "NASDAQ Cryptocurrencies",
-    feedUrl: "https://www.nasdaq.com/feed/rssoutbound?category=Cryptocurrencies",
-    description: "NASDAQ news and analysis on cryptocurrencies",
-    category: "cryptocurrency",
-    isActive: true,
-    logoUrl: "https://www.nasdaq.com/favicon.ico"
-  },
-  {
-    name: "NASDAQ Dividends",
-    feedUrl: "https://www.nasdaq.com/feed/rssoutbound?category=Dividends",
-    description: "NASDAQ news and analysis on dividends",
-    category: "investment",
-    isActive: true,
-    logoUrl: "https://www.nasdaq.com/favicon.ico"
-  },
-  {
-    name: "NASDAQ ETFs",
-    feedUrl: "https://www.nasdaq.com/feed/rssoutbound?category=ETFs",
-    description: "NASDAQ news and analysis on etfs",
-    category: "investment",
-    isActive: true,
-    logoUrl: "https://www.nasdaq.com/favicon.ico"
-  },
-  {
-    name: "NASDAQ Earnings",
-    feedUrl: "https://www.nasdaq.com/feed/rssoutbound?category=Earnings",
-    description: "NASDAQ news and analysis on earnings",
-    category: "markets",
-    isActive: true,
-    logoUrl: "https://www.nasdaq.com/favicon.ico"
-  },
-  {
-    name: "NASDAQ FinTech",
-    feedUrl: "https://www.nasdaq.com/feed/rssoutbound?category=FinTech",
-    description: "NASDAQ news and analysis on fintech",
-    category: "technology",
-    isActive: true,
-    logoUrl: "https://www.nasdaq.com/favicon.ico"
-  },
-  {
-    name: "NASDAQ Financial Advisors",
-    feedUrl: "https://www.nasdaq.com/feed/rssoutbound?category=Financial+Advisors",
-    description: "NASDAQ news and analysis on financial advisors",
-    category: "finance",
-    isActive: true,
-    logoUrl: "https://www.nasdaq.com/favicon.ico"
-  },
-  {
-    name: "NASDAQ IPOs",
-    feedUrl: "https://www.nasdaq.com/feed/rssoutbound?category=IPOs",
-    description: "NASDAQ news and analysis on ipos",
-    category: "markets",
-    isActive: true,
-    logoUrl: "https://www.nasdaq.com/favicon.ico"
-  },
-  {
-    name: "NASDAQ Innovation",
-    feedUrl: "https://www.nasdaq.com/feed/rssoutbound?category=Innovation",
-    description: "NASDAQ news and analysis on innovation",
-    category: "technology",
-    isActive: true,
-    logoUrl: "https://www.nasdaq.com/favicon.ico"
-  },
-  {
-    name: "NASDAQ Investing",
-    feedUrl: "https://www.nasdaq.com/feed/rssoutbound?category=Investing",
-    description: "NASDAQ news and analysis on investing",
-    category: "investment",
-    isActive: true,
-    logoUrl: "https://www.nasdaq.com/favicon.ico"
-  },
-  {
-    name: "NASDAQ Markets",
-    feedUrl: "https://www.nasdaq.com/feed/rssoutbound?category=Markets",
-    description: "NASDAQ news and analysis on markets",
-    category: "markets",
-    isActive: true,
-    logoUrl: "https://www.nasdaq.com/favicon.ico"
-  },
-  {
-    name: "NASDAQ Nasdaq",
-    feedUrl: "https://www.nasdaq.com/feed/rssoutbound?category=Nasdaq",
-    description: "NASDAQ news and analysis on nasdaq",
-    category: "markets",
-    isActive: true,
-    logoUrl: "https://www.nasdaq.com/favicon.ico"
-  },
-  {
-    name: "NASDAQ Options",
-    feedUrl: "https://www.nasdaq.com/feed/rssoutbound?category=Options",
-    description: "NASDAQ news and analysis on options",
-    category: "investment",
-    isActive: true,
-    logoUrl: "https://www.nasdaq.com/favicon.ico"
-  },
-  {
-    name: "NASDAQ Retirement",
-    feedUrl: "https://www.nasdaq.com/feed/rssoutbound?category=Retirement",
-    description: "NASDAQ news and analysis on retirement",
-    category: "finance",
-    isActive: true,
-    logoUrl: "https://www.nasdaq.com/favicon.ico"
-  },
-  {
-    name: "NASDAQ Saving Money",
-    feedUrl: "https://www.nasdaq.com/feed/rssoutbound?category=Saving%20Money",
-    description: "NASDAQ news and analysis on saving money",
-    category: "finance",
-    isActive: true,
-    logoUrl: "https://www.nasdaq.com/favicon.ico"
-  },
-  {
-    name: "NASDAQ Stocks",
-    feedUrl: "https://www.nasdaq.com/feed/rssoutbound?category=Stocks",
-    description: "NASDAQ news and analysis on stocks",
-    category: "stocks",
-    isActive: true,
-    logoUrl: "https://www.nasdaq.com/favicon.ico"
-  },
-  {
-    name: "NASDAQ Technology",
-    feedUrl: "https://www.nasdaq.com/feed/rssoutbound?category=Technology",
-    description: "NASDAQ news and analysis on technology",
-    category: "technology",
-    isActive: true,
-    logoUrl: "https://www.nasdaq.com/favicon.ico"
-  },
-  {
-    name: "NASDAQ AMD",
-    feedUrl: "https://www.nasdaq.com/feed/rssoutbound?symbol=AMD",
-    description: "NASDAQ news and analysis for AMD stock",
-    category: "stocks",
-    isActive: true,
-    logoUrl: "https://www.nasdaq.com/favicon.ico"
-  },
-  {
-    name: "NASDAQ AMZN",
-    feedUrl: "https://www.nasdaq.com/feed/rssoutbound?symbol=AMZN",
-    description: "NASDAQ news and analysis for AMZN stock",
-    category: "stocks",
-    isActive: true,
-    logoUrl: "https://www.nasdaq.com/favicon.ico"
-  },
-  {
-    name: "NASDAQ BABA",
-    feedUrl: "https://www.nasdaq.com/feed/rssoutbound?symbol=BABA",
-    description: "NASDAQ news and analysis for BABA stock",
-    category: "stocks",
-    isActive: true,
-    logoUrl: "https://www.nasdaq.com/favicon.ico"
-  },
-  {
-    name: "NASDAQ F",
-    feedUrl: "https://www.nasdaq.com/feed/rssoutbound?symbol=F",
-    description: "NASDAQ news and analysis for F stock",
-    category: "stocks",
-    isActive: true,
-    logoUrl: "https://www.nasdaq.com/favicon.ico"
-  },
-  {
-    name: "NASDAQ FB",
-    feedUrl: "https://www.nasdaq.com/feed/rssoutbound?symbol=FB",
-    description: "NASDAQ news and analysis for FB stock",
-    category: "stocks",
-    isActive: true,
-    logoUrl: "https://www.nasdaq.com/favicon.ico"
-  },
-  {
-    name: "NASDAQ MSFT",
-    feedUrl: "https://www.nasdaq.com/feed/rssoutbound?symbol=MSFT",
-    description: "NASDAQ news and analysis for MSFT stock",
-    category: "stocks",
-    isActive: true,
-    logoUrl: "https://www.nasdaq.com/favicon.ico"
-  },
-  {
-    name: "NASDAQ NFLX",
-    feedUrl: "https://www.nasdaq.com/feed/rssoutbound?symbol=NFLX",
-    description: "NASDAQ news and analysis for NFLX stock",
-    category: "stocks",
-    isActive: true,
-    logoUrl: "https://www.nasdaq.com/favicon.ico"
-  },
-  {
-    name: "NASDAQ NVDA",
-    feedUrl: "https://www.nasdaq.com/feed/rssoutbound?symbol=NVDA",
-    description: "NASDAQ news and analysis for NVDA stock",
-    category: "stocks",
-    isActive: true,
-    logoUrl: "https://www.nasdaq.com/favicon.ico"
-  },
-  {
-    name: "NASDAQ TSLA",
-    feedUrl: "https://www.nasdaq.com/feed/rssoutbound?symbol=TSLA",
-    description: "NASDAQ news and analysis for TSLA stock",
-    category: "stocks",
-    isActive: true,
-    logoUrl: "https://www.nasdaq.com/favicon.ico"
-  },
-  {
-    name: "NASDAQ AAPL",
-    feedUrl: "https://www.nasdaq.com/feed/rssoutbound?symbol=aapl",
-    description: "NASDAQ news and analysis for AAPL stock",
-    category: "stocks",
-    isActive: true,
-    logoUrl: "https://www.nasdaq.com/favicon.ico"
-  },
+    logoUrl: "${source.logoUrl}"
+  }`).join(',\n')},
 
   // United States - Government & Central Bank Sources
   {
@@ -566,3 +441,49 @@ export const DEFAULT_RSS_SOURCES = [
     logoUrl: "https://www.investing.com/favicon.ico"
   }
 ];
+`;
+
+  return fileContent;
+}
+
+function main() {
+  console.log('Generating updated RSS sources configuration...');
+
+  const updatedContent = generateUpdatedRSSSourcesFile();
+  const outputPath = path.join(__dirname, 'src', 'lib', 'constants', 'rss-sources.ts');
+
+  // Backup the original file
+  const backupPath = outputPath + '.backup';
+  try {
+    if (fs.existsSync(outputPath)) {
+      fs.copyFileSync(outputPath, backupPath);
+      console.log(`✓ Backed up original file to ${backupPath}`);
+    }
+  } catch (error) {
+    console.error('Warning: Could not create backup:', error.message);
+  }
+
+  // Write the updated file
+  try {
+    fs.writeFileSync(outputPath, updatedContent);
+    console.log(`✓ Updated RSS sources file: ${outputPath}`);
+    console.log(`✓ Added ${NASDAQ_RSS_FEEDS.length - 1} NASDAQ RSS feeds`);
+  } catch (error) {
+    console.error('Error writing updated file:', error.message);
+    process.exit(1);
+  }
+
+  console.log('\nNASDAQ RSS feeds added:');
+  NASDAQ_RSS_FEEDS.filter(url => url !== "https://www.nasdaq.com/nasdaq-RSS-Feeds").forEach((url, index) => {
+    console.log(`  ${index + 1}. ${url}`);
+  });
+
+  console.log('\n✅ RSS sources updated successfully!');
+  console.log('The monitoring system will now use the updated RSS sources.');
+}
+
+if (require.main === module) {
+  main();
+}
+
+module.exports = { createNasdaqRSSConfig, generateUpdatedRSSSourcesFile };
