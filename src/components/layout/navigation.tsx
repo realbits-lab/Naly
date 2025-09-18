@@ -2,24 +2,17 @@
 
 import {
   BarChart3,
-  Check,
-  ChevronDown,
-  Globe,
   LogOut,
   Monitor,
-  Moon,
   Newspaper,
-  Palette,
   PenTool,
   Settings,
-  Sun,
   User,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { signIn, signOut, useSession } from "next-auth/react";
-import { useTheme } from "@/components/theme-provider";
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -30,8 +23,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import { locales, localeLabels, type Locale } from "@/i18n/config";
-import { toast } from "sonner";
+import { locales, type Locale } from "@/i18n/config";
 import { useScreenSize } from "@/hooks/use-screen-size";
 import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 
@@ -64,9 +56,7 @@ const adminNavigationItems = [
 
 export function Navigation() {
   const pathname = usePathname();
-  const router = useRouter();
   const { data: session, status } = useSession();
-  const [isPending, startTransition] = useTransition();
   const screenSize = useScreenSize();
   const { isMobile, desktopClasses, mobileClasses } = useResponsiveLayout();
 
@@ -87,39 +77,6 @@ export function Navigation() {
 
   // Check if user is manager
   const isManager = session?.user && session.user.role === "manager";
-
-  const switchLanguage = (newLocale: Locale) => {
-    startTransition(() => {
-      // Store preference in localStorage
-      localStorage.setItem("user-locale", newLocale);
-
-      // Store preference in cookie for server-side access
-      document.cookie = `user-locale=${newLocale}; path=/; max-age=31536000; SameSite=Lax`;
-
-      // Update URL with new locale
-      let newPathname = pathname;
-
-      // Remove current locale from pathname if it exists
-      const currentLocaleInPath = locales.find((locale) =>
-        pathname.startsWith(`/${locale}`)
-      );
-      if (currentLocaleInPath) {
-        newPathname = pathname.slice(`/${currentLocaleInPath}`.length) || "/";
-      }
-
-      // Add new locale prefix if it's not the default locale
-      if (newLocale !== "en") {
-        newPathname = `/${newLocale}${newPathname}`;
-      }
-
-      // Navigate to new URL
-      router.push(newPathname);
-      router.refresh();
-
-      // Show success message
-      toast.success("Language changed successfully!");
-    });
-  };
 
 
   return (
@@ -231,55 +188,6 @@ export function Navigation() {
                   );
                 })}
             </div>
-          </div>
-
-
-          {/* Language Switcher */}
-          <div className="flex items-center space-x-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="flex items-center space-x-2 text-sm font-medium"
-                  disabled={isPending}
-                >
-                  <Globe className="h-4 w-4" />
-                  <span className="hidden md:inline">Language</span>
-                  <ChevronDown className="h-3 w-3 hidden md:inline" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="end"
-                className="w-48 bg-white border border-gray-200 shadow-lg"
-              >
-                <DropdownMenuLabel className="flex items-center gap-2">
-                  <Globe className="h-4 w-4" />
-                  Select Language
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {locales.map((locale) => (
-                  <DropdownMenuItem
-                    key={locale}
-                    onClick={() => switchLanguage(locale)}
-                    className="flex items-center justify-between cursor-pointer"
-                    disabled={isPending}
-                  >
-                    <div className="flex flex-col">
-                      <span className="font-medium">
-                        {localeLabels[locale].nativeName}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {localeLabels[locale].name}
-                      </span>
-                    </div>
-                    {currentLocale === locale && (
-                      <Check className="h-4 w-4 text-primary" />
-                    )}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
           </div>
 
 

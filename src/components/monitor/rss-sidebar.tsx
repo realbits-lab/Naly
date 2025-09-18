@@ -3,10 +3,7 @@
 import {
 	ChevronLeft,
 	ChevronRight,
-	Plus,
 	Rss,
-	Search,
-	Settings,
 	Wifi,
 	WifiOff,
 } from "lucide-react";
@@ -14,7 +11,6 @@ import { useCallback, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import type { RssSource } from "./monitor-page-client";
 
@@ -79,7 +75,6 @@ export function RssSidebar({
 }: RssSidebarProps) {
 	const [sources, setSources] = useState<RssSource[]>([]);
 	const [loading, setLoading] = useState(true);
-	const [searchQuery, setSearchQuery] = useState("");
 
 	const fetchSources = useCallback(async () => {
 		setLoading(true);
@@ -113,11 +108,6 @@ export function RssSidebar({
 		fetchSources();
 	}, [fetchSources]);
 
-	const filteredSources = sources.filter(source =>
-		source.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-		source.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-		source.category.toLowerCase().includes(searchQuery.toLowerCase())
-	);
 
 	const handleSourceClick = (source: RssSource) => {
 		onSourceSelect(source);
@@ -146,7 +136,7 @@ export function RssSidebar({
 							))}
 						</div>
 					) : (
-						filteredSources.slice(0, 8).map((source) => (
+						sources.slice(0, 8).map((source) => (
 							<Button
 								key={source.id}
 								variant={selectedSourceId === source.id ? "default" : "ghost"}
@@ -195,22 +185,6 @@ export function RssSidebar({
 					)}
 				</div>
 
-				{/* Search */}
-				<div className="relative">
-					<Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-					<Input
-						placeholder="Search RSS sources..."
-						value={searchQuery}
-						onChange={(e) => setSearchQuery(e.target.value)}
-						className="pl-10"
-					/>
-				</div>
-
-				{/* Add Source Button */}
-				<Button variant="outline" size="sm" className="w-full">
-					<Plus className="h-4 w-4 mr-2" />
-					Add RSS Source
-				</Button>
 			</CardHeader>
 
 			<CardContent className="p-0 overflow-y-auto">
@@ -225,7 +199,7 @@ export function RssSidebar({
 					</div>
 				) : (
 					<div className="space-y-1 p-2">
-						{filteredSources.map((source) => (
+						{sources.map((source) => (
 							<Button
 								key={source.id}
 								variant={selectedSourceId === source.id ? "secondary" : "ghost"}
@@ -277,11 +251,11 @@ export function RssSidebar({
 					</div>
 				)}
 
-				{!loading && filteredSources.length === 0 && (
+				{!loading && sources.length === 0 && (
 					<div className="p-8 text-center text-muted-foreground">
 						<Rss className="h-12 w-12 mx-auto mb-4 opacity-50" />
 						<p className="text-sm">No RSS sources found</p>
-						<p className="text-xs mt-1">Try adjusting your search</p>
+						<p className="text-xs mt-1">No sources available</p>
 					</div>
 				)}
 			</CardContent>

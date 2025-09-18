@@ -5,8 +5,9 @@ import { cn } from "@/lib/utils";
 import { SettingsSidebar } from "./settings-sidebar";
 import { AppearancePanel } from "./appearance-panel";
 import { LayoutPanel } from "./layout-panel";
+import { LanguagePanel } from "./language-panel";
 
-export type SettingsTab = "appearance" | "layout";
+export type SettingsTab = "appearance" | "layout" | "language";
 
 export function SettingsPageClient() {
 	const [activeTab, setActiveTab] = useState<SettingsTab>("appearance");
@@ -17,6 +18,8 @@ export function SettingsPageClient() {
 				return <AppearancePanel />;
 			case "layout":
 				return <LayoutPanel />;
+			case "language":
+				return <LanguagePanel />;
 			default:
 				return <AppearancePanel />;
 		}

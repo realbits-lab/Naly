@@ -1,6 +1,6 @@
 "use client";
 
-import { Monitor, Palette, Settings } from "lucide-react";
+import { Globe, Monitor, Palette, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { SettingsTab } from "./settings-page-client";
 
@@ -21,6 +21,12 @@ const sidebarItems = [
 		name: "Layout",
 		description: "Control responsive layout behavior",
 		icon: Monitor,
+	},
+	{
+		id: "language" as const,
+		name: "Language",
+		description: "Choose your preferred language",
+		icon: Globe,
 	},
 ];
 
