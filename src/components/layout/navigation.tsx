@@ -72,9 +72,6 @@ export function Navigation() {
 
   // Helper function to build localized path
   const getLocalizedPath = (path: string) => {
-    if (currentLocale === 'en') {
-      return `/${path}`;
-    }
     return `/${currentLocale}/${path}`;
   };
 

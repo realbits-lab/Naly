@@ -12,6 +12,7 @@ import {
 	User,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { toast } from "sonner";
 import { ArticleContentSkeleton, EmptyArticleState } from "@/components/articles/article-skeleton";
 import { MarkdownContent } from "@/components/articles/markdown-content";
@@ -38,6 +39,13 @@ interface ArticleContentPanelProps {
 export function ArticleContentPanel({ article }: ArticleContentPanelProps) {
 	const [fullArticle, setFullArticle] = useState<Article | null>(null);
 	const [loading, setLoading] = useState(false);
+	const pathname = usePathname();
+
+	// Extract current locale from pathname
+	const getCurrentLocale = () => {
+		const localeMatch = pathname.match(/^\/([a-z]{2})(\/|$)/);
+		return localeMatch ? localeMatch[1] : 'en';
+	};
 
 	const fetchFullArticle = useCallback(async (articleId: string) => {
 		try {
@@ -180,7 +188,7 @@ export function ArticleContentPanel({ article }: ArticleContentPanelProps) {
 
 								<Button variant="outline" size="sm" asChild>
 									<a
-										href={`/news/${displayArticle.id}`}
+										href={`/${getCurrentLocale()}/news/${displayArticle.id}`}
 										target="_blank"
 										rel="noopener noreferrer"
 									>
@@ -210,7 +218,7 @@ export function ArticleContentPanel({ article }: ArticleContentPanelProps) {
 											"Full content is not available for this article."}
 									</p>
 									<Button className="mt-4" asChild>
-										<a href={`/news/${displayArticle.id}`}>View Full Article</a>
+										<a href={`/${getCurrentLocale()}/news/${displayArticle.id}`}>View Full Article</a>
 									</Button>
 								</CardContent>
 							</Card>

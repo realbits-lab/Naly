@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Development Commands
 
 ### Core Commands
-- `pnpm dev` - Start development server (Next.js on port 3000)
+- `pnpm dev` - Start development server (Next.js on port 4000)
 - `pnpm build` - Build for production
 - `pnpm start` - Start production server
 - `pnpm lint` - Run ESLint checks
@@ -95,7 +95,8 @@ Located in `src/lib/schema/` with modular organization:
 
 ### Background Process Management
 - Run `pnpm dev` as background process with output redirection to `logs/dev-server.log`
-- If port 3000 is in use, kill existing process and restart
+- Use port 4000 for development server (not port 3000)
+- If port 4000 is in use, kill existing process and restart
 - Use background execution for npx commands with output piping to logs directory
 
 ### Testing

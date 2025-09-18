@@ -16,6 +16,7 @@ import { generatedArticles } from "@/lib/schema";
 
 interface ArticlePageProps {
 	params: {
+		locale: string;
 		id: string;
 	};
 }
@@ -42,11 +43,14 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
 		notFound();
 	}
 
+	// Build localized back link
+	const backLink = `/${params.locale}/news`;
+
 	return (
 		<div className="container mx-auto px-4 py-8 max-w-4xl">
 			<div className="mb-6">
 				<Link
-					href="/news"
+					href={backLink}
 					className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
 				>
 					<ArrowLeft className="mr-2 h-4 w-4" />
