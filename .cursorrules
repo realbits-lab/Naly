@@ -4,17 +4,23 @@
 
 When writing commit messages for GitHub:
 
-1. **Title (First Line)**: 
+1. **Before Writing**: 
+   - Always examine what changes were made using `git diff` or `git status`
+   - Review the actual file changes to understand what was modified
+   - Use `git add` to stage specific changes if needed
+
+2. **Title (First Line)**: 
    - Use 10-15 words maximum
    - Be specific and descriptive
    - Use imperative mood (e.g., "Add", "Fix", "Update", "Remove")
    - No period at the end
 
-2. **Body**:
+3. **Body**:
    - List the specific items that were changed
    - Use bullet points for clarity
    - Be concise but descriptive
    - Focus on what was done, not why (unless the why is not obvious)
+   - Do NOT include conclusions, closing remarks, or closing statements
 
 ### Examples:
 

@@ -1,20 +1,20 @@
 "use client";
 
 import {
-	BarChart3,
-	Check,
-	ChevronDown,
-	Globe,
-	LogOut,
-	Menu,
-	Monitor,
-	Moon,
-	Newspaper,
-	Palette,
-	PenTool,
-	Settings,
-	Sun,
-	User,
+  BarChart3,
+  Check,
+  ChevronDown,
+  Globe,
+  LogOut,
+  Menu,
+  Monitor,
+  Moon,
+  Newspaper,
+  Palette,
+  PenTool,
+  Settings,
+  Sun,
+  User,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -23,300 +23,327 @@ import { useTheme } from "@/components/theme-provider";
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuLabel,
-	DropdownMenuSeparator,
-	DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { locales, localeLabels, type Locale } from "@/i18n/config";
 import { toast } from "sonner";
+import { useScreenSize } from "@/hooks/use-screen-size";
 
 const navigationItems = [
-	{
-		name: "News",
-		href: "/news",
-		icon: Newspaper,
-	},
+  {
+    name: "News",
+    href: "/news",
+    icon: Newspaper,
+  },
 ];
 
 const adminNavigationItems = [
-	{
-		name: "Write",
-		href: "/write",
-		icon: PenTool,
-	},
+  {
+    name: "Write",
+    href: "/write",
+    icon: PenTool,
+  },
 ];
 
 export function Navigation() {
-	const pathname = usePathname();
-	const router = useRouter();
-	const { theme, setTheme } = useTheme();
-	const { data: session, status } = useSession();
-	const [isPending, startTransition] = useTransition();
+  const pathname = usePathname();
+  const router = useRouter();
+  const { theme, setTheme } = useTheme();
+  const { data: session, status } = useSession();
+  const [isPending, startTransition] = useTransition();
+  const screenSize = useScreenSize();
 
-	// Get current locale from pathname
-	const getCurrentLocale = (): Locale => {
-		const localeInPath = locales.find((locale) =>
-			pathname.startsWith(`/${locale}`)
-		);
-		return localeInPath || 'en';
-	};
+  // Get current locale from pathname
+  const getCurrentLocale = (): Locale => {
+    const localeInPath = locales.find((locale) =>
+      pathname.startsWith(`/${locale}`)
+    );
+    return localeInPath || "en";
+  };
 
-	const currentLocale = getCurrentLocale();
+  const currentLocale = getCurrentLocale();
 
-	const switchLanguage = (newLocale: Locale) => {
-		startTransition(() => {
-			// Store preference in localStorage
-			localStorage.setItem("user-locale", newLocale);
+  // Check if user is manager or admin
+  const isManagerOrAdmin = session?.user && session.user.role === "ADMIN";
 
-			// Store preference in cookie for server-side access
-			document.cookie = `user-locale=${newLocale}; path=/; max-age=31536000; SameSite=Lax`;
+  const switchLanguage = (newLocale: Locale) => {
+    startTransition(() => {
+      // Store preference in localStorage
+      localStorage.setItem("user-locale", newLocale);
 
-			// Update URL with new locale
-			let newPathname = pathname;
+      // Store preference in cookie for server-side access
+      document.cookie = `user-locale=${newLocale}; path=/; max-age=31536000; SameSite=Lax`;
 
-			// Remove current locale from pathname if it exists
-			const currentLocaleInPath = locales.find((locale) =>
-				pathname.startsWith(`/${locale}`)
-			);
-			if (currentLocaleInPath) {
-				newPathname = pathname.slice(`/${currentLocaleInPath}`.length) || "/";
-			}
+      // Update URL with new locale
+      let newPathname = pathname;
 
-			// Add new locale prefix if it's not the default locale
-			if (newLocale !== "en") {
-				newPathname = `/${newLocale}${newPathname}`;
-			}
+      // Remove current locale from pathname if it exists
+      const currentLocaleInPath = locales.find((locale) =>
+        pathname.startsWith(`/${locale}`)
+      );
+      if (currentLocaleInPath) {
+        newPathname = pathname.slice(`/${currentLocaleInPath}`.length) || "/";
+      }
 
-			// Navigate to new URL
-			router.push(newPathname);
-			router.refresh();
+      // Add new locale prefix if it's not the default locale
+      if (newLocale !== "en") {
+        newPathname = `/${newLocale}${newPathname}`;
+      }
 
-			// Show success message
-			toast.success("Language changed successfully!");
-		});
-	};
+      // Navigate to new URL
+      router.push(newPathname);
+      router.refresh();
 
-	const themes = [
-		{ name: "Light", value: "light", icon: Sun },
-		{ name: "Dark", value: "dark", icon: Moon },
-		{ name: "System", value: "system", icon: Monitor },
-		{ name: "Blue", value: "blue", icon: Palette },
-		{ name: "Green", value: "green", icon: Palette },
-		{ name: "Purple", value: "purple", icon: Palette },
-	];
+      // Show success message
+      toast.success("Language changed successfully!");
+    });
+  };
 
-	return (
-		<nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-			<div className="max-w-7xl mx-auto px-4 flex h-16 items-center">
-				{/* Logo */}
-				<div className="mr-4 flex">
-					<Link href="/news" className="mr-6 flex items-center space-x-2">
-						<BarChart3 className="h-6 w-6 text-primary" />
-						<span className="hidden font-bold sm:inline-block">Naly</span>
-					</Link>
-				</div>
+  const themes = [
+    { name: "Light", value: "light", icon: Sun },
+    { name: "Dark", value: "dark", icon: Moon },
+    { name: "System", value: "system", icon: Monitor },
+    { name: "Blue", value: "blue", icon: Palette },
+    { name: "Green", value: "green", icon: Palette },
+    { name: "Purple", value: "purple", icon: Palette },
+  ];
 
-				{/* Navigation Menu */}
-				<div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
-					<div className="w-full flex-1 md:w-auto md:flex-none">
-						<div className="hidden md:flex md:space-x-6">
-							{navigationItems.map((item) => {
-								const Icon = item.icon;
-								return (
-									<Link
-										key={item.href}
-										href={item.href}
-										className={cn(
-											"flex items-center space-x-2 text-sm font-medium transition-colors hover:text-primary",
-											pathname === item.href
-												? "text-primary"
-												: "text-muted-foreground",
-										)}
-									>
-										<Icon className="h-4 w-4" />
-										<span>{item.name}</span>
-									</Link>
-								);
-							})}
-							{session?.user?.role === "admin" &&
-								adminNavigationItems.map((item) => {
-									const Icon = item.icon;
-									return (
-										<Link
-											key={item.href}
-											href={item.href}
-											className={cn(
-												"flex items-center space-x-2 text-sm font-medium transition-colors hover:text-primary",
-												pathname === item.href
-													? "text-primary"
-													: "text-muted-foreground",
-											)}
-										>
-											<Icon className="h-4 w-4" />
-											<span>{item.name}</span>
-										</Link>
-									);
-								})}
-						</div>
-					</div>
+  return (
+    <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="max-w-7xl mx-auto px-4 flex h-16 items-center">
+        {/* Logo */}
+        <div className="mr-4 flex">
+          <Link href="/news" className="mr-6 flex items-center space-x-2">
+            <BarChart3 className="h-6 w-6 text-primary" />
+            <span className="hidden font-bold sm:inline-block">Naly</span>
+          </Link>
+        </div>
 
-					{/* Mobile Menu */}
-					<div className="flex md:hidden">
-						<DropdownMenu>
-							<DropdownMenuTrigger asChild>
-								<Button variant="ghost" size="icon">
-									<Menu className="h-5 w-5" />
-									<span className="sr-only">Open menu</span>
-								</Button>
-							</DropdownMenuTrigger>
-							<DropdownMenuContent align="end" className="w-48 bg-white border border-gray-200 shadow-lg">
-								{navigationItems.map((item) => {
-									const Icon = item.icon;
-									return (
-										<DropdownMenuItem key={item.href} asChild>
-											<Link
-												href={item.href}
-												className="flex items-center space-x-2"
-											>
-												<Icon className="h-4 w-4" />
-												<span>{item.name}</span>
-											</Link>
-										</DropdownMenuItem>
-									);
-								})}
-							</DropdownMenuContent>
-						</DropdownMenu>
-					</div>
+        {/* Screen Size Display for Manager/Admin */}
+        {isManagerOrAdmin && screenSize.width > 0 && (
+          <div className="mr-4 hidden md:flex items-center space-x-2 text-xs text-muted-foreground border border-border rounded px-2 py-1">
+            <Monitor className="h-3 w-3" />
+            <span>
+              {screenSize.width} × {screenSize.height}
+            </span>
+          </div>
+        )}
 
-					{/* Authentication */}
-					<div className="flex items-center space-x-2">
-						{session?.user ? (
-							<DropdownMenu>
-								<DropdownMenuTrigger asChild>
-									<Button variant="ghost" size="icon" className="relative">
-										<User className="h-4 w-4" />
-										<span className="sr-only">User menu</span>
-									</Button>
-								</DropdownMenuTrigger>
-								<DropdownMenuContent align="end" className="w-56 bg-white border border-gray-200 shadow-lg">
-									<DropdownMenuLabel>
-										<div className="flex flex-col space-y-1">
-											<p className="text-sm font-medium">{session.user.name}</p>
-											<p className="text-xs text-muted-foreground">
-												{session.user.email}
-											</p>
-											{session.user.role === "admin" && (
-												<p className="text-xs text-blue-600 font-medium">
-													ADMIN
-												</p>
-											)}
-										</div>
-									</DropdownMenuLabel>
-									<DropdownMenuSeparator />
-									<DropdownMenuItem
-										onClick={() => signOut()}
-										className="cursor-pointer"
-									>
-										<LogOut className="h-4 w-4 mr-2" />
-										Sign out
-									</DropdownMenuItem>
-								</DropdownMenuContent>
-							</DropdownMenu>
-						) : (
-							<Button
-								onClick={() => signIn("google")}
-								variant="outline"
-								size="sm"
-							>
-								Sign in with Google
-							</Button>
-						)}
-					</div>
+        {/* Navigation Menu */}
+        <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
+          <div className="w-full flex-1 md:w-auto md:flex-none">
+            <div className="hidden md:flex md:space-x-6">
+              {navigationItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={cn(
+                      "flex items-center space-x-2 text-sm font-medium transition-colors hover:text-primary",
+                      pathname === item.href
+                        ? "text-primary"
+                        : "text-muted-foreground"
+                    )}
+                  >
+                    <Icon className="h-4 w-4" />
+                    <span>{item.name}</span>
+                  </Link>
+                );
+              })}
+              {session?.user?.role === "admin" &&
+                adminNavigationItems.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={cn(
+                        "flex items-center space-x-2 text-sm font-medium transition-colors hover:text-primary",
+                        pathname === item.href
+                          ? "text-primary"
+                          : "text-muted-foreground"
+                      )}
+                    >
+                      <Icon className="h-4 w-4" />
+                      <span>{item.name}</span>
+                    </Link>
+                  );
+                })}
+            </div>
+          </div>
 
-					{/* Language Switcher */}
-					<div className="flex items-center space-x-2">
-						<DropdownMenu>
-							<DropdownMenuTrigger asChild>
-								<Button
-									variant="ghost"
-									size="sm"
-									className="flex items-center space-x-2 text-sm font-medium"
-									disabled={isPending}
-								>
-									<Globe className="h-4 w-4" />
-									<span>Language</span>
-									<ChevronDown className="h-3 w-3" />
-								</Button>
-							</DropdownMenuTrigger>
-							<DropdownMenuContent align="end" className="w-48 bg-white border border-gray-200 shadow-lg">
-								<DropdownMenuLabel className="flex items-center gap-2">
-									<Globe className="h-4 w-4" />
-									Select Language
-								</DropdownMenuLabel>
-								<DropdownMenuSeparator />
-								{locales.map((locale) => (
-									<DropdownMenuItem
-										key={locale}
-										onClick={() => switchLanguage(locale)}
-										className="flex items-center justify-between cursor-pointer"
-										disabled={isPending}
-									>
-										<div className="flex flex-col">
-											<span className="font-medium">
-												{localeLabels[locale].nativeName}
-											</span>
-											<span className="text-xs text-muted-foreground">
-												{localeLabels[locale].name}
-											</span>
-										</div>
-										{currentLocale === locale && (
-											<Check className="h-4 w-4 text-primary" />
-										)}
-									</DropdownMenuItem>
-								))}
-							</DropdownMenuContent>
-						</DropdownMenu>
-					</div>
+          {/* Mobile Menu */}
+          <div className="flex md:hidden">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <Menu className="h-5 w-5" />
+                  <span className="sr-only">Open menu</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                className="w-48 bg-white border border-gray-200 shadow-lg"
+              >
+                {navigationItems.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <DropdownMenuItem key={item.href} asChild>
+                      <Link
+                        href={item.href}
+                        className="flex items-center space-x-2"
+                      >
+                        <Icon className="h-4 w-4" />
+                        <span>{item.name}</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  );
+                })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
 
-					{/* Settings Menu */}
-					<div className="flex items-center space-x-2">
-						<DropdownMenu>
-							<DropdownMenuTrigger asChild>
-								<Button variant="ghost" size="icon">
-									<Settings className="h-4 w-4" />
-									<span className="sr-only">Settings</span>
-								</Button>
-							</DropdownMenuTrigger>
-							<DropdownMenuContent align="end" className="w-56 bg-white border border-gray-200 shadow-lg">
-								<DropdownMenuLabel>Appearance</DropdownMenuLabel>
-								<DropdownMenuSeparator />
-								{themes.map((themeOption) => {
-									const Icon = themeOption.icon;
-									return (
-										<DropdownMenuItem
-											key={themeOption.value}
-											onClick={() => setTheme(themeOption.value as any)}
-											className="flex items-center justify-between cursor-pointer"
-										>
-											<div className="flex items-center space-x-2">
-												<Icon className="h-4 w-4" />
-												<span>{themeOption.name}</span>
-											</div>
-											{theme === themeOption.value && (
-												<Check className="h-4 w-4" />
-											)}
-										</DropdownMenuItem>
-									);
-								})}
-							</DropdownMenuContent>
-						</DropdownMenu>
-					</div>
-				</div>
-			</div>
-		</nav>
-	);
+          {/* Authentication */}
+          <div className="flex items-center space-x-2">
+            {session?.user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="relative">
+                    <User className="h-4 w-4" />
+                    <span className="sr-only">User menu</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  className="w-56 bg-white border border-gray-200 shadow-lg"
+                >
+                  <DropdownMenuLabel>
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium">{session.user.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {session.user.email}
+                      </p>
+                      {session.user.role === "admin" && (
+                        <p className="text-xs text-blue-600 font-medium">
+                          ADMIN
+                        </p>
+                      )}
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => signOut()}
+                    className="cursor-pointer"
+                  >
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Sign out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Button
+                onClick={() => signIn("google")}
+                variant="outline"
+                size="sm"
+              >
+                Sign in with Google
+              </Button>
+            )}
+          </div>
+
+          {/* Language Switcher */}
+          <div className="flex items-center space-x-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="flex items-center space-x-2 text-sm font-medium"
+                  disabled={isPending}
+                >
+                  <Globe className="h-4 w-4" />
+                  <span>Language</span>
+                  <ChevronDown className="h-3 w-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                className="w-48 bg-white border border-gray-200 shadow-lg"
+              >
+                <DropdownMenuLabel className="flex items-center gap-2">
+                  <Globe className="h-4 w-4" />
+                  Select Language
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {locales.map((locale) => (
+                  <DropdownMenuItem
+                    key={locale}
+                    onClick={() => switchLanguage(locale)}
+                    className="flex items-center justify-between cursor-pointer"
+                    disabled={isPending}
+                  >
+                    <div className="flex flex-col">
+                      <span className="font-medium">
+                        {localeLabels[locale].nativeName}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {localeLabels[locale].name}
+                      </span>
+                    </div>
+                    {currentLocale === locale && (
+                      <Check className="h-4 w-4 text-primary" />
+                    )}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
+          {/* Settings Menu */}
+          <div className="flex items-center space-x-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <Settings className="h-4 w-4" />
+                  <span className="sr-only">Settings</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                className="w-56 bg-white border border-gray-200 shadow-lg"
+              >
+                <DropdownMenuLabel>Appearance</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {themes.map((themeOption) => {
+                  const Icon = themeOption.icon;
+                  return (
+                    <DropdownMenuItem
+                      key={themeOption.value}
+                      onClick={() => setTheme(themeOption.value as any)}
+                      className="flex items-center justify-between cursor-pointer"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <Icon className="h-4 w-4" />
+                        <span>{themeOption.name}</span>
+                      </div>
+                      {theme === themeOption.value && (
+                        <Check className="h-4 w-4" />
+                      )}
+                    </DropdownMenuItem>
+                  );
+                })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+      </div>
+    </nav>
+  );
 }
