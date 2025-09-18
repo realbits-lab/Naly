@@ -370,15 +370,18 @@ class ArticleContentService {
 
   private loadCacheFromStorage(): void {
     try {
-      const cached = localStorage.getItem('rss-content-cache');
-      if (cached) {
-        this.cache = JSON.parse(cached);
+      // Only access localStorage in browser environment
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const cached = localStorage.getItem('rss-content-cache');
+        if (cached) {
+          this.cache = JSON.parse(cached);
 
-        // Clean expired entries
-        const now = Date.now();
-        for (const [url, entry] of Object.entries(this.cache)) {
-          if (now > entry.expiresAt) {
-            delete this.cache[url];
+          // Clean expired entries
+          const now = Date.now();
+          for (const [url, entry] of Object.entries(this.cache)) {
+            if (now > entry.expiresAt) {
+              delete this.cache[url];
+            }
           }
         }
       }
@@ -390,7 +393,10 @@ class ArticleContentService {
 
   private saveCacheToStorage(): void {
     try {
-      localStorage.setItem('rss-content-cache', JSON.stringify(this.cache));
+      // Only access localStorage in browser environment
+      if (typeof window !== 'undefined' && window.localStorage) {
+        localStorage.setItem('rss-content-cache', JSON.stringify(this.cache));
+      }
     } catch (error) {
       console.warn('Failed to save cache to storage:', error);
     }
