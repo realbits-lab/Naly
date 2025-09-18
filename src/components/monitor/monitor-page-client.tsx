@@ -104,33 +104,29 @@ export function MonitorPageClient() {
 		if (selectedSource && !selectedArticle) {
 			// Show articles list
 			return (
-				<div className="h-[calc(100vh-4rem)] max-w-7xl mx-auto px-4">
-					<div className="h-full">
-						<RssContentPanel
-							source={selectedSource}
-							articles={articles}
-							selectedArticle={null}
-							onArticleSelect={handleArticleSelect}
-							onBack={() => setSelectedSource(null)}
-							loading={loading}
-							isMobile={true}
-						/>
-					</div>
+				<div className="w-full h-[calc(100vh-4rem)]">
+					<RssContentPanel
+						source={selectedSource}
+						articles={articles}
+						selectedArticle={null}
+						onArticleSelect={handleArticleSelect}
+						onBack={() => setSelectedSource(null)}
+						loading={loading}
+						isMobile={true}
+					/>
 				</div>
 			);
 		} else {
 			// Show RSS sources list
 			return (
-				<div className="h-[calc(100vh-4rem)] max-w-7xl mx-auto px-4">
-					<div className="h-full">
-						<RssSidebar
-							selectedSourceId={null}
-							onSourceSelect={handleSourceSelect}
-							isCollapsed={false}
-							onToggleCollapse={() => {}}
-							isMobile={true}
-						/>
-					</div>
+				<div className="w-full h-[calc(100vh-4rem)]">
+					<RssSidebar
+						selectedSourceId={null}
+						onSourceSelect={handleSourceSelect}
+						isCollapsed={false}
+						onToggleCollapse={() => {}}
+						isMobile={true}
+					/>
 				</div>
 			);
 		}
@@ -138,29 +134,29 @@ export function MonitorPageClient() {
 
 	// Desktop layout: Show both sidebar and content panel
 	return (
-		<div className="flex h-[calc(100vh-4rem)] max-w-7xl mx-auto px-4 relative">
-			{/* Sidebar - Fixed width to prevent shifting */}
-			<div className={`flex-shrink-0 transition-all duration-300 ${isCollapsed ? 'w-16' : 'w-80'}`}>
-				<RssSidebar
-					selectedSourceId={selectedSource?.id || null}
-					onSourceSelect={handleSourceSelect}
-					isCollapsed={isCollapsed}
-					onToggleCollapse={handleToggleCollapse}
-					isMobile={false}
-				/>
-			</div>
+		<div className="w-full h-[calc(100vh-4rem)] flex relative">
+				{/* Sidebar - Fixed width to prevent shifting */}
+				<div className={`flex-shrink-0 transition-all duration-300 ${isCollapsed ? 'w-16' : 'w-80'}`}>
+					<RssSidebar
+						selectedSourceId={selectedSource?.id || null}
+						onSourceSelect={handleSourceSelect}
+						isCollapsed={isCollapsed}
+						onToggleCollapse={handleToggleCollapse}
+						isMobile={false}
+					/>
+				</div>
 
-			{/* Main Content Area - Fixed flex-grow to prevent shifting */}
-			<div className="flex-1 min-w-0">
-				<RssContentPanel
-					source={selectedSource}
-					articles={articles}
-					selectedArticle={selectedArticle}
-					onArticleSelect={handleArticleSelect}
-					loading={loading}
-					isMobile={false}
-				/>
-			</div>
+				{/* Main Content Area - Fixed flex-grow to prevent shifting */}
+				<div className="flex-1 min-w-0">
+					<RssContentPanel
+						source={selectedSource}
+						articles={articles}
+						selectedArticle={selectedArticle}
+						onArticleSelect={handleArticleSelect}
+						loading={loading}
+						isMobile={false}
+					/>
+				</div>
 		</div>
 	);
 }

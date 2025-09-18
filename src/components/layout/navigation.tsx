@@ -81,31 +81,49 @@ export function Navigation() {
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="max-w-7xl mx-auto px-4 flex h-16 items-center">
-        {/* Logo */}
-        <div className="mr-4 flex">
-          <Link href={getLocalizedPath("news")} className="mr-6 flex items-center space-x-2">
+      <div className="max-w-7xl mx-auto px-6 relative h-16 flex items-center">
+        {/* Logo - Absolute Left */}
+        <div className="absolute left-6 flex items-center">
+          <Link href={getLocalizedPath("news")} className="flex items-center space-x-2">
             <BarChart3 className="h-6 w-6 text-primary" />
             <span className="hidden font-bold sm:inline-block">Naly</span>
           </Link>
+          {/* Screen Size Display for Manager */}
+          {isManager && screenSize.width > 0 && (
+            <div className="ml-4 hidden md:flex items-center space-x-2 text-xs text-muted-foreground border border-border rounded px-2 py-1">
+              <Monitor className="h-3 w-3" />
+              <span>
+                {screenSize.width} × {screenSize.height}
+              </span>
+            </div>
+          )}
         </div>
 
-        {/* Screen Size Display for Manager */}
-        {isManager && screenSize.width > 0 && (
-          <div className="mr-4 hidden md:flex items-center space-x-2 text-xs text-muted-foreground border border-border rounded px-2 py-1">
-            <Monitor className="h-3 w-3" />
-            <span>
-              {screenSize.width} × {screenSize.height}
-            </span>
-          </div>
-        )}
-
-        {/* Navigation Menu */}
-        <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
-          <div className="w-full flex-1 md:w-auto md:flex-none">
-            {/* Mobile Icon-Only Navigation */}
-            <div className={cn("space-x-4", mobileClasses)}>
-              {navigationItems.map((item) => {
+        {/* Navigation Menu - Absolute Center */}
+        <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center space-x-2">
+          {/* Mobile Icon-Only Navigation */}
+          <div className={cn("space-x-4", mobileClasses)}>
+            {navigationItems.map((item) => {
+              const Icon = item.icon;
+              const localizedHref = getLocalizedPath(item.href);
+              return (
+                <Link
+                  key={item.href}
+                  href={localizedHref}
+                  className={cn(
+                    "flex items-center justify-center w-8 h-8 rounded-md transition-colors hover:bg-muted",
+                    pathname === localizedHref
+                      ? "text-primary bg-primary/10"
+                      : "text-muted-foreground"
+                  )}
+                  title={item.name}
+                >
+                  <Icon className="h-4 w-4" />
+                </Link>
+              );
+            })}
+            {(session?.user?.role === "manager" || session?.user?.role === "writer") &&
+              adminNavigationItems.map((item) => {
                 const Icon = item.icon;
                 const localizedHref = getLocalizedPath(item.href);
                 return (
@@ -124,31 +142,31 @@ export function Navigation() {
                   </Link>
                 );
               })}
-              {(session?.user?.role === "manager" || session?.user?.role === "writer") &&
-                adminNavigationItems.map((item) => {
-                  const Icon = item.icon;
-                  const localizedHref = getLocalizedPath(item.href);
-                  return (
-                    <Link
-                      key={item.href}
-                      href={localizedHref}
-                      className={cn(
-                        "flex items-center justify-center w-8 h-8 rounded-md transition-colors hover:bg-muted",
-                        pathname === localizedHref
-                          ? "text-primary bg-primary/10"
-                          : "text-muted-foreground"
-                      )}
-                      title={item.name}
-                    >
-                      <Icon className="h-4 w-4" />
-                    </Link>
-                  );
-                })}
-            </div>
+          </div>
 
-            {/* Desktop Navigation with Text */}
-            <div className={cn("space-x-6", desktopClasses)}>
-              {navigationItems.map((item) => {
+          {/* Desktop Navigation with Text */}
+          <div className={cn("space-x-6", desktopClasses)}>
+            {navigationItems.map((item) => {
+              const Icon = item.icon;
+              const localizedHref = getLocalizedPath(item.href);
+              return (
+                <Link
+                  key={item.href}
+                  href={localizedHref}
+                  className={cn(
+                    "flex items-center space-x-2 text-sm font-medium transition-colors hover:text-primary",
+                    pathname === localizedHref
+                      ? "text-primary"
+                      : "text-muted-foreground"
+                  )}
+                >
+                  <Icon className="h-4 w-4" />
+                  <span>{item.name}</span>
+                </Link>
+              );
+            })}
+            {(session?.user?.role === "manager" || session?.user?.role === "writer") &&
+              adminNavigationItems.map((item) => {
                 const Icon = item.icon;
                 const localizedHref = getLocalizedPath(item.href);
                 return (
@@ -167,31 +185,11 @@ export function Navigation() {
                   </Link>
                 );
               })}
-              {(session?.user?.role === "manager" || session?.user?.role === "writer") &&
-                adminNavigationItems.map((item) => {
-                  const Icon = item.icon;
-                  const localizedHref = getLocalizedPath(item.href);
-                  return (
-                    <Link
-                      key={item.href}
-                      href={localizedHref}
-                      className={cn(
-                        "flex items-center space-x-2 text-sm font-medium transition-colors hover:text-primary",
-                        pathname === localizedHref
-                          ? "text-primary"
-                          : "text-muted-foreground"
-                      )}
-                    >
-                      <Icon className="h-4 w-4" />
-                      <span>{item.name}</span>
-                    </Link>
-                  );
-                })}
-            </div>
           </div>
+        </div>
 
-
-          {/* Authentication - Profile Icon at the rightmost position */}
+        {/* Profile Icon - Absolute Right */}
+        <div className="absolute right-6 flex items-center">
           <div className="flex items-center space-x-2">
             {session?.user ? (
               <DropdownMenu>
