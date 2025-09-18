@@ -1,0 +1,90 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - navigation [ref=e3]:
+      - generic [ref=e4]:
+        - link "Naly" [ref=e6] [cursor=pointer]:
+          - /url: /en/news
+          - img [ref=e7] [cursor=pointer]
+          - generic [ref=e9] [cursor=pointer]: Naly
+        - generic [ref=e11]:
+          - link "News" [ref=e12] [cursor=pointer]:
+            - /url: /en/news
+            - img [ref=e13] [cursor=pointer]
+            - generic [ref=e16] [cursor=pointer]: News
+          - link "Monitor" [ref=e17] [cursor=pointer]:
+            - /url: /en/monitor
+            - img [ref=e18] [cursor=pointer]
+            - generic [ref=e20] [cursor=pointer]: Monitor
+        - button "Sign in with Google" [ref=e23]:
+          - img
+          - generic [ref=e24]: Sign in with Google
+    - main [ref=e25]:
+      - generic [ref=e27]:
+        - generic [ref=e29]:
+          - generic [ref=e31]:
+            - generic [ref=e32]:
+              - img [ref=e33]
+              - text: RSS Sources
+            - button [ref=e37]:
+              - img
+          - generic [ref=e39]:
+            - button "CNBC CNBC Business and financial news finance" [ref=e40]:
+              - generic [ref=e41]:
+                - img "CNBC" [ref=e43]
+                - generic [ref=e44]:
+                  - generic [ref=e45]:
+                    - heading "CNBC" [level=3] [ref=e46]
+                    - generic [ref=e47]:
+                      - img
+                  - paragraph [ref=e48]: Business and financial news
+                  - generic [ref=e50]: finance
+            - button "Reuters Business Reuters Business Reuters business news finance" [ref=e51]:
+              - generic [ref=e52]:
+                - img "Reuters Business" [ref=e54]
+                - generic [ref=e55]:
+                  - generic [ref=e56]:
+                    - heading "Reuters Business" [level=3] [ref=e57]
+                    - generic [ref=e58]:
+                      - img
+                  - paragraph [ref=e59]: Reuters business news
+                  - generic [ref=e61]: finance
+            - button "Bloomberg Bloomberg Bloomberg financial news finance" [ref=e62]:
+              - generic [ref=e63]:
+                - img "Bloomberg" [ref=e65]
+                - generic [ref=e66]:
+                  - generic [ref=e67]:
+                    - heading "Bloomberg" [level=3] [ref=e68]
+                    - generic [ref=e69]:
+                      - img
+                  - paragraph [ref=e70]: Bloomberg financial news
+                  - generic [ref=e72]: finance
+            - button "MarketWatch MarketWatch MarketWatch real-time headlines finance" [ref=e73]:
+              - generic [ref=e74]:
+                - img "MarketWatch" [ref=e76]
+                - generic [ref=e77]:
+                  - generic [ref=e78]:
+                    - heading "MarketWatch" [level=3] [ref=e79]
+                    - generic [ref=e80]:
+                      - img
+                  - paragraph [ref=e81]: MarketWatch real-time headlines
+                  - generic [ref=e83]: finance
+            - button "Yahoo Finance Yahoo Finance Yahoo Finance news finance" [ref=e84]:
+              - generic [ref=e85]:
+                - img "Yahoo Finance" [ref=e87]
+                - generic [ref=e88]:
+                  - generic [ref=e89]:
+                    - heading "Yahoo Finance" [level=3] [ref=e90]
+                    - generic [ref=e91]:
+                      - img
+                  - paragraph [ref=e92]: Yahoo Finance news
+                  - generic [ref=e94]: finance
+        - generic [ref=e97]:
+          - img [ref=e98]
+          - heading "Select an RSS Source" [level=3] [ref=e102]
+          - paragraph [ref=e103]: Choose an RSS source from the sidebar to view its latest articles
+  - region "Notifications alt+T"
+  - alert [ref=e104]
+```

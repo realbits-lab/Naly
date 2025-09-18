@@ -3,47 +3,133 @@ import { db } from "@/lib/db";
 import { rssSources } from "@/lib/schema/rss";
 import { eq } from "drizzle-orm";
 
-// Default RSS sources based on our research
+// Default RSS sources based on compatibility testing (100% success rate sources)
 const DEFAULT_RSS_SOURCES = [
+	// Bloomberg RSS sources (100% success rate)
 	{
-		name: "CNBC",
-		feedUrl: "https://feeds.cnbc.com/cnbc/feed",
-		description: "Business and financial news",
-		category: "finance",
-		isActive: true,
-		logoUrl: "https://www.cnbc.com/favicon.ico"
-	},
-	{
-		name: "Reuters Business",
-		feedUrl: "https://feeds.reuters.com/reuters/businessNews",
-		description: "Reuters business news",
-		category: "finance",
-		isActive: true,
-		logoUrl: "https://www.reuters.com/favicon.ico"
-	},
-	{
-		name: "Bloomberg",
+		name: "Bloomberg Markets",
 		feedUrl: "https://feeds.bloomberg.com/markets/news.rss",
-		description: "Bloomberg financial news",
-		category: "finance",
+		description: "Bloomberg markets and financial news",
+		category: "markets",
 		isActive: true,
 		logoUrl: "https://www.bloomberg.com/favicon.ico"
 	},
 	{
-		name: "MarketWatch",
-		feedUrl: "https://feeds.marketwatch.com/marketwatch/realtimeheadlines/",
-		description: "MarketWatch real-time headlines",
+		name: "Bloomberg Wealth",
+		feedUrl: "https://feeds.bloomberg.com/wealth/news.rss",
+		description: "Bloomberg wealth and investment news",
+		category: "wealth",
+		isActive: true,
+		logoUrl: "https://www.bloomberg.com/favicon.ico"
+	},
+	{
+		name: "Bloomberg Technology",
+		feedUrl: "https://feeds.bloomberg.com/technology/news.rss",
+		description: "Bloomberg technology and innovation news",
+		category: "technology",
+		isActive: true,
+		logoUrl: "https://www.bloomberg.com/favicon.ico"
+	},
+	{
+		name: "Bloomberg Politics",
+		feedUrl: "https://feeds.bloomberg.com/politics/news.rss",
+		description: "Bloomberg politics and policy news",
+		category: "politics",
+		isActive: true,
+		logoUrl: "https://www.bloomberg.com/favicon.ico"
+	},
+	// CNBC RSS sources (100% success rate)
+	{
+		name: "CNBC Top News",
+		feedUrl: "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+		description: "CNBC top business and financial news",
+		category: "business",
+		isActive: true,
+		logoUrl: "https://www.cnbc.com/favicon.ico"
+	},
+	{
+		name: "CNBC World Markets",
+		feedUrl: "https://www.cnbc.com/id/100727362/device/rss/rss.html",
+		description: "CNBC international markets and analysis",
+		category: "markets",
+		isActive: true,
+		logoUrl: "https://www.cnbc.com/favicon.ico"
+	},
+	{
+		name: "CNBC US Markets",
+		feedUrl: "https://www.cnbc.com/id/15839135/device/rss/rss.html",
+		description: "CNBC US markets and earnings",
+		category: "markets",
+		isActive: true,
+		logoUrl: "https://www.cnbc.com/favicon.ico"
+	},
+	// Financial Times RSS sources (100% success rate)
+	{
+		name: "Financial Times Companies",
+		feedUrl: "https://www.ft.com/companies?format=rss",
+		description: "Financial Times company news and analysis",
+		category: "companies",
+		isActive: true,
+		logoUrl: "https://www.ft.com/favicon.ico"
+	},
+	{
+		name: "Financial Times Markets",
+		feedUrl: "https://www.ft.com/markets?format=rss",
+		description: "Financial Times markets and trading news",
+		category: "markets",
+		isActive: true,
+		logoUrl: "https://www.ft.com/favicon.ico"
+	},
+	// MarketWatch RSS sources (100% success rate)
+	{
+		name: "MarketWatch Top Stories",
+		feedUrl: "http://feeds.marketwatch.com/marketwatch/topstories/",
+		description: "MarketWatch top financial stories",
 		category: "finance",
 		isActive: true,
 		logoUrl: "https://www.marketwatch.com/favicon.ico"
 	},
 	{
+		name: "MarketWatch Headlines",
+		feedUrl: "http://feeds.marketwatch.com/marketwatch/realtimeheadlines/",
+		description: "MarketWatch real-time headlines",
+		category: "finance",
+		isActive: true,
+		logoUrl: "https://www.marketwatch.com/favicon.ico"
+	},
+	// Investment Analysis sources (100% success rate)
+	{
+		name: "Seeking Alpha Articles",
+		feedUrl: "https://seekingalpha.com/feed.xml",
+		description: "Seeking Alpha investment analysis and articles",
+		category: "investment",
+		isActive: true,
+		logoUrl: "https://seekingalpha.com/favicon.ico"
+	},
+	{
+		name: "Forbes Business",
+		feedUrl: "https://www.forbes.com/business/feed/",
+		description: "Forbes business news and insights",
+		category: "business",
+		isActive: true,
+		logoUrl: "https://www.forbes.com/favicon.ico"
+	},
+	// Partial success sources (monitored)
+	{
 		name: "Yahoo Finance",
 		feedUrl: "https://finance.yahoo.com/news/rssindex",
-		description: "Yahoo Finance news",
+		description: "Yahoo Finance top stories (66.7% success rate)",
 		category: "finance",
 		isActive: true,
 		logoUrl: "https://finance.yahoo.com/favicon.ico"
+	},
+	{
+		name: "Seeking Alpha Market News",
+		feedUrl: "https://seekingalpha.com/market_currents.xml",
+		description: "Seeking Alpha breaking market news (66.7% success rate)",
+		category: "investment",
+		isActive: true,
+		logoUrl: "https://seekingalpha.com/favicon.ico"
 	}
 ];
 

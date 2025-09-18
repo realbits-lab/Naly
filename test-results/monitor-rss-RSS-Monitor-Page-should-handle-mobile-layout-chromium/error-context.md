@@ -1,0 +1,76 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - navigation [ref=e3]:
+      - generic [ref=e4]:
+        - link [ref=e6] [cursor=pointer]:
+          - /url: /en/news
+          - img [ref=e7] [cursor=pointer]
+        - generic [ref=e10]:
+          - link "News" [ref=e11] [cursor=pointer]:
+            - /url: /en/news
+            - img [ref=e12] [cursor=pointer]
+          - link "Monitor" [ref=e15] [cursor=pointer]:
+            - /url: /en/monitor
+            - img [ref=e16] [cursor=pointer]
+        - button [ref=e20]:
+          - img
+    - main [ref=e21]:
+      - generic [ref=e24]:
+        - img [ref=e28]
+        - generic [ref=e33]:
+          - button "CNBC CNBC Business and financial news finance" [ref=e34]:
+            - generic [ref=e35]:
+              - img "CNBC" [ref=e37]
+              - generic [ref=e38]:
+                - generic [ref=e39]:
+                  - heading "CNBC" [level=3] [ref=e40]
+                  - generic [ref=e41]:
+                    - img
+                - paragraph [ref=e42]: Business and financial news
+                - generic [ref=e44]: finance
+          - button "Reuters Business Reuters Business Reuters business news finance" [ref=e45]:
+            - generic [ref=e46]:
+              - img "Reuters Business" [ref=e48]
+              - generic [ref=e49]:
+                - generic [ref=e50]:
+                  - heading "Reuters Business" [level=3] [ref=e51]
+                  - generic [ref=e52]:
+                    - img
+                - paragraph [ref=e53]: Reuters business news
+                - generic [ref=e55]: finance
+          - button "Bloomberg Bloomberg Bloomberg financial news finance" [ref=e56]:
+            - generic [ref=e57]:
+              - img "Bloomberg" [ref=e59]
+              - generic [ref=e60]:
+                - generic [ref=e61]:
+                  - heading "Bloomberg" [level=3] [ref=e62]
+                  - generic [ref=e63]:
+                    - img
+                - paragraph [ref=e64]: Bloomberg financial news
+                - generic [ref=e66]: finance
+          - button "MarketWatch MarketWatch MarketWatch real-time headlines finance" [ref=e67]:
+            - generic [ref=e68]:
+              - img "MarketWatch" [ref=e70]
+              - generic [ref=e71]:
+                - generic [ref=e72]:
+                  - heading "MarketWatch" [level=3] [ref=e73]
+                  - generic [ref=e74]:
+                    - img
+                - paragraph [ref=e75]: MarketWatch real-time headlines
+                - generic [ref=e77]: finance
+          - button "Yahoo Finance Yahoo Finance Yahoo Finance news finance" [ref=e78]:
+            - generic [ref=e79]:
+              - img "Yahoo Finance" [ref=e81]
+              - generic [ref=e82]:
+                - generic [ref=e83]:
+                  - heading "Yahoo Finance" [level=3] [ref=e84]
+                  - generic [ref=e85]:
+                    - img
+                - paragraph [ref=e86]: Yahoo Finance news
+                - generic [ref=e88]: finance
+  - region "Notifications alt+T"
+  - alert [ref=e89]
+```
