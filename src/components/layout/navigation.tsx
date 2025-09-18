@@ -42,6 +42,11 @@ const navigationItems = [
     href: "news", // Remove leading slash to be prefixed with locale
     icon: Newspaper,
   },
+  {
+    name: "Monitor",
+    href: "monitor", // Remove leading slash to be prefixed with locale
+    icon: Monitor,
+  },
 ];
 
 const adminNavigationItems = [
