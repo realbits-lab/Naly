@@ -22,29 +22,13 @@ interface RssSidebarProps {
 	isMobile: boolean;
 }
 
-// Default RSS sources based on compatibility testing (100% success rate sources)
+// Iframe-compatible RSS sources (tested with Playwright MCP tool)
 const DEFAULT_RSS_SOURCES: Omit<RssSource, 'id'>[] = [
-	// Bloomberg RSS sources (100% success rate)
-	{
-		name: "Bloomberg Markets",
-		feedUrl: "https://feeds.bloomberg.com/markets/news.rss",
-		description: "Bloomberg markets and financial news",
-		category: "markets",
-		isActive: true,
-		logoUrl: "https://www.bloomberg.com/favicon.ico"
-	},
-	{
-		name: "Bloomberg Economics",
-		feedUrl: "https://feeds.bloomberg.com/economics/news.rss",
-		description: "Bloomberg economics and policy news",
-		category: "economics",
-		isActive: true,
-		logoUrl: "https://www.bloomberg.com/favicon.ico"
-	},
+	// Bloomberg RSS sources - IFRAME COMPATIBLE ✅
 	{
 		name: "Bloomberg Technology",
 		feedUrl: "https://feeds.bloomberg.com/technology/news.rss",
-		description: "Bloomberg technology and innovation news",
+		description: "Bloomberg technology and innovation news (iframe compatible)",
 		category: "technology",
 		isActive: true,
 		logoUrl: "https://www.bloomberg.com/favicon.ico"
@@ -52,78 +36,10 @@ const DEFAULT_RSS_SOURCES: Omit<RssSource, 'id'>[] = [
 	{
 		name: "Bloomberg Politics",
 		feedUrl: "https://feeds.bloomberg.com/politics/news.rss",
-		description: "Bloomberg politics and policy news",
+		description: "Bloomberg politics and policy news (iframe compatible)",
 		category: "politics",
 		isActive: true,
 		logoUrl: "https://www.bloomberg.com/favicon.ico"
-	},
-	// CNBC RSS sources (100% success rate)
-	{
-		name: "CNBC Top News",
-		feedUrl: "https://www.cnbc.com/id/100003114/device/rss/rss.html",
-		description: "CNBC top business and financial news",
-		category: "business",
-		isActive: true,
-		logoUrl: "https://www.cnbc.com/favicon.ico"
-	},
-	{
-		name: "CNBC World Markets",
-		feedUrl: "https://www.cnbc.com/id/100727362/device/rss/rss.html",
-		description: "CNBC international markets and analysis",
-		category: "markets",
-		isActive: true,
-		logoUrl: "https://www.cnbc.com/favicon.ico"
-	},
-	{
-		name: "CNBC US Markets",
-		feedUrl: "https://www.cnbc.com/id/15839135/device/rss/rss.html",
-		description: "CNBC US markets and earnings",
-		category: "markets",
-		isActive: true,
-		logoUrl: "https://www.cnbc.com/favicon.ico"
-	},
-	// Financial Times RSS sources (100% success rate)
-	{
-		name: "Financial Times Home",
-		feedUrl: "https://ft.com/rss/home",
-		description: "Financial Times main news feed",
-		category: "finance",
-		isActive: true,
-		logoUrl: "https://www.ft.com/favicon.ico"
-	},
-	{
-		name: "Financial Times Markets",
-		feedUrl: "https://www.ft.com/markets?format=rss",
-		description: "Financial Times markets and trading news",
-		category: "markets",
-		isActive: true,
-		logoUrl: "https://www.ft.com/favicon.ico"
-	},
-	// Fox Business RSS sources (100% success rate)
-	{
-		name: "Fox Business Economy",
-		feedUrl: "https://moxie.foxbusiness.com/google-publisher/economy.xml",
-		description: "Fox Business economic news and analysis",
-		category: "economy",
-		isActive: true,
-		logoUrl: "https://www.foxbusiness.com/favicon.ico"
-	},
-	{
-		name: "Fox Business Markets",
-		feedUrl: "https://moxie.foxbusiness.com/google-publisher/markets.xml",
-		description: "Fox Business markets and trading news",
-		category: "markets",
-		isActive: true,
-		logoUrl: "https://www.foxbusiness.com/favicon.ico"
-	},
-	// Verified high-quality sources
-	{
-		name: "Forbes Business",
-		feedUrl: "https://www.forbes.com/business/feed/",
-		description: "Forbes business news and insights (100% success rate)",
-		category: "business",
-		isActive: true,
-		logoUrl: "https://www.forbes.com/favicon.ico"
 	}
 ];
 

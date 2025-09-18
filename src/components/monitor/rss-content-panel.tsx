@@ -266,7 +266,7 @@ export function RssContentPanel({
 		);
 	}
 
-	// Desktop layout - show articles list, article summary, and full content in three columns
+	// Desktop layout - show articles list and combined content with iframe
 	return (
 		<div className="h-full flex">
 			{/* Articles List */}
@@ -357,25 +357,27 @@ export function RssContentPanel({
 				</Card>
 			</div>
 
-			{/* Article Summary */}
-			<div className="w-1/3 border-r">
+			{/* Combined Article Content with Iframe */}
+			<div className="w-2/3">
 				{selectedArticle ? (
 					<Card className="h-full border-none rounded-none">
 						<CardHeader className="border-b">
 							<CardTitle className="text-lg line-clamp-2">
 								{selectedArticle.title}
 							</CardTitle>
-							<div className="flex items-center gap-4 text-sm text-muted-foreground">
-								<div className="flex items-center gap-1">
-									<Calendar className="h-4 w-4" />
-									{formatDate(selectedArticle.publishedAt)}
-								</div>
-								{selectedArticle.author && (
+							<div className="flex items-center justify-between">
+								<div className="flex items-center gap-4 text-sm text-muted-foreground">
 									<div className="flex items-center gap-1">
-										<User className="h-4 w-4" />
-										{selectedArticle.author}
+										<Calendar className="h-4 w-4" />
+										{formatDate(selectedArticle.publishedAt)}
 									</div>
-								)}
+									{selectedArticle.author && (
+										<div className="flex items-center gap-1">
+											<User className="h-4 w-4" />
+											{selectedArticle.author}
+										</div>
+									)}
+								</div>
 								<Button
 									onClick={() => openExternalLink(selectedArticle.link)}
 									size="sm"
@@ -387,33 +389,57 @@ export function RssContentPanel({
 							</div>
 						</CardHeader>
 						<CardContent className="p-0">
-							<ScrollArea className="h-[calc(100vh-12rem)] p-6">
-								{selectedArticle.description && (
-									<div className="mb-6">
-										<p className="text-muted-foreground leading-relaxed">
-											{selectedArticle.description}
-										</p>
+							<div className="h-[calc(100vh-12rem)]">
+								{/* Article Summary Section */}
+								{(selectedArticle.description || selectedArticle.content || (selectedArticle.categories && selectedArticle.categories.length > 0)) && (
+									<div className="border-b bg-muted/20">
+										<ScrollArea className="max-h-48 p-4">
+											{selectedArticle.description && (
+												<div className="mb-4">
+													<p className="text-muted-foreground leading-relaxed text-sm">
+														{selectedArticle.description}
+													</p>
+												</div>
+											)}
+											{selectedArticle.content && (
+												<div className="mb-4">
+													<div
+														className="prose prose-sm max-w-none"
+														dangerouslySetInnerHTML={{ __html: selectedArticle.content }}
+													/>
+												</div>
+											)}
+											{selectedArticle.categories && selectedArticle.categories.length > 0 && (
+												<div className="flex flex-wrap gap-2">
+													{selectedArticle.categories.map((category, index) => (
+														<Badge key={index} variant="secondary" className="text-xs">
+															{typeof category === 'string' ? category : String(category)}
+														</Badge>
+													))}
+												</div>
+											)}
+										</ScrollArea>
 									</div>
 								)}
-								{selectedArticle.content && (
-									<div
-										className="prose prose-sm max-w-none"
-										dangerouslySetInnerHTML={{ __html: selectedArticle.content }}
+
+								{/* Iframe Content Section */}
+								<div className="h-full">
+									<iframe
+										src={selectedArticle.link}
+										className="w-full h-full border-0"
+										title={selectedArticle.title}
+										sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+										onLoad={(e) => {
+											// Optional: Handle iframe load events
+											console.log('Iframe loaded:', selectedArticle.link);
+										}}
+										onError={(e) => {
+											// Optional: Handle iframe errors
+											console.error('Iframe failed to load:', selectedArticle.link);
+										}}
 									/>
-								)}
-								{selectedArticle.categories && selectedArticle.categories.length > 0 && (
-									<div className="mt-6 pt-6 border-t">
-										<h4 className="text-sm font-medium mb-2">Categories</h4>
-										<div className="flex flex-wrap gap-2">
-											{selectedArticle.categories.map((category, index) => (
-												<Badge key={index} variant="secondary">
-													{typeof category === 'string' ? category : String(category)}
-												</Badge>
-											))}
-										</div>
-									</div>
-								)}
-							</ScrollArea>
+								</div>
+							</div>
 						</CardContent>
 					</Card>
 				) : (
@@ -422,84 +448,7 @@ export function RssContentPanel({
 							<Rss className="h-16 w-16 mx-auto mb-4 opacity-50" />
 							<h3 className="text-lg font-medium mb-2">Select an Article</h3>
 							<p className="text-sm">
-								Choose an article from the list to view its content
-							</p>
-						</div>
-					</div>
-				)}
-			</div>
-
-			{/* Full Article Content */}
-			<div className="w-1/3">
-				{selectedArticle ? (
-					<Card className="h-full border-none rounded-none">
-						<CardHeader className="border-b">
-							<CardTitle className="text-sm font-medium">
-								Full Article Content
-							</CardTitle>
-							<div className="flex items-center gap-2">
-								{isLoadingContent && (
-									<div className="flex items-center gap-2 text-sm text-muted-foreground">
-										<Loader2 className="h-3 w-3 animate-spin" />
-										Loading content...
-									</div>
-								)}
-								{contentError && (
-									<div className="text-sm text-red-500">
-										{contentError}
-									</div>
-								)}
-							</div>
-						</CardHeader>
-						<CardContent className="p-0">
-							<ScrollArea className="h-[calc(100vh-12rem)]">
-								<div className="p-6">
-									{isLoadingContent ? (
-										<div className="flex items-center justify-center py-8">
-											<div className="text-center">
-												<Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-muted-foreground" />
-												<p className="text-sm text-muted-foreground">
-													Extracting article content...
-												</p>
-											</div>
-										</div>
-									) : contentError ? (
-										<div className="text-center py-8">
-											<div className="text-red-500 mb-4">
-												<ExternalLink className="h-8 w-8 mx-auto mb-2" />
-												<p className="text-sm font-medium">Failed to load content</p>
-												<p className="text-xs text-muted-foreground mt-1">
-													{contentError?.includes('Network error') || contentError?.includes('HTTP error') ?
-														'This website blocks automated content extraction. Please use "Open Original" to read the full article.' :
-														contentError
-													}
-												</p>
-											</div>
-											<Button
-												onClick={() => fetchFullArticleContent(selectedArticle.link)}
-												size="sm"
-												variant="outline"
-											>
-												Try Again
-											</Button>
-										</div>
-									) : fullArticleContent ? (
-										<div
-											className="prose prose-sm max-w-none"
-											dangerouslySetInnerHTML={{ __html: fullArticleContent }}
-										/>
-									) : null}
-								</div>
-							</ScrollArea>
-						</CardContent>
-					</Card>
-				) : (
-					<div className="h-full flex items-center justify-center">
-						<div className="text-center text-muted-foreground max-w-md">
-							<Rss className="h-16 w-16 mx-auto mb-4 opacity-50" />
-							<h3 className="text-lg font-medium mb-2">Full Article</h3>
-							<p className="text-sm">
-								Select an article to view its complete content
+								Choose an article from the list to view its content in iframe
 							</p>
 						</div>
 					</div>
