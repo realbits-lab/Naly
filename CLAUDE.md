@@ -102,7 +102,7 @@ Located in `src/lib/schema/` with modular organization:
 ### Testing
 - **Unit Tests**: Jest framework
 - **E2E Tests**: Playwright with headless option
-- **Authentication**: Use `@playwright/.auth/user.json` for Google OAuth in Playwright tests
+- **Authentication**: Use `.auth/user.json` for Google OAuth in Playwright tests
 - Default test account: jong95@gmail.com
 
 ### AI Gateway

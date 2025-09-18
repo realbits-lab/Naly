@@ -16,7 +16,9 @@ export default function LocaleLayout({ children, params }: LocaleLayoutProps) {
 		<div className="min-h-screen bg-background font-sans antialiased">
 			<Navigation />
 			<main className="relative flex min-h-screen flex-col">
-				{children}
+				<div className="max-w-7xl mx-auto px-6 w-full flex-1">
+					{children}
+				</div>
 			</main>
 		</div>
 	);

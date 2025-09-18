@@ -65,6 +65,9 @@
 	* {
 		border-color: hsl(var(--border));
 	}
+	html, body {
+		overscroll-behavior: none;
+	}
 	body {
 		background-color: hsl(var(--background));
 		color: hsl(var(--foreground));
@@ -90,14 +93,19 @@
 
 	/* Interactive element styles */
 	.interactive-hover {
-		transition: all 0.2s ease-in-out;
+		transition: all 0.15s ease-linear;
 	}
 
 	.interactive-hover:hover {
-		transform: scale(1.05);
+		transform: translateY(-1px);
 		box-shadow:
-			0 10px 15px -3px rgba(0, 0, 0, 0.1),
-			0 4px 6px -2px rgba(0, 0, 0, 0.05);
+			0 4px 6px -1px rgba(0, 0, 0, 0.1),
+			0 2px 4px -1px rgba(0, 0, 0, 0.06);
+	}
+
+	/* Remove bounce effects from scrollable elements */
+	.overflow-y-auto {
+		overscroll-behavior-y: none;
 	}
 
 	/* Gradient backgrounds for financial themes */
@@ -123,5 +131,58 @@
 			hsl(43, 74%, 66%) 0%,
 			hsl(43, 74%, 76%) 100%
 		);
+	}
+
+	/* Highlighting styles */
+	.highlight {
+		background-color: rgba(255, 255, 0, 0.6);
+	}
+
+	.highlight-yellow {
+		background-color: rgba(255, 255, 0, 0.6);
+	}
+
+	.highlight-transparent-yellow {
+		background-color: rgba(255, 255, 0, 0.4);
+	}
+
+	/* Selected item highlighting for grid boxes */
+	.selected-item {
+		background-color: rgba(255, 255, 0, 0.3) !important;
+		border-radius: 0.75rem;
+		border: 2px solid rgba(255, 255, 0, 0.8);
+		box-shadow: 0 0 0 2px rgba(255, 255, 0, 0.2);
+		transition: all 0.2s ease-in-out;
+	}
+
+	/* Thicker yellow highlighting for RSS sources in first column */
+	.selected-source {
+		background-color: rgba(255, 255, 0, 0.5) !important;
+		border-radius: 0.75rem;
+		border: 3px solid rgba(255, 255, 0, 0.9);
+		box-shadow: 0 0 0 3px rgba(255, 255, 0, 0.3);
+		transition: all 0.2s ease-in-out;
+	}
+
+	.selectable-item {
+		cursor: pointer;
+		transition: all 0.15s ease-in-out;
+		border-radius: 0.5rem;
+	}
+
+	.selectable-source {
+		cursor: pointer;
+		transition: all 0.15s ease-in-out;
+		border-radius: 0.5rem;
+	}
+
+	.selectable-item:hover:not(.selected-item) {
+		background-color: rgba(255, 255, 0, 0.1);
+		transform: translateY(-1px);
+	}
+
+	.selectable-source:hover:not(.selected-source) {
+		background-color: rgba(255, 255, 0, 0.15);
+		transform: translateY(-1px);
 	}
 }

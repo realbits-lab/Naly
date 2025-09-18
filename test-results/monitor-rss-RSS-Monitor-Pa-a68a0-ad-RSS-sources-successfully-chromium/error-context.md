@@ -1,0 +1,162 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - navigation [ref=e3]:
+      - generic [ref=e4]:
+        - link "Naly" [ref=e6] [cursor=pointer]:
+          - /url: /en/news
+          - img [ref=e7] [cursor=pointer]
+          - generic [ref=e9] [cursor=pointer]: Naly
+        - generic [ref=e11]:
+          - link "News" [ref=e12] [cursor=pointer]:
+            - /url: /en/news
+            - img [ref=e13] [cursor=pointer]
+            - generic [ref=e16] [cursor=pointer]: News
+          - link "Monitor" [ref=e17] [cursor=pointer]:
+            - /url: /en/monitor
+            - img [ref=e18] [cursor=pointer]
+            - generic [ref=e20] [cursor=pointer]: Monitor
+        - button "Sign in with Google" [ref=e23]:
+          - img
+          - generic [ref=e24]: Sign in with Google
+    - main [ref=e25]:
+      - generic [ref=e27]:
+        - generic [ref=e29]:
+          - generic [ref=e31]:
+            - generic [ref=e32]:
+              - img [ref=e33]
+              - text: RSS Sources
+            - button [ref=e37]:
+              - img
+          - generic [ref=e39]:
+            - button "Bloomberg Markets Bloomberg Markets Bloomberg markets and financial news markets" [ref=e40]:
+              - generic [ref=e41]:
+                - img "Bloomberg Markets" [ref=e43]
+                - generic [ref=e44]:
+                  - generic [ref=e45]:
+                    - heading "Bloomberg Markets" [level=3] [ref=e46]
+                    - generic [ref=e47]:
+                      - img
+                  - paragraph [ref=e48]: Bloomberg markets and financial news
+                  - generic [ref=e50]: markets
+            - button "Bloomberg Economics Bloomberg Economics Bloomberg economics and policy news economics" [ref=e51]:
+              - generic [ref=e52]:
+                - img "Bloomberg Economics" [ref=e54]
+                - generic [ref=e55]:
+                  - generic [ref=e56]:
+                    - heading "Bloomberg Economics" [level=3] [ref=e57]
+                    - generic [ref=e58]:
+                      - img
+                  - paragraph [ref=e59]: Bloomberg economics and policy news
+                  - generic [ref=e61]: economics
+            - button "Bloomberg Technology Bloomberg Technology Bloomberg technology and innovation news technology" [ref=e62]:
+              - generic [ref=e63]:
+                - img "Bloomberg Technology" [ref=e65]
+                - generic [ref=e66]:
+                  - generic [ref=e67]:
+                    - heading "Bloomberg Technology" [level=3] [ref=e68]
+                    - generic [ref=e69]:
+                      - img
+                  - paragraph [ref=e70]: Bloomberg technology and innovation news
+                  - generic [ref=e72]: technology
+            - button "Bloomberg Politics Bloomberg Politics Bloomberg politics and policy news politics" [ref=e73]:
+              - generic [ref=e74]:
+                - img "Bloomberg Politics" [ref=e76]
+                - generic [ref=e77]:
+                  - generic [ref=e78]:
+                    - heading "Bloomberg Politics" [level=3] [ref=e79]
+                    - generic [ref=e80]:
+                      - img
+                  - paragraph [ref=e81]: Bloomberg politics and policy news
+                  - generic [ref=e83]: politics
+            - button "CNBC Top News CNBC Top News CNBC top business and financial news business" [ref=e84]:
+              - generic [ref=e85]:
+                - img "CNBC Top News" [ref=e87]
+                - generic [ref=e88]:
+                  - generic [ref=e89]:
+                    - heading "CNBC Top News" [level=3] [ref=e90]
+                    - generic [ref=e91]:
+                      - img
+                  - paragraph [ref=e92]: CNBC top business and financial news
+                  - generic [ref=e94]: business
+            - button "CNBC World Markets CNBC World Markets CNBC international markets and analysis markets" [ref=e95]:
+              - generic [ref=e96]:
+                - img "CNBC World Markets" [ref=e98]
+                - generic [ref=e99]:
+                  - generic [ref=e100]:
+                    - heading "CNBC World Markets" [level=3] [ref=e101]
+                    - generic [ref=e102]:
+                      - img
+                  - paragraph [ref=e103]: CNBC international markets and analysis
+                  - generic [ref=e105]: markets
+            - button "CNBC US Markets CNBC US Markets CNBC US markets and earnings markets" [ref=e106]:
+              - generic [ref=e107]:
+                - img "CNBC US Markets" [ref=e109]
+                - generic [ref=e110]:
+                  - generic [ref=e111]:
+                    - heading "CNBC US Markets" [level=3] [ref=e112]
+                    - generic [ref=e113]:
+                      - img
+                  - paragraph [ref=e114]: CNBC US markets and earnings
+                  - generic [ref=e116]: markets
+            - button "Financial Times Home Financial Times main news feed finance" [ref=e117]:
+              - generic [ref=e118]:
+                - generic [ref=e119]:
+                  - img
+                - generic [ref=e120]:
+                  - generic [ref=e121]:
+                    - heading "Financial Times Home" [level=3] [ref=e122]
+                    - generic [ref=e123]:
+                      - img
+                  - paragraph [ref=e124]: Financial Times main news feed
+                  - generic [ref=e126]: finance
+            - button "Financial Times Markets Financial Times markets and trading news markets" [ref=e127]:
+              - generic [ref=e128]:
+                - generic [ref=e129]:
+                  - img
+                - generic [ref=e130]:
+                  - generic [ref=e131]:
+                    - heading "Financial Times Markets" [level=3] [ref=e132]
+                    - generic [ref=e133]:
+                      - img
+                  - paragraph [ref=e134]: Financial Times markets and trading news
+                  - generic [ref=e136]: markets
+            - button "Fox Business Economy Fox Business Economy Fox Business economic news and analysis economy" [ref=e137]:
+              - generic [ref=e138]:
+                - img "Fox Business Economy" [ref=e140]
+                - generic [ref=e141]:
+                  - generic [ref=e142]:
+                    - heading "Fox Business Economy" [level=3] [ref=e143]
+                    - generic [ref=e144]:
+                      - img
+                  - paragraph [ref=e145]: Fox Business economic news and analysis
+                  - generic [ref=e147]: economy
+            - button "Fox Business Markets Fox Business Markets Fox Business markets and trading news markets" [ref=e148]:
+              - generic [ref=e149]:
+                - img "Fox Business Markets" [ref=e151]
+                - generic [ref=e152]:
+                  - generic [ref=e153]:
+                    - heading "Fox Business Markets" [level=3] [ref=e154]
+                    - generic [ref=e155]:
+                      - img
+                  - paragraph [ref=e156]: Fox Business markets and trading news
+                  - generic [ref=e158]: markets
+            - button "Forbes Business Forbes Business Forbes business news and insights (100% success rate) business" [ref=e159]:
+              - generic [ref=e160]:
+                - img "Forbes Business" [ref=e162]
+                - generic [ref=e163]:
+                  - generic [ref=e164]:
+                    - heading "Forbes Business" [level=3] [ref=e165]
+                    - generic [ref=e166]:
+                      - img
+                  - paragraph [ref=e167]: Forbes business news and insights (100% success rate)
+                  - generic [ref=e169]: business
+        - generic [ref=e172]:
+          - img [ref=e173]
+          - heading "Select an RSS Source" [level=3] [ref=e177]
+          - paragraph [ref=e178]: Choose an RSS source from the sidebar to view its latest articles
+  - region "Notifications alt+T"
+  - alert [ref=e179]
+```
