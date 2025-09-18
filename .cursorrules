@@ -1,0 +1,66 @@
+# Cursor Rules for Naly Project
+
+## Commit Message Guidelines
+
+When writing commit messages for GitHub:
+
+1. **Title (First Line)**: 
+   - Use 10-15 words maximum
+   - Be specific and descriptive
+   - Use imperative mood (e.g., "Add", "Fix", "Update", "Remove")
+   - No period at the end
+
+2. **Body**:
+   - List the specific items that were changed
+   - Use bullet points for clarity
+   - Be concise but descriptive
+   - Focus on what was done, not why (unless the why is not obvious)
+
+### Examples:
+
+**Good:**
+```
+Add user authentication with Google OAuth integration
+
+- Implement Google OAuth provider configuration
+- Add user session management
+- Create protected route middleware
+- Update user schema with OAuth fields
+```
+
+**Good:**
+```
+Fix article generation timeout issues
+
+- Increase timeout from 30s to 60s
+- Add retry logic for failed requests
+- Improve error handling for API calls
+- Update loading states in UI
+```
+
+**Avoid:**
+```
+Fixed some bugs and added features
+```
+
+## Code Style
+
+- Follow TypeScript best practices
+- Use meaningful variable and function names
+- Add JSDoc comments for complex functions
+- Maintain consistent formatting with Prettier
+- Use proper error handling with try-catch blocks
+
+## Project Structure
+
+- Keep components in `/src/components/`
+- API routes in `/src/app/api/`
+- Database schemas in `/src/lib/schema/`
+- Types in `/src/types/`
+- Utilities in `/src/lib/`
+
+## Testing
+
+- Write tests for new features
+- Use descriptive test names
+- Follow the existing test patterns in `/__tests__/` and `/tests/`
