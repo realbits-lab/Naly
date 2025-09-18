@@ -14,7 +14,7 @@ export function Providers({ children }: ProvidersProps) {
 		<AuthSessionProvider>
 			<ThemeProvider defaultTheme="light" storageKey="naly-ui-theme">
 				{children}
-				<Toaster position="top-right" richColors />
+				<Toaster position="top-right" richColors closeButton />
 			</ThemeProvider>
 		</AuthSessionProvider>
 	);

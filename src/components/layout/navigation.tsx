@@ -35,10 +35,11 @@ import { locales, localeLabels, type Locale } from "@/i18n/config";
 import { toast } from "sonner";
 import { useScreenSize } from "@/hooks/use-screen-size";
 
+// Navigation items will be updated with locale prefix in the component
 const navigationItems = [
   {
     name: "News",
-    href: "/news",
+    href: "news", // Remove leading slash to be prefixed with locale
     icon: Newspaper,
   },
 ];
@@ -46,7 +47,7 @@ const navigationItems = [
 const adminNavigationItems = [
   {
     name: "Write",
-    href: "/write",
+    href: "write", // Remove leading slash to be prefixed with locale
     icon: PenTool,
   },
 ];
@@ -69,11 +70,16 @@ export function Navigation() {
 
   const currentLocale = getCurrentLocale();
 
-  // Check if user is manager or admin
-  const isManagerOrAdmin = session?.user && (
-    session.user.role === "manager" ||
-    session.user.role === "writer"
-  );
+  // Helper function to build localized path
+  const getLocalizedPath = (path: string) => {
+    if (currentLocale === 'en') {
+      return `/${path}`;
+    }
+    return `/${currentLocale}/${path}`;
+  };
+
+  // Check if user is manager
+  const isManager = session?.user && session.user.role === "manager";
 
   const switchLanguage = (newLocale: Locale) => {
     startTransition(() => {
@@ -122,14 +128,14 @@ export function Navigation() {
       <div className="max-w-7xl mx-auto px-4 flex h-16 items-center">
         {/* Logo */}
         <div className="mr-4 flex">
-          <Link href="/news" className="mr-6 flex items-center space-x-2">
+          <Link href={getLocalizedPath("news")} className="mr-6 flex items-center space-x-2">
             <BarChart3 className="h-6 w-6 text-primary" />
             <span className="hidden font-bold sm:inline-block">Naly</span>
           </Link>
         </div>
 
-        {/* Screen Size Display for Manager/Admin */}
-        {isManagerOrAdmin && screenSize.width > 0 && (
+        {/* Screen Size Display for Manager */}
+        {isManager && screenSize.width > 0 && (
           <div className="mr-4 hidden md:flex items-center space-x-2 text-xs text-muted-foreground border border-border rounded px-2 py-1">
             <Monitor className="h-3 w-3" />
             <span>
@@ -144,13 +150,14 @@ export function Navigation() {
             <div className="hidden md:flex md:space-x-6">
               {navigationItems.map((item) => {
                 const Icon = item.icon;
+                const localizedHref = getLocalizedPath(item.href);
                 return (
                   <Link
                     key={item.href}
-                    href={item.href}
+                    href={localizedHref}
                     className={cn(
                       "flex items-center space-x-2 text-sm font-medium transition-colors hover:text-primary",
-                      pathname === item.href
+                      pathname === localizedHref
                         ? "text-primary"
                         : "text-muted-foreground"
                     )}
@@ -163,13 +170,14 @@ export function Navigation() {
               {(session?.user?.role === "manager" || session?.user?.role === "writer") &&
                 adminNavigationItems.map((item) => {
                   const Icon = item.icon;
+                  const localizedHref = getLocalizedPath(item.href);
                   return (
                     <Link
                       key={item.href}
-                      href={item.href}
+                      href={localizedHref}
                       className={cn(
                         "flex items-center space-x-2 text-sm font-medium transition-colors hover:text-primary",
-                        pathname === item.href
+                        pathname === localizedHref
                           ? "text-primary"
                           : "text-muted-foreground"
                       )}
@@ -197,10 +205,11 @@ export function Navigation() {
               >
                 {navigationItems.map((item) => {
                   const Icon = item.icon;
+                  const localizedHref = getLocalizedPath(item.href);
                   return (
                     <DropdownMenuItem key={item.href} asChild>
                       <Link
-                        href={item.href}
+                        href={localizedHref}
                         className="flex items-center space-x-2"
                       >
                         <Icon className="h-4 w-4" />
@@ -211,64 +220,6 @@ export function Navigation() {
                 })}
               </DropdownMenuContent>
             </DropdownMenu>
-          </div>
-
-          {/* Authentication */}
-          <div className="flex items-center space-x-2">
-            {session?.user ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="relative">
-                    <User className="h-4 w-4" />
-                    <span className="sr-only">User menu</span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  align="end"
-                  className="w-56 bg-white border border-gray-200 shadow-lg"
-                >
-                  <DropdownMenuLabel>
-                    <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium">{session.user.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {session.user.email}
-                      </p>
-                      {session.user.role === "manager" && (
-                        <p className="text-xs text-blue-600 font-medium">
-                          MANAGER
-                        </p>
-                      )}
-                      {session.user.role === "writer" && (
-                        <p className="text-xs text-green-600 font-medium">
-                          WRITER
-                        </p>
-                      )}
-                      {session.user.role === "reader" && (
-                        <p className="text-xs text-gray-600 font-medium">
-                          READER
-                        </p>
-                      )}
-                    </div>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={() => signOut()}
-                    className="cursor-pointer"
-                  >
-                    <LogOut className="h-4 w-4 mr-2" />
-                    Sign out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <Button
-                onClick={() => signIn("google")}
-                variant="outline"
-                size="sm"
-              >
-                Sign in with Google
-              </Button>
-            )}
           </div>
 
           {/* Language Switcher */}
@@ -354,6 +305,64 @@ export function Navigation() {
                 })}
               </DropdownMenuContent>
             </DropdownMenu>
+          </div>
+
+          {/* Authentication - Profile Icon at the rightmost position */}
+          <div className="flex items-center space-x-2">
+            {session?.user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="relative">
+                    <User className="h-4 w-4" />
+                    <span className="sr-only">User menu</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  className="w-56 bg-white border border-gray-200 shadow-lg"
+                >
+                  <DropdownMenuLabel>
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium">{session.user.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {session.user.email}
+                      </p>
+                      {session.user.role === "manager" && (
+                        <p className="text-xs text-blue-600 font-medium">
+                          MANAGER
+                        </p>
+                      )}
+                      {session.user.role === "writer" && (
+                        <p className="text-xs text-green-600 font-medium">
+                          WRITER
+                        </p>
+                      )}
+                      {session.user.role === "reader" && (
+                        <p className="text-xs text-gray-600 font-medium">
+                          READER
+                        </p>
+                      )}
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => signOut()}
+                    className="cursor-pointer"
+                  >
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Sign out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Button
+                onClick={() => signIn("google")}
+                variant="outline"
+                size="sm"
+              >
+                Sign in with Google
+              </Button>
+            )}
           </div>
         </div>
       </div>
