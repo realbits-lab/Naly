@@ -334,25 +334,29 @@ export function RssSidebar({
 
 			</CardHeader>
 
-			<CardContent className="p-0 overflow-y-auto">
-				{loading ? (
-					<div className="p-4 space-y-4">
-						{[...Array(5)].map((_, i) => (
-							<div key={i} className="space-y-2">
-								<div className="h-4 bg-muted animate-pulse rounded" />
-								<div className="h-3 bg-muted animate-pulse rounded w-3/4" />
-							</div>
-						))}
-					</div>
-				) : (
-					<div className="space-y-1 p-2">
-						{sources.map((source) => (
-							<Button
-								key={source.id}
-								variant={selectedSourceId === source.id ? "secondary" : "ghost"}
-								onClick={() => handleSourceClick(source)}
-								className="w-full justify-start h-auto p-3 text-left"
-							>
+			<CardContent className="p-0">
+				<div className="h-[calc(100vh-8rem)] overflow-y-auto">
+					{loading ? (
+						<div className="p-4 space-y-4">
+							{[...Array(5)].map((_, i) => (
+								<div key={i} className="space-y-2">
+									<div className="h-4 bg-muted animate-pulse rounded" />
+									<div className="h-3 bg-muted animate-pulse rounded w-3/4" />
+								</div>
+							))}
+						</div>
+					) : (
+						<div className="space-y-1 p-2">
+							{sources.map((source) => (
+								<Button
+									key={source.id}
+									variant={selectedSourceId === source.id ? "default" : "ghost"}
+									onClick={() => handleSourceClick(source)}
+									className={cn(
+										"w-full justify-start h-auto p-3 text-left transition-colors duration-150 ease-linear",
+										selectedSourceId === source.id && "bg-primary text-primary-foreground shadow-sm"
+									)}
+								>
 								<div className="flex items-start gap-3 w-full">
 									<div className="flex-shrink-0 mt-0.5">
 										{source.logoUrl ? (
@@ -405,6 +409,7 @@ export function RssSidebar({
 						<p className="text-xs mt-1">No sources available</p>
 					</div>
 				)}
+			</div>
 			</CardContent>
 		</Card>
 	);

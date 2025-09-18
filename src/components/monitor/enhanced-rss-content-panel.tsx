@@ -19,11 +19,11 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { articleContentService, type EnhancedRSSContent, type ExtractedContent } from "@/lib/services/article-content-service";
+import { FetchArticleButton } from "@/components/fetch-article-button";
 import type { RssSource, RssArticle } from "./monitor-page-client";
 
 interface EnhancedRssContentPanelProps {
@@ -182,7 +182,7 @@ export function EnhancedRssContentPanel({
 							)}
 						</div>
 					</div>
-					<ScrollArea className="flex-1 p-4">
+					<div className="flex-1 p-4 overflow-y-auto">
 						{/* Enhanced Mobile Content */}
 						{enhancedContent && (
 							<div className="space-y-4">
@@ -268,26 +268,19 @@ export function EnhancedRssContentPanel({
 										className="flex-1"
 									>
 										<ExternalLink className="h-4 w-4 mr-2" />
-										Read Original
+										Original
 									</Button>
-									{viewMode === 'preview' && (
-										<Button
-											onClick={() => extractFullContent(enhancedContent.externalLink)}
-											disabled={isLoadingExtraction}
-											className="flex-1"
-										>
-											{isLoadingExtraction ? (
-												<Loader2 className="h-4 w-4 mr-2 animate-spin" />
-											) : (
-												<Download className="h-4 w-4 mr-2" />
-											)}
-											Extract Full Content
-										</Button>
-									)}
+									<FetchArticleButton
+										url={enhancedContent.externalLink}
+										title="Extract Content"
+										variant="default"
+										className="flex-1"
+										showDialog={false}
+									/>
 								</div>
 							</div>
 						)}
-					</ScrollArea>
+					</div>
 				</div>
 			);
 		}
@@ -303,7 +296,7 @@ export function EnhancedRssContentPanel({
 					<h1 className="text-xl font-bold">{source.name}</h1>
 					<p className="text-sm text-muted-foreground">{source.description}</p>
 				</div>
-				<ScrollArea className="flex-1">
+				<div className="flex-1 overflow-y-auto">
 					{loading ? (
 						<div className="p-4 space-y-4">
 							{[...Array(5)].map((_, i) => (
@@ -418,23 +411,15 @@ export function EnhancedRssContentPanel({
 															variant="outline"
 														>
 															<ExternalLink className="h-3 w-3 mr-2" />
-															Read Original
+															Original
 														</Button>
-														<Button
-															onClick={(e) => {
-																e.stopPropagation();
-																extractFullContent(article.link);
-															}}
+														<FetchArticleButton
+															url={article.link}
+															title="Extract Content"
+															variant="default"
 															size="sm"
-															disabled={isLoadingExtraction}
-														>
-															{isLoadingExtraction ? (
-																<Loader2 className="h-3 w-3 mr-2 animate-spin" />
-															) : (
-																<Download className="h-3 w-3 mr-2" />
-															)}
-															Extract Content
-														</Button>
+															showDialog={false}
+														/>
 													</div>
 												</div>
 											</CardContent>
@@ -444,7 +429,7 @@ export function EnhancedRssContentPanel({
 							})}
 						</div>
 					)}
-				</ScrollArea>
+				</div>
 			</div>
 		);
 	}
@@ -472,7 +457,7 @@ export function EnhancedRssContentPanel({
 						<p className="text-sm text-muted-foreground">{source.description}</p>
 					</CardHeader>
 					<CardContent className="p-0">
-						<ScrollArea className="h-[calc(100vh-12rem)]">
+						<div className="h-[calc(100vh-12rem)] overflow-y-auto">
 							{loading ? (
 								<div className="p-4 space-y-4">
 									{[...Array(8)].map((_, i) => (
@@ -491,8 +476,8 @@ export function EnhancedRssContentPanel({
 											<div
 												key={article.id}
 												className={cn(
-													"p-4 cursor-pointer hover:bg-muted/50 transition-colors",
-													selectedArticle?.id === article.id && "bg-muted"
+													"p-4 cursor-pointer hover:bg-muted/50 transition-colors duration-150 ease-linear",
+													selectedArticle?.id === article.id && "bg-primary/10 border-l-4 border-l-primary shadow-sm"
 												)}
 												onClick={() => onArticleSelect?.(article)}
 											>
@@ -549,7 +534,7 @@ export function EnhancedRssContentPanel({
 									<p className="text-xs mt-1">This RSS source may be empty or unavailable</p>
 								</div>
 							)}
-						</ScrollArea>
+						</div>
 					</CardContent>
 				</Card>
 			</div>
@@ -575,14 +560,13 @@ export function EnhancedRssContentPanel({
 										</div>
 									)}
 								</div>
-								<Button
-									onClick={() => openExternalLink(selectedArticle.link)}
+								<FetchArticleButton
+									url={selectedArticle.link}
+									title="Extract Content"
+									variant="default"
 									size="sm"
-									variant="outline"
-								>
-									<ExternalLink className="h-3 w-3 mr-2" />
-									Open Original
-								</Button>
+									showDialog={true}
+								/>
 							</div>
 						</CardHeader>
 						<CardContent className="p-0">
@@ -590,7 +574,7 @@ export function EnhancedRssContentPanel({
 								{/* Enhanced Article Preview Section */}
 								{enhancedContent && (
 									<div className="border-b bg-muted/20">
-										<ScrollArea className="max-h-64 p-4">
+										<div className="max-h-64 p-4 overflow-y-auto">
 											<div className="space-y-4">
 												{/* Enhanced Summary */}
 												<div>
@@ -677,13 +661,13 @@ export function EnhancedRssContentPanel({
 													)}
 												</div>
 											</div>
-										</ScrollArea>
+										</div>
 									</div>
 								)}
 
 								{/* Enhanced Content Section */}
 								<div className="h-full">
-									<ScrollArea className="h-full p-4">
+									<div className="h-full p-4 overflow-y-auto">
 										{isLoadingExtraction ? (
 											<div className="flex items-center justify-center h-64">
 												<div className="flex items-center gap-2">
@@ -760,7 +744,7 @@ export function EnhancedRssContentPanel({
 												</div>
 											</div>
 										)}
-									</ScrollArea>
+									</div>
 								</div>
 							</div>
 						</CardContent>

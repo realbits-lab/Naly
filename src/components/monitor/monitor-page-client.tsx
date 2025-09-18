@@ -136,7 +136,7 @@ export function MonitorPageClient() {
 	return (
 		<div className="w-full h-[calc(100vh-4rem)] flex relative">
 				{/* Sidebar - Fixed width to prevent shifting */}
-				<div className={`flex-shrink-0 transition-all duration-300 ${isCollapsed ? 'w-16' : 'w-80'}`}>
+				<div className={`flex-shrink-0 transition-all duration-200 ease-linear ${isCollapsed ? 'w-16' : 'w-80'}`}>
 					<RssSidebar
 						selectedSourceId={selectedSource?.id || null}
 						onSourceSelect={handleSourceSelect}
