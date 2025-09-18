@@ -270,13 +270,6 @@ export function EnhancedRssContentPanel({
 										<ExternalLink className="h-4 w-4 mr-2" />
 										Original
 									</Button>
-									<FetchArticleButton
-										url={enhancedContent.externalLink}
-										title="Extract Content"
-										variant="default"
-										className="flex-1"
-										showDialog={false}
-									/>
 								</div>
 							</div>
 						)}
@@ -413,13 +406,6 @@ export function EnhancedRssContentPanel({
 															<ExternalLink className="h-3 w-3 mr-2" />
 															Original
 														</Button>
-														<FetchArticleButton
-															url={article.link}
-															title="Extract Content"
-															variant="default"
-															size="sm"
-															showDialog={false}
-														/>
 													</div>
 												</div>
 											</CardContent>
