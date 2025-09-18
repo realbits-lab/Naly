@@ -202,7 +202,7 @@ export function RssContentPanel({
 													<div className="flex flex-wrap gap-1 mb-4">
 														{article.categories.map((category, index) => (
 															<Badge key={index} variant="secondary" className="text-xs">
-																{category}
+																{typeof category === 'string' ? category : String(category)}
 															</Badge>
 														))}
 													</div>
@@ -298,7 +298,7 @@ export function RssContentPanel({
 												<div className="flex flex-wrap gap-1 mt-2">
 													{article.categories.slice(0, 3).map((category, index) => (
 														<Badge key={index} variant="secondary" className="text-xs">
-															{category}
+															{typeof category === 'string' ? category : String(category)}
 														</Badge>
 													))}
 												</div>
@@ -370,7 +370,7 @@ export function RssContentPanel({
 										<div className="flex flex-wrap gap-2">
 											{selectedArticle.categories.map((category, index) => (
 												<Badge key={index} variant="secondary">
-													{category}
+													{typeof category === 'string' ? category : String(category)}
 												</Badge>
 											))}
 										</div>
