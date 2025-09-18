@@ -6,7 +6,6 @@ import {
   ChevronDown,
   Globe,
   LogOut,
-  Menu,
   Monitor,
   Moon,
   Newspaper,
@@ -144,6 +143,50 @@ export function Navigation() {
         {/* Navigation Menu */}
         <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
           <div className="w-full flex-1 md:w-auto md:flex-none">
+            {/* Mobile Icon-Only Navigation */}
+            <div className="flex space-x-4 md:hidden">
+              {navigationItems.map((item) => {
+                const Icon = item.icon;
+                const localizedHref = getLocalizedPath(item.href);
+                return (
+                  <Link
+                    key={item.href}
+                    href={localizedHref}
+                    className={cn(
+                      "flex items-center justify-center w-8 h-8 rounded-md transition-colors hover:bg-muted",
+                      pathname === localizedHref
+                        ? "text-primary bg-primary/10"
+                        : "text-muted-foreground"
+                    )}
+                    title={item.name}
+                  >
+                    <Icon className="h-4 w-4" />
+                  </Link>
+                );
+              })}
+              {(session?.user?.role === "manager" || session?.user?.role === "writer") &&
+                adminNavigationItems.map((item) => {
+                  const Icon = item.icon;
+                  const localizedHref = getLocalizedPath(item.href);
+                  return (
+                    <Link
+                      key={item.href}
+                      href={localizedHref}
+                      className={cn(
+                        "flex items-center justify-center w-8 h-8 rounded-md transition-colors hover:bg-muted",
+                        pathname === localizedHref
+                          ? "text-primary bg-primary/10"
+                          : "text-muted-foreground"
+                      )}
+                      title={item.name}
+                    >
+                      <Icon className="h-4 w-4" />
+                    </Link>
+                  );
+                })}
+            </div>
+
+            {/* Desktop Navigation with Text */}
             <div className="hidden md:flex md:space-x-6">
               {navigationItems.map((item) => {
                 const Icon = item.icon;
@@ -187,53 +230,6 @@ export function Navigation() {
             </div>
           </div>
 
-          {/* Mobile Menu */}
-          <div className="flex md:hidden">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <Menu className="h-5 w-5" />
-                  <span className="sr-only">Open menu</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="end"
-                className="w-48 bg-white border border-gray-200 shadow-lg"
-              >
-                {navigationItems.map((item) => {
-                  const Icon = item.icon;
-                  const localizedHref = getLocalizedPath(item.href);
-                  return (
-                    <DropdownMenuItem key={item.href} asChild>
-                      <Link
-                        href={localizedHref}
-                        className="flex items-center space-x-2"
-                      >
-                        <Icon className="h-4 w-4" />
-                        <span>{item.name}</span>
-                      </Link>
-                    </DropdownMenuItem>
-                  );
-                })}
-                {(session?.user?.role === "manager" || session?.user?.role === "writer") &&
-                  adminNavigationItems.map((item) => {
-                    const Icon = item.icon;
-                    const localizedHref = getLocalizedPath(item.href);
-                    return (
-                      <DropdownMenuItem key={item.href} asChild>
-                        <Link
-                          href={localizedHref}
-                          className="flex items-center space-x-2"
-                        >
-                          <Icon className="h-4 w-4" />
-                          <span>{item.name}</span>
-                        </Link>
-                      </DropdownMenuItem>
-                    );
-                  })}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
 
           {/* Language Switcher */}
           <div className="flex items-center space-x-2">
@@ -246,8 +242,8 @@ export function Navigation() {
                   disabled={isPending}
                 >
                   <Globe className="h-4 w-4" />
-                  <span>Language</span>
-                  <ChevronDown className="h-3 w-3" />
+                  <span className="hidden md:inline">Language</span>
+                  <ChevronDown className="h-3 w-3 hidden md:inline" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent
@@ -287,9 +283,9 @@ export function Navigation() {
           <div className="flex items-center space-x-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
+                <Button variant="ghost" size="sm" className="flex items-center space-x-2">
                   <Settings className="h-4 w-4" />
-                  <span className="sr-only">Settings</span>
+                  <span className="hidden md:inline sr-only md:not-sr-only">Settings</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent
@@ -372,8 +368,10 @@ export function Navigation() {
                 onClick={() => signIn("google")}
                 variant="outline"
                 size="sm"
+                className="flex items-center space-x-2"
               >
-                Sign in with Google
+                <User className="h-4 w-4" />
+                <span className="hidden md:inline">Sign in with Google</span>
               </Button>
             )}
           </div>

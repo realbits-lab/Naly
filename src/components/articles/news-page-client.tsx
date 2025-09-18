@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { ArticleContentPanel } from "@/components/articles/article-content-panel";
 import { NewsSidebar } from "@/components/articles/news-sidebar";
@@ -26,7 +26,21 @@ export function NewsPageClient() {
 	const screenSize = useScreenSize();
 
 	// Check if we're on mobile (below md breakpoint - 900px)
-	const isMobile = screenSize.width > 0 && screenSize.width < 900;
+	// Use window.innerWidth for initial check to handle hydration
+	const [isMobile, setIsMobile] = useState(false);
+
+	useEffect(() => {
+		const checkMobile = () => {
+			setIsMobile(window.innerWidth < 900);
+		};
+
+		// Initial check
+		checkMobile();
+
+		// Update on resize
+		window.addEventListener('resize', checkMobile);
+		return () => window.removeEventListener('resize', checkMobile);
+	}, []);
 
 	// Extract current locale from pathname
 	const getCurrentLocale = () => {

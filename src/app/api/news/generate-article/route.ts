@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { ArticleGenerator } from "@/lib/article-generator";
+import { aiArticleGenerator } from "@/lib/ai-article-generator";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { NewsService } from "@/lib/news-service";
@@ -31,6 +31,18 @@ const selectedArticlesSchema = z
 		}),
 	)
 	.optional();
+
+// Schema for AI generation options
+const aiOptionsSchema = z
+	.object({
+		audienceLevel: z.enum(["retail", "institutional", "professional"]).optional().default("professional"),
+		analysisDepth: z.enum(["standard", "comprehensive", "executive_brief"]).optional().default("standard"),
+		focusArea: z.enum(["market_impact", "investment_strategy", "risk_analysis"]).optional().default("market_impact"),
+		generateVariations: z.boolean().optional().default(false),
+		variationCount: z.number().min(1).max(5).optional().default(3),
+	})
+	.optional()
+	.default({});
 
 export async function POST(request: NextRequest) {
 	try {
@@ -66,9 +78,9 @@ export async function POST(request: NextRequest) {
 		const selectedArticles = selectedArticlesSchema.parse(
 			body.selectedArticles,
 		);
+		const aiOptions = aiOptionsSchema.parse(body.aiOptions);
 
 		const newsService = new NewsService();
-		const articleGenerator = new ArticleGenerator();
 
 		let newsResult;
 
@@ -131,11 +143,39 @@ export async function POST(request: NextRequest) {
 		const selectedArticle = newsResult.articles[0];
 		const relatedInfo = newsResult.relatedInfo;
 
-		// Generate the comprehensive article
-		const generatedArticle = await articleGenerator.generateArticle(
-			selectedArticle,
-			relatedInfo,
-		);
+		// Generate AI-powered comprehensive article
+		let generatedArticles;
+
+		if (aiOptions.generateVariations) {
+			console.log(`Generating ${aiOptions.variationCount} article variations...`);
+			generatedArticles = await aiArticleGenerator.generateArticleVariations(
+				selectedArticle,
+				relatedInfo,
+				aiOptions.variationCount
+			);
+		} else {
+			console.log("Generating single AI-powered article...");
+			const singleArticle = await aiArticleGenerator.generateArticle(
+				selectedArticle,
+				relatedInfo,
+				{
+					audienceLevel: aiOptions.audienceLevel,
+					analysisDepth: aiOptions.analysisDepth,
+					focusArea: aiOptions.focusArea,
+				}
+			);
+			generatedArticles = [singleArticle];
+		}
+
+		// Use the first (or best) generated article
+		const primaryGeneratedArticle = generatedArticles[0];
+
+		// Validate article quality
+		const qualityCheck = aiArticleGenerator.validateArticleQuality(primaryGeneratedArticle);
+		console.log(`Article quality score: ${qualityCheck.score}/100`);
+		if (qualityCheck.issues.length > 0) {
+			console.warn("Article quality issues:", qualityCheck.issues);
+		}
 
 		// Verify we still have a valid user ID before saving
 		if (!session.user?.id) {
@@ -151,17 +191,20 @@ export async function POST(request: NextRequest) {
 
 		console.log("About to save article with user ID:", session.user.id);
 
+		// Convert AI-generated article structure to database format
+		const fullContent = `${primaryGeneratedArticle.content.introduction}\n\n${primaryGeneratedArticle.content.analysis}\n\n${primaryGeneratedArticle.content.market_context}\n\n${primaryGeneratedArticle.content.stakeholder_impact}\n\n${primaryGeneratedArticle.content.risk_assessment}\n\n${primaryGeneratedArticle.content.conclusion}`;
+
 		// Save the generated article to database
 		const [savedArticle] = await db
 			.insert(generatedArticles)
 			.values({
 				userId: session.user.id,
-				title: generatedArticle.title,
-				content: generatedArticle.content,
-				summary: generatedArticle.summary,
-				keyPoints: generatedArticle.keyPoints,
-				marketAnalysis: generatedArticle.marketAnalysis,
-				investmentImplications: generatedArticle.investmentImplications,
+				title: primaryGeneratedArticle.title,
+				content: fullContent,
+				summary: primaryGeneratedArticle.executive_summary,
+				keyPoints: primaryGeneratedArticle.key_insights,
+				marketAnalysis: `${primaryGeneratedArticle.market_analysis.immediate_impact}\n\n${primaryGeneratedArticle.market_analysis.medium_term_outlook}\n\n${primaryGeneratedArticle.market_analysis.long_term_implications}`,
+				investmentImplications: primaryGeneratedArticle.investment_recommendations.portfolio_considerations,
 
 				// Source information - use primary article
 				sourceTitle: selectedArticle.title,
@@ -177,15 +220,15 @@ export async function POST(request: NextRequest) {
 				marketImpact: relatedInfo.marketImpact,
 
 				// Article metadata
-				wordCount: generatedArticle.metadata.wordCount,
-				readingTime: generatedArticle.metadata.readingTime,
-				aiModel: process.env.OPENAI_API_KEY ? "gpt-4" : "mock",
+				wordCount: Math.round(fullContent.length / 5), // Approximate word count
+				readingTime: primaryGeneratedArticle.metadata.reading_time_minutes,
+				aiModel: "gpt-4o-ai-gateway", // Using AI Gateway with GPT-4O
 				generationMethod:
 					selectedArticles && selectedArticles.length > 0
-						? "selected-articles"
+						? "ai-selected-articles"
 						: customNews && customNews.title
-							? "custom"
-							: "auto",
+							? "ai-custom"
+							: "ai-auto",
 
 				// Multi-language support
 				sourceLanguage: "en",
@@ -193,7 +236,7 @@ export async function POST(request: NextRequest) {
 			})
 			.returning();
 
-		console.log(`Generated and saved article: ${generatedArticle.title}`);
+		console.log(`Generated and saved article: ${primaryGeneratedArticle.title}`);
 		console.log(`Article ID: ${savedArticle.id}`);
 
 		// Generate Korean translation
@@ -202,11 +245,11 @@ export async function POST(request: NextRequest) {
 			console.log("Generating Korean translation...");
 			koreanTranslation = await translationService.translateArticle(
 				{
-					title: generatedArticle.title,
-					content: generatedArticle.content,
-					summary: generatedArticle.summary,
-					marketAnalysis: generatedArticle.marketAnalysis,
-					investmentImplications: generatedArticle.investmentImplications,
+					title: primaryGeneratedArticle.title,
+					content: fullContent,
+					summary: primaryGeneratedArticle.executive_summary,
+					marketAnalysis: `${primaryGeneratedArticle.market_analysis.immediate_impact}\n\n${primaryGeneratedArticle.market_analysis.medium_term_outlook}\n\n${primaryGeneratedArticle.market_analysis.long_term_implications}`,
+					investmentImplications: primaryGeneratedArticle.investment_recommendations.portfolio_considerations,
 				},
 				"en",
 				"ko"
@@ -243,11 +286,39 @@ export async function POST(request: NextRequest) {
 			sourceNews: selectedArticle,
 			relatedInformation: relatedInfo,
 			generatedArticle: {
-				...generatedArticle,
 				id: savedArticle.id,
+				title: primaryGeneratedArticle.title,
+				content: fullContent,
+				summary: primaryGeneratedArticle.executive_summary,
+				keyInsights: primaryGeneratedArticle.key_insights,
+				marketAnalysis: {
+					immediate: primaryGeneratedArticle.market_analysis.immediate_impact,
+					mediumTerm: primaryGeneratedArticle.market_analysis.medium_term_outlook,
+					longTerm: primaryGeneratedArticle.market_analysis.long_term_implications,
+					affectedSectors: primaryGeneratedArticle.market_analysis.affected_sectors,
+					sentiment: primaryGeneratedArticle.market_analysis.sentiment_analysis,
+				},
+				investmentRecommendations: primaryGeneratedArticle.investment_recommendations,
+				confidenceMetrics: primaryGeneratedArticle.confidence_metrics,
+				metadata: {
+					...primaryGeneratedArticle.metadata,
+					wordCount: Math.round(fullContent.length / 5),
+				},
 				savedAt: savedArticle.createdAt,
 				sourceLanguage: "en",
 				hasTranslations: koreanTranslation ? true : false,
+			},
+			aiGeneration: {
+				options: aiOptions,
+				qualityScore: qualityCheck.score,
+				qualityIssues: qualityCheck.issues,
+				variationsGenerated: generatedArticles.length,
+				variations: aiOptions.generateVariations ? generatedArticles.map((article, index) => ({
+					index,
+					title: article.title,
+					summary: article.executive_summary,
+					confidenceScore: (article.confidence_metrics.data_quality + article.confidence_metrics.prediction_confidence + article.confidence_metrics.analysis_depth) / 3,
+				})) : null,
 			},
 			translations: koreanTranslation ? {
 				ko: {
@@ -262,8 +333,9 @@ export async function POST(request: NextRequest) {
 				}
 			} : null,
 			metadata: {
-				processingTime: "Real-time generation",
-				aiModel: process.env.OPENAI_API_KEY ? "GPT-4" : "Mock Generation",
+				processingTime: "AI-powered real-time generation",
+				aiModel: "GPT-4O via AI Gateway",
+				aiProvider: "Vercel AI SDK",
 				sources: newsResult.articles.length,
 				generatedAt: new Date().toISOString(),
 				articleId: savedArticle.id,
