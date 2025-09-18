@@ -33,6 +33,7 @@ interface NewsSidebarProps {
 	onArticleSelect: (article: Article) => void;
 	isCollapsed: boolean;
 	onToggleCollapse: () => void;
+	autoSelectFirst?: boolean;
 }
 
 export function NewsSidebar({
@@ -40,6 +41,7 @@ export function NewsSidebar({
 	onArticleSelect,
 	isCollapsed,
 	onToggleCollapse,
+	autoSelectFirst = false,
 }: NewsSidebarProps) {
 	const [articles, setArticles] = useState<Article[]>([]);
 	const [loading, setLoading] = useState(true);
@@ -54,8 +56,8 @@ export function NewsSidebar({
 				const data = await response.json();
 				setArticles(Array.isArray(data.articles) ? data.articles : []);
 
-				// Auto-select first article if none selected
-				if (!selectedArticleId && data.articles && data.articles.length > 0) {
+				// Auto-select first article if enabled and none selected
+				if (autoSelectFirst && !selectedArticleId && data.articles && data.articles.length > 0) {
 					onArticleSelect(data.articles[0]);
 				}
 			}
@@ -65,7 +67,7 @@ export function NewsSidebar({
 		} finally {
 			setLoading(false);
 		}
-	}, [selectedArticleId, onArticleSelect]);
+	}, [autoSelectFirst, selectedArticleId, onArticleSelect]);
 
 	useEffect(() => {
 		fetchArticles();

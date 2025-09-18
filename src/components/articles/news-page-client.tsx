@@ -60,6 +60,7 @@ export function NewsPageClient() {
 						onArticleSelect={handleArticleSelect}
 						isCollapsed={false} // Always expanded on mobile
 						onToggleCollapse={() => {}} // No collapse functionality on mobile
+						autoSelectFirst={false} // Don't auto-select on mobile
 					/>
 				</div>
 			</div>
@@ -76,6 +77,7 @@ export function NewsPageClient() {
 					onArticleSelect={handleArticleSelect}
 					isCollapsed={isCollapsed}
 					onToggleCollapse={handleToggleCollapse}
+					autoSelectFirst={true} // Auto-select first article on desktop
 				/>
 			</div>
 

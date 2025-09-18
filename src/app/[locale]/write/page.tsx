@@ -10,7 +10,7 @@ export default async function WritePage() {
 		redirect("/api/auth/signin");
 	}
 
-	if (session.user.role !== "admin") {
+	if (session.user.role !== "admin" && session.user.role !== "manager" && session.user.role !== "writer") {
 		redirect("/news");
 	}
 
@@ -20,7 +20,7 @@ export default async function WritePage() {
 				<Shield className="h-6 w-6 text-primary" />
 				<h1 className="text-2xl font-bold">Article Writing Studio</h1>
 				<span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-					ADMIN
+					{session.user.role?.toUpperCase()}
 				</span>
 			</div>
 
