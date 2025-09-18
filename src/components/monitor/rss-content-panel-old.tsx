@@ -41,6 +41,9 @@ export function RssContentPanel({
 	isMobile = false,
 }: RssContentPanelProps) {
 	const [expandedArticleId, setExpandedArticleId] = useState<string | null>(null);
+	const [fullArticleContent, setFullArticleContent] = useState<string | null>(null);
+	const [isLoadingContent, setIsLoadingContent] = useState(false);
+	const [contentError, setContentError] = useState<string | null>(null);
 	const [rssContent, setRssContent] = useState<string | null>(null);
 	const [isLoadingRss, setIsLoadingRss] = useState(false);
 	const [rssError, setRssError] = useState<string | null>(null);
@@ -76,14 +79,37 @@ export function RssContentPanel({
 		window.open(url, "_blank", "noopener,noreferrer");
 	};
 
+	const fetchFullArticleContent = async (articleUrl: string) => {
+		setIsLoadingContent(true);
+		setContentError(null);
+		setFullArticleContent(null);
+
+		try {
+			const response = await fetch(`/api/monitor/article?url=${encodeURIComponent(articleUrl)}`);
+
+			if (!response.ok) {
+				const errorData = await response.json();
+				throw new Error(errorData.error || `HTTP ${response.status}`);
+			}
+
+			const articleData = await response.json();
+			setFullArticleContent(articleData.content);
+		} catch (error) {
+			console.error('Error fetching full article content:', error);
+			setContentError(error instanceof Error ? error.message : 'Failed to load article content');
+		} finally {
+			setIsLoadingContent(false);
+		}
+	};
+
 	const fetchRssContent = async (articleUrl: string) => {
 		setIsLoadingRss(true);
 		setRssError(null);
 		setRssContent(null);
 
 		try {
-			// Use CORS proxy for client-side RSS parsing (reliable 2025 option)
-			const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(articleUrl)}`;
+			// Use CORS proxy for client-side RSS parsing
+			const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(articleUrl)}`;
 			const parser = new Parser();
 
 			// Try to parse the URL as RSS content directly
@@ -103,40 +129,8 @@ export function RssContentPanel({
 					throw new Error('Article content not found in RSS feed');
 				}
 			} else {
-				// It's probably the article page itself, extract readable content
-				// Simple content extraction - look for common article containers
-				const parser = new DOMParser();
-				const doc = parser.parseFromString(rssText, 'text/html');
-
-				// Try to find article content in common containers
-				const contentSelectors = [
-					'article',
-					'[role="main"]',
-					'.article-content',
-					'.post-content',
-					'.entry-content',
-					'.content',
-					'main'
-				];
-
-				let content = '';
-				for (const selector of contentSelectors) {
-					const element = doc.querySelector(selector);
-					if (element) {
-						// Remove scripts, styles, and other unwanted elements
-						const scripts = element.querySelectorAll('script, style, iframe, nav, header, footer, aside');
-						scripts.forEach(el => el.remove());
-
-						content = element.innerHTML;
-						break;
-					}
-				}
-
-				if (content) {
-					setRssContent(content);
-				} else {
-					throw new Error('Could not extract article content');
-				}
+				// It's probably the article page itself, try to extract content
+				setRssContent(rssText);
 			}
 		} catch (error) {
 			console.error('Error fetching RSS content:', error);
@@ -314,7 +308,7 @@ export function RssContentPanel({
 		);
 	}
 
-	// Desktop layout - show articles list and combined content with RSS parser
+	// Desktop layout - show articles list and combined content with iframe
 	return (
 		<div className="h-full flex">
 			{/* Articles List */}
@@ -405,7 +399,7 @@ export function RssContentPanel({
 				</Card>
 			</div>
 
-			{/* Combined Article Content with RSS Parser */}
+			{/* Combined Article Content with Iframe */}
 			<div className="w-2/3">
 				{selectedArticle ? (
 					<Card className="h-full border-none rounded-none">
@@ -470,53 +464,22 @@ export function RssContentPanel({
 									</div>
 								)}
 
-								{/* RSS Content Section */}
+								{/* Iframe Content Section */}
 								<div className="h-full">
-									<ScrollArea className="h-full p-4">
-										{isLoadingRss ? (
-											<div className="flex items-center justify-center h-64">
-												<div className="flex items-center gap-2">
-													<Loader2 className="h-4 w-4 animate-spin" />
-													<span className="text-sm text-muted-foreground">Loading article content...</span>
-												</div>
-											</div>
-										) : rssError ? (
-											<div className="flex flex-col items-center justify-center h-64 text-center">
-												<div className="p-4 border border-destructive/20 bg-destructive/5 rounded-lg max-w-md">
-													<h4 className="font-medium text-destructive mb-2">Failed to Load Content</h4>
-													<p className="text-sm text-muted-foreground mb-4">{rssError}</p>
-													<Button
-														variant="outline"
-														size="sm"
-														onClick={() => openExternalLink(selectedArticle.link)}
-													>
-														<ExternalLink className="h-3 w-3 mr-2" />
-														View Original Article
-													</Button>
-												</div>
-											</div>
-										) : rssContent ? (
-											<div className="prose prose-sm max-w-none">
-												<div dangerouslySetInnerHTML={{ __html: rssContent }} />
-											</div>
-										) : (
-											<div className="flex items-center justify-center h-64">
-												<div className="text-center text-muted-foreground">
-													<Rss className="h-12 w-12 mx-auto mb-4 opacity-50" />
-													<p className="text-sm">No content available</p>
-													<Button
-														variant="outline"
-														size="sm"
-														className="mt-4"
-														onClick={() => openExternalLink(selectedArticle.link)}
-													>
-														<ExternalLink className="h-3 w-3 mr-2" />
-														View Original Article
-													</Button>
-												</div>
-											</div>
-										)}
-									</ScrollArea>
+									<iframe
+										src={selectedArticle.link}
+										className="w-full h-full border-0"
+										title={selectedArticle.title}
+										sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+										onLoad={(e) => {
+											// Optional: Handle iframe load events
+											console.log('Iframe loaded:', selectedArticle.link);
+										}}
+										onError={(e) => {
+											// Optional: Handle iframe errors
+											console.error('Iframe failed to load:', selectedArticle.link);
+										}}
+									/>
 								</div>
 							</div>
 						</CardContent>
@@ -527,7 +490,7 @@ export function RssContentPanel({
 							<Rss className="h-16 w-16 mx-auto mb-4 opacity-50" />
 							<h3 className="text-lg font-medium mb-2">Select an Article</h3>
 							<p className="text-sm">
-								Choose an article from the list to view its content
+								Choose an article from the list to view its content in iframe
 							</p>
 						</div>
 					</div>
