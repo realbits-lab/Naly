@@ -27,24 +27,112 @@ export async function GET(request: NextRequest) {
 
 		console.log(`Fetching article content from: ${articleUrl}`);
 
-		// Fetch the article HTML
-		const response = await fetch(articleUrl, {
-			headers: {
-				'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+		// Different headers for different websites
+		const getHeadersForUrl = (url: string) => {
+			const domain = new URL(url).hostname;
+
+			// Base headers that work for most sites
+			const baseHeaders = {
 				'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
 				'Accept-Language': 'en-US,en;q=0.5',
 				'Accept-Encoding': 'gzip, deflate',
 				'DNT': '1',
 				'Connection': 'keep-alive',
 				'Upgrade-Insecure-Requests': '1',
-			},
-			redirect: 'follow',
-			// Add timeout to prevent hanging requests
-			signal: AbortSignal.timeout(30000) // 30 seconds timeout
-		});
+				'Cache-Control': 'no-cache',
+			};
 
-		if (!response.ok) {
-			throw new Error(`HTTP error! status: ${response.status}`);
+			// Site-specific headers
+			if (domain.includes('yahoo.com')) {
+				return {
+					...baseHeaders,
+					'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+					'Referer': 'https://finance.yahoo.com/',
+				};
+			} else if (domain.includes('cnbc.com')) {
+				return {
+					...baseHeaders,
+					'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Safari/605.1.15',
+					'Referer': 'https://www.cnbc.com/',
+				};
+			} else if (domain.includes('reuters.com')) {
+				return {
+					...baseHeaders,
+					'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+					'Referer': 'https://www.reuters.com/',
+				};
+			} else if (domain.includes('marketwatch.com')) {
+				return {
+					...baseHeaders,
+					'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/120.0',
+					'Referer': 'https://www.marketwatch.com/',
+				};
+			} else {
+				// Default for Bloomberg and others
+				return {
+					...baseHeaders,
+					'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+				};
+			}
+		};
+
+		// Fetch the article HTML with retry logic
+		let response;
+		let lastError;
+
+		// Try multiple times with different strategies
+		const fetchStrategies = [
+			// Strategy 1: Normal fetch with site-specific headers
+			() => fetch(articleUrl, {
+				headers: getHeadersForUrl(articleUrl),
+				redirect: 'follow',
+				signal: AbortSignal.timeout(30000)
+			}),
+
+			// Strategy 2: Add random delay and different user agent
+			async () => {
+				await new Promise(resolve => setTimeout(resolve, Math.random() * 2000));
+				const headers = getHeadersForUrl(articleUrl);
+				headers['User-Agent'] = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0';
+				return fetch(articleUrl, {
+					headers,
+					redirect: 'follow',
+					signal: AbortSignal.timeout(30000)
+				});
+			},
+
+			// Strategy 3: Try with minimal headers
+			() => fetch(articleUrl, {
+				headers: {
+					'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+					'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+				},
+				redirect: 'follow',
+				signal: AbortSignal.timeout(30000)
+			})
+		];
+
+		for (let i = 0; i < fetchStrategies.length; i++) {
+			try {
+				console.log(`Trying fetch strategy ${i + 1} for ${articleUrl}`);
+				response = await fetchStrategies[i]();
+
+				if (response.ok) {
+					console.log(`Strategy ${i + 1} succeeded with status ${response.status}`);
+					break;
+				} else {
+					console.log(`Strategy ${i + 1} failed with status ${response.status}`);
+					lastError = new Error(`HTTP error! status: ${response.status}`);
+				}
+			} catch (error) {
+				console.log(`Strategy ${i + 1} threw error:`, error);
+				lastError = error;
+				continue;
+			}
+		}
+
+		if (!response || !response.ok) {
+			throw lastError || new Error('All fetch strategies failed');
 		}
 
 		const html = await response.text();
@@ -62,18 +150,83 @@ export async function GET(request: NextRequest) {
 
 		const document = dom.window.document;
 
-		// Use Readability to extract the main content
-		const reader = new Readability(document, {
-			// Keep images in the extracted content
-			keepClasses: true,
-			// Don't extract JSON-LD metadata to focus on article content
-			disableJSONLD: false,
-		});
+		// Use Readability to extract the main content with fallback strategies
+		let article = null;
 
-		const article = reader.parse();
+		// Try different Readability configurations
+		const configs = [
+			{ keepClasses: true, disableJSONLD: false },
+			{ keepClasses: false, disableJSONLD: true },
+			{ keepClasses: false, disableJSONLD: false, charThreshold: 500 },
+			{ keepClasses: true, disableJSONLD: true, charThreshold: 0 }
+		];
 
-		if (!article) {
-			throw new Error('Failed to extract article content using Readability');
+		for (const config of configs) {
+			try {
+				const reader = new Readability(document, config);
+				article = reader.parse();
+				if (article && article.content && article.content.trim().length > 100) {
+					console.log(`Successfully extracted content with config:`, config);
+					break;
+				}
+			} catch (error) {
+				console.log(`Failed with config ${JSON.stringify(config)}:`, error);
+				continue;
+			}
+		}
+
+		// If Readability fails completely, try fallback extraction
+		if (!article || !article.content || article.content.trim().length < 100) {
+			console.log('Readability failed, trying fallback extraction...');
+
+			// Try to extract content using common article selectors
+			const fallbackSelectors = [
+				'article',
+				'.article-content',
+				'.entry-content',
+				'.post-content',
+				'[data-module="ArticleBody"]',
+				'.story-body',
+				'.article-text',
+				'main',
+				'.content'
+			];
+
+			let fallbackContent = '';
+			let fallbackTitle = document.querySelector('h1')?.textContent ||
+							   document.querySelector('title')?.textContent ||
+							   'Untitled Article';
+
+			for (const selector of fallbackSelectors) {
+				const element = document.querySelector(selector);
+				if (element) {
+					// Get text content and basic formatting
+					const textContent = element.textContent?.trim() || '';
+					if (textContent.length > 200) {
+						fallbackContent = `<div>${textContent}</div>`;
+						console.log(`Found content using selector: ${selector}`);
+						break;
+					}
+				}
+			}
+
+			if (fallbackContent) {
+				article = {
+					title: fallbackTitle,
+					content: fallbackContent,
+					textContent: fallbackContent.replace(/<[^>]*>/g, ''),
+					length: fallbackContent.length,
+					byline: null,
+					publishedTime: null,
+					siteName: new URL(articleUrl).hostname,
+					lang: null,
+					dir: null
+				};
+			}
+		}
+
+		if (!article || !article.content) {
+			throw new Error('Failed to extract article content using all available methods');
 		}
 
 		// Sanitize the content using DOMPurify in Node.js environment

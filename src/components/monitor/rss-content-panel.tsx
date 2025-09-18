@@ -469,7 +469,10 @@ export function RssContentPanel({
 												<ExternalLink className="h-8 w-8 mx-auto mb-2" />
 												<p className="text-sm font-medium">Failed to load content</p>
 												<p className="text-xs text-muted-foreground mt-1">
-													{contentError}
+													{contentError?.includes('Network error') || contentError?.includes('HTTP error') ?
+														'This website blocks automated content extraction. Please use "Open Original" to read the full article.' :
+														contentError
+													}
 												</p>
 											</div>
 											<Button
