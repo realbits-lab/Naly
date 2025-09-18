@@ -1,51 +1,85 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useSettings, type LayoutMode } from "./use-settings";
 
 export function useResponsiveLayout() {
 	const { settings, isLoaded } = useSettings();
 	const [effectiveLayoutMode, setEffectiveLayoutMode] = useState<"desktop" | "mobile">("desktop");
+	const [screenWidth, setScreenWidth] = useState<number>(0);
 
+	// Memoized layout calculation function
+	const calculateLayout = useCallback((layoutMode: LayoutMode, currentScreenWidth: number): "desktop" | "mobile" => {
+		switch (layoutMode) {
+			case "automatic":
+				// Responsive breakpoint: 768px (standard md breakpoint)
+				return currentScreenWidth >= 768 ? "desktop" : "mobile";
+			case "desktop":
+				// ALWAYS desktop - user preference overrides screen size
+				return "desktop";
+			case "mobile":
+				// ALWAYS mobile - user preference overrides screen size
+				return "mobile";
+			default:
+				return "desktop";
+		}
+	}, []);
+
+	// Handle screen size changes (only for automatic mode)
 	useEffect(() => {
-		if (!isLoaded) return;
+		if (typeof window === "undefined") return;
 
-		const updateLayout = () => {
-			const screenWidth = window.innerWidth;
+		const updateScreenSize = () => {
+			const newWidth = window.innerWidth;
+			setScreenWidth(newWidth);
 
-			switch (settings.layoutMode) {
-				case "automatic":
-					// Use standard responsive breakpoint (768px for tablet/mobile)
-					setEffectiveLayoutMode(screenWidth >= 768 ? "desktop" : "mobile");
-					break;
-				case "desktop":
-					// Always use desktop layout regardless of screen size
-					setEffectiveLayoutMode("desktop");
-					break;
-				case "mobile":
-					// Always use mobile layout regardless of screen size
-					setEffectiveLayoutMode("mobile");
-					break;
-				default:
-					setEffectiveLayoutMode("desktop");
+			// Only recalculate layout if in automatic mode and settings are loaded
+			if (isLoaded && settings.layoutMode === "automatic") {
+				const newLayout = calculateLayout(settings.layoutMode, newWidth);
+				setEffectiveLayoutMode(newLayout);
 			}
 		};
 
-		// Initial layout calculation
-		updateLayout();
+		// Initial screen size
+		updateScreenSize();
 
-		// Only listen to resize events if mode is "automatic"
-		if (settings.layoutMode === "automatic") {
-			window.addEventListener("resize", updateLayout);
-			return () => window.removeEventListener("resize", updateLayout);
+		// Listen to resize events (but only act on them in automatic mode)
+		window.addEventListener("resize", updateScreenSize);
+		return () => window.removeEventListener("resize", updateScreenSize);
+	}, [isLoaded, settings.layoutMode, calculateLayout]);
+
+	// Handle layout mode changes
+	useEffect(() => {
+		if (!isLoaded) {
+			// Before settings load, default to desktop to prevent layout flash
+			setEffectiveLayoutMode("desktop");
+			return;
 		}
-	}, [settings.layoutMode, isLoaded]);
+
+		// Immediately update layout when settings change
+		const newLayout = calculateLayout(settings.layoutMode, screenWidth || window.innerWidth);
+		setEffectiveLayoutMode(newLayout);
+	}, [settings.layoutMode, isLoaded, screenWidth, calculateLayout]);
 
 	return {
+		// Settings
 		layoutMode: settings.layoutMode,
 		effectiveLayoutMode,
 		isLoaded,
+
+		// Layout state
 		isDesktop: effectiveLayoutMode === "desktop",
 		isMobile: effectiveLayoutMode === "mobile",
+
+		// Screen info (for debugging/display)
+		screenWidth,
+
+		// Helper function for conditional rendering
+		showDesktop: effectiveLayoutMode === "desktop",
+		showMobile: effectiveLayoutMode === "mobile",
+
+		// Layout class helpers
+		desktopClasses: effectiveLayoutMode === "desktop" ? "flex" : "hidden",
+		mobileClasses: effectiveLayoutMode === "mobile" ? "flex" : "hidden",
 	};
 }

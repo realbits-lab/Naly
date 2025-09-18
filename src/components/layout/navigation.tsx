@@ -33,6 +33,7 @@ import { cn } from "@/lib/utils";
 import { locales, localeLabels, type Locale } from "@/i18n/config";
 import { toast } from "sonner";
 import { useScreenSize } from "@/hooks/use-screen-size";
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 
 // Navigation items will be updated with locale prefix in the component
 const navigationItems = [
@@ -49,15 +50,20 @@ const adminNavigationItems = [
     href: "write", // Remove leading slash to be prefixed with locale
     icon: PenTool,
   },
+  {
+    name: "Settings",
+    href: "settings", // Remove leading slash to be prefixed with locale
+    icon: Settings,
+  },
 ];
 
 export function Navigation() {
   const pathname = usePathname();
   const router = useRouter();
-  const { theme, setTheme } = useTheme();
   const { data: session, status } = useSession();
   const [isPending, startTransition] = useTransition();
   const screenSize = useScreenSize();
+  const { isMobile, desktopClasses, mobileClasses } = useResponsiveLayout();
 
   // Get current locale from pathname
   const getCurrentLocale = (): Locale => {
@@ -110,14 +116,6 @@ export function Navigation() {
     });
   };
 
-  const themes = [
-    { name: "Light", value: "light", icon: Sun },
-    { name: "Dark", value: "dark", icon: Moon },
-    { name: "System", value: "system", icon: Monitor },
-    { name: "Blue", value: "blue", icon: Palette },
-    { name: "Green", value: "green", icon: Palette },
-    { name: "Purple", value: "purple", icon: Palette },
-  ];
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -144,7 +142,7 @@ export function Navigation() {
         <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
           <div className="w-full flex-1 md:w-auto md:flex-none">
             {/* Mobile Icon-Only Navigation */}
-            <div className="flex space-x-4 md:hidden">
+            <div className={cn("space-x-4", mobileClasses)}>
               {navigationItems.map((item) => {
                 const Icon = item.icon;
                 const localizedHref = getLocalizedPath(item.href);
@@ -187,7 +185,7 @@ export function Navigation() {
             </div>
 
             {/* Desktop Navigation with Text */}
-            <div className="hidden md:flex md:space-x-6">
+            <div className={cn("space-x-6", desktopClasses)}>
               {navigationItems.map((item) => {
                 const Icon = item.icon;
                 const localizedHref = getLocalizedPath(item.href);
@@ -279,42 +277,6 @@ export function Navigation() {
             </DropdownMenu>
           </div>
 
-          {/* Settings Menu */}
-          <div className="flex items-center space-x-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="flex items-center space-x-2">
-                  <Settings className="h-4 w-4" />
-                  <span className="hidden md:inline sr-only md:not-sr-only">Settings</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="end"
-                className="w-56 bg-white border border-gray-200 shadow-lg"
-              >
-                <DropdownMenuLabel>Appearance</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {themes.map((themeOption) => {
-                  const Icon = themeOption.icon;
-                  return (
-                    <DropdownMenuItem
-                      key={themeOption.value}
-                      onClick={() => setTheme(themeOption.value as any)}
-                      className="flex items-center justify-between cursor-pointer"
-                    >
-                      <div className="flex items-center space-x-2">
-                        <Icon className="h-4 w-4" />
-                        <span>{themeOption.name}</span>
-                      </div>
-                      {theme === themeOption.value && (
-                        <Check className="h-4 w-4" />
-                      )}
-                    </DropdownMenuItem>
-                  );
-                })}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
 
           {/* Authentication - Profile Icon at the rightmost position */}
           <div className="flex items-center space-x-2">
