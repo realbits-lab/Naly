@@ -55,7 +55,28 @@ interface ContentCache {
 class ArticleContentService {
   private cache: ContentCache = {};
   private readonly CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
-  private readonly CORS_PROXY = 'https://api.allorigins.win/raw?url=';
+
+  // Multiple CORS proxy options for better reliability
+  private readonly CORS_PROXIES = [
+    'https://api.allorigins.win/raw?url=',
+    'https://corsproxy.io/?',
+    'https://cors-anywhere.herokuapp.com/',
+    'https://thingproxy.freeboard.io/fetch/'
+  ];
+
+  // External API configurations (add API keys to env variables)
+  private readonly EXTERNAL_APIS = {
+    diffbot: {
+      url: 'https://api.diffbot.com/v3/article',
+      token: process.env.DIFFBOT_API_TOKEN,
+      enabled: !!process.env.DIFFBOT_API_TOKEN
+    },
+    scraperapi: {
+      url: 'http://api.scraperapi.com',
+      key: process.env.SCRAPERAPI_KEY,
+      enabled: !!process.env.SCRAPERAPI_KEY
+    }
+  };
 
   constructor() {
     this.loadCacheFromStorage();
@@ -129,7 +150,22 @@ class ArticleContentService {
    */
   private async progressiveEnhancement(articleUrl: string): Promise<ExtractedContent | null> {
     try {
-      // For most news sites, extraction works better than iframe due to X-Frame-Options
+      // Primary: Use our server-side API (no CORS issues)
+      const serverResult = await this.extractWithServerAPI(articleUrl);
+      if (serverResult) return serverResult;
+
+      // Fallback: Try external APIs (if available and configured)
+      if (this.EXTERNAL_APIS.diffbot.enabled) {
+        const diffbotResult = await this.extractWithDiffbot(articleUrl);
+        if (diffbotResult) return diffbotResult;
+      }
+
+      if (this.EXTERNAL_APIS.scraperapi.enabled) {
+        const scraperapiResult = await this.extractWithScraperAPI(articleUrl);
+        if (scraperapiResult) return scraperapiResult;
+      }
+
+      // Last resort: CORS proxy method (keeping for backward compatibility)
       return await this.extractContent(articleUrl);
     } catch (error) {
       console.warn('Content extraction failed, falling back to external link:', error);
@@ -151,22 +187,40 @@ class ArticleContentService {
   }
 
   /**
-   * Fetch HTML content through CORS proxy
+   * Fetch HTML content through CORS proxy with multiple fallbacks
    */
   private async fetchThroughProxy(articleUrl: string): Promise<string> {
-    const proxyUrl = `${this.CORS_PROXY}${encodeURIComponent(articleUrl)}`;
+    let lastError: Error | null = null;
 
-    const response = await fetch(proxyUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; RSS Reader)',
-      },
-    });
+    // Try each CORS proxy until one succeeds
+    for (const proxy of this.CORS_PROXIES) {
+      try {
+        const proxyUrl = `${proxy}${encodeURIComponent(articleUrl)}`;
 
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        const response = await fetch(proxyUrl, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (compatible; RSS Reader)',
+          },
+          timeout: 10000, // 10 second timeout
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const html = await response.text();
+        if (html && html.length > 100) { // Basic validation
+          return html;
+        }
+        throw new Error('Empty or invalid response');
+      } catch (error) {
+        console.warn(`Proxy ${proxy} failed:`, error);
+        lastError = error as Error;
+        continue; // Try next proxy
+      }
     }
 
-    return await response.text();
+    throw lastError || new Error('All CORS proxies failed');
   }
 
   /**
@@ -436,11 +490,109 @@ class ArticleContentService {
   }
 
   /**
+   * Extract content using our server-side API (no CORS issues)
+   */
+  private async extractWithServerAPI(articleUrl: string): Promise<ExtractedContent | null> {
+    try {
+      const response = await fetch(`/api/monitor/article?url=${encodeURIComponent(articleUrl)}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Server API failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (data.content) {
+        return {
+          title: data.title || '',
+          content: data.content || '',
+          textContent: data.textContent || '',
+          excerpt: data.excerpt || '',
+          byline: data.byline || '',
+          siteName: data.siteName || '',
+          publishedTime: data.publishedTime || ''
+        };
+      }
+      return null;
+    } catch (error) {
+      console.warn('Server API extraction failed:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Extract content using Diffbot API
+   */
+  private async extractWithDiffbot(articleUrl: string): Promise<ExtractedContent | null> {
+    if (!this.EXTERNAL_APIS.diffbot.enabled) return null;
+
+    try {
+      const response = await fetch(`${this.EXTERNAL_APIS.diffbot.url}?token=${this.EXTERNAL_APIS.diffbot.token}&url=${encodeURIComponent(articleUrl)}`, {
+        timeout: 15000,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Diffbot API failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (data.objects && data.objects.length > 0) {
+        const article = data.objects[0];
+        return {
+          title: article.title || '',
+          content: article.html || article.text || '',
+          textContent: article.text || '',
+          excerpt: article.summary || '',
+          byline: article.author || '',
+          siteName: article.siteName || '',
+          publishedTime: article.date || ''
+        };
+      }
+      return null;
+    } catch (error) {
+      console.warn('Diffbot extraction failed:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Extract content using ScraperAPI
+   */
+  private async extractWithScraperAPI(articleUrl: string): Promise<ExtractedContent | null> {
+    if (!this.EXTERNAL_APIS.scraperapi.enabled) return null;
+
+    try {
+      const response = await fetch(`${this.EXTERNAL_APIS.scraperapi.url}?api_key=${this.EXTERNAL_APIS.scraperapi.key}&url=${encodeURIComponent(articleUrl)}`, {
+        timeout: 15000,
+      });
+
+      if (!response.ok) {
+        throw new Error(`ScraperAPI failed: ${response.status}`);
+      }
+
+      const html = await response.text();
+      // Use Readability to parse the clean HTML from ScraperAPI
+      return this.parseWithReadability(html, articleUrl);
+    } catch (error) {
+      console.warn('ScraperAPI extraction failed:', error);
+      return null;
+    }
+  }
+
+  /**
    * Clear all cached content
    */
   clearCache(): void {
     this.cache = {};
-    localStorage.removeItem('rss-content-cache');
+    if (typeof window !== 'undefined' && window.localStorage) {
+      localStorage.removeItem('rss-content-cache');
+    }
   }
 }
 
