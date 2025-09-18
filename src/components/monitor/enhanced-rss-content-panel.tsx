@@ -540,10 +540,29 @@ export function EnhancedRssContentPanel({
 			</div>
 
 			{/* Enhanced Article Content */}
-			<div className="w-2/3 flex flex-col h-full">
+			<div
+				className="w-2/3 flex flex-col h-full"
+				onWheel={(e) => {
+					// Prevent wheel events from bubbling up to avoid affecting other columns
+					// Only allow scrolling within the designated scrollable areas
+					const target = e.target as HTMLElement;
+					const scrollableArea = target.closest('.overflow-y-auto');
+					if (!scrollableArea) {
+						e.preventDefault();
+						e.stopPropagation();
+					}
+				}}
+			>
 				{selectedArticle ? (
 					<Card className="h-full border-none rounded-none flex flex-col">
-						<CardHeader className="border-b flex-shrink-0">
+						<CardHeader
+							className="border-b flex-shrink-0"
+							onWheel={(e) => {
+								// Prevent wheel events from bubbling up from header area
+								e.preventDefault();
+								e.stopPropagation();
+							}}
+						>
 							<CardTitle className="text-lg line-clamp-2">
 								{selectedArticle.title}
 							</CardTitle>
@@ -750,7 +769,14 @@ export function EnhancedRssContentPanel({
 						</CardContent>
 					</Card>
 				) : (
-					<div className="h-full flex items-center justify-center">
+					<div
+						className="h-full flex items-center justify-center"
+						onWheel={(e) => {
+							// Prevent wheel events from bubbling up from placeholder area
+							e.preventDefault();
+							e.stopPropagation();
+						}}
+					>
 						<div className="text-center text-muted-foreground max-w-md">
 							<Rss className="h-16 w-16 mx-auto mb-4 opacity-50" />
 							<h3 className="text-lg font-medium mb-2">Select an Article</h3>
