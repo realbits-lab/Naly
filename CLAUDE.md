@@ -120,3 +120,4 @@ Located in `src/lib/schema/` with modular organization:
 - Community features include gamification elements (achievements, leaderboards)
 - All database operations use Drizzle ORM with type-safe queries
 - Error handling follows a structured approach with ApplicationError types
+- Use 4000 port for pnpm dev command in localhost
