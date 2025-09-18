@@ -78,18 +78,18 @@ const DEFAULT_RSS_SOURCES: Omit<RssSource, 'id'>[] = [
 
 	// Reuters RSS sources
 	{
-		name: "Reuters Business",
-		feedUrl: "http://feeds.reuters.com/reuters/businessNews",
-		description: "Reuters global business news and analysis",
+		name: "Reuters Business News",
+		feedUrl: "https://news.google.com/rss/search?q=site:reuters.com/business&hl=en-US&gl=US&ceid=US:en",
+		description: "Reuters business news via Google News RSS",
 		category: "business",
 		isActive: true,
 		logoUrl: "https://www.reuters.com/favicon.ico"
 	},
 	{
-		name: "Reuters Top News",
-		feedUrl: "http://feeds.reuters.com/reuters/topNews",
-		description: "Reuters breaking news and top stories",
-		category: "news",
+		name: "Reuters Markets News",
+		feedUrl: "https://news.google.com/rss/search?q=site:reuters.com/markets&hl=en-US&gl=US&ceid=US:en",
+		description: "Reuters markets and trading news via Google News RSS",
+		category: "markets",
 		isActive: true,
 		logoUrl: "https://www.reuters.com/favicon.ico"
 	},
@@ -143,11 +143,11 @@ const DEFAULT_RSS_SOURCES: Omit<RssSource, 'id'>[] = [
 	// South Korea
 	{
 		name: "Korea Economic Daily Global",
-		feedUrl: "https://kedglobal.com/newsRss",
+		feedUrl: "https://www.kedglobal.com/newsRss",
 		description: "Korean business and economic news in English",
 		category: "business",
 		isActive: true,
-		logoUrl: "https://kedglobal.com/favicon.ico"
+		logoUrl: "https://www.kedglobal.com/favicon.ico"
 	},
 	{
 		name: "BusinessKorea",

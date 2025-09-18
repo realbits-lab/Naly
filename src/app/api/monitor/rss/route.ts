@@ -3,6 +3,7 @@ import Parser from "rss-parser";
 import { db } from "@/lib/db";
 import { rssSources, rssArticles } from "@/lib/schema/rss";
 import { eq, desc } from "drizzle-orm";
+import { DEFAULT_RSS_SOURCES } from "@/lib/constants/rss-sources";
 
 const parser = new Parser({
 	customFields: {
@@ -10,6 +11,35 @@ const parser = new Parser({
 		item: ['media:content', 'media:thumbnail', 'enclosure', 'dc:creator', 'content:encoded']
 	}
 });
+
+// CORS proxy for feeds that might be blocked
+const CORS_PROXY = 'https://api.allorigins.win/raw?url=';
+
+// Helper function to try fetching RSS with CORS proxy fallback
+async function tryFetchRSS(feedUrl: string): Promise<any> {
+	try {
+		// First, try direct fetch
+		return await parser.parseURL(feedUrl);
+	} catch (directError) {
+		console.log(`Direct fetch failed for ${feedUrl}, trying CORS proxy...`);
+
+		try {
+			// If direct fetch fails, try with CORS proxy
+			const proxyUrl = `${CORS_PROXY}${encodeURIComponent(feedUrl)}`;
+			const response = await fetch(proxyUrl);
+
+			if (!response.ok) {
+				throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+			}
+
+			const xmlText = await response.text();
+			return await parser.parseString(xmlText);
+		} catch (proxyError) {
+			// If both direct and proxy fail, throw the original error
+			throw directError;
+		}
+	}
+}
 
 // Mock RSS data for when feeds are not accessible
 const MOCK_RSS_DATA: Record<string, any[]> = {
@@ -106,14 +136,11 @@ export async function GET(request: NextRequest) {
 			const sources = await db.select().from(rssSources).where(eq(rssSources.id, sourceId));
 			source = sources[0];
 		} catch (dbError) {
-			// Fallback for when database is not available
-			const defaultSources = [
-				{ id: "default-0", name: "CNBC", feedUrl: "https://feeds.cnbc.com/cnbc/feed" },
-				{ id: "default-1", name: "Reuters Business", feedUrl: "https://feeds.reuters.com/reuters/businessNews" },
-				{ id: "default-2", name: "Bloomberg", feedUrl: "https://feeds.bloomberg.com/markets/news.rss" },
-				{ id: "default-3", name: "MarketWatch", feedUrl: "https://feeds.marketwatch.com/marketwatch/realtimeheadlines/" },
-				{ id: "default-4", name: "Yahoo Finance", feedUrl: "https://finance.yahoo.com/news/rssindex" }
-			];
+			// Fallback for when database is not available - use comprehensive sources
+			const defaultSources = DEFAULT_RSS_SOURCES.map((source, index) => ({
+				id: `default-${index}`,
+				...source
+			}));
 			source = defaultSources.find(s => s.id === sourceId);
 		}
 
@@ -129,8 +156,8 @@ export async function GET(request: NextRequest) {
 		let usesMockData = false;
 
 		try {
-			// Attempt to fetch the RSS feed
-			const feed = await parser.parseURL(source.feedUrl);
+			// Attempt to fetch the RSS feed with CORS proxy fallback
+			const feed = await tryFetchRSS(source.feedUrl);
 
 			articles = feed.items.map((item, index) => ({
 				id: `${sourceId}-${item.guid || index}`,
