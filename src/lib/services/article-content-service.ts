@@ -1,0 +1,443 @@
+import { Readability } from '@mozilla/readability';
+
+export interface RSSItem {
+  title: string;
+  link: string;
+  description?: string;
+  contentSnippet?: string;
+  content?: string;
+  pubDate?: string;
+  creator?: string;
+  author?: string;
+  categories?: string[];
+  enclosure?: {
+    url: string;
+    type: string;
+  };
+}
+
+export interface ExtractedContent {
+  title: string;
+  content: string;
+  textContent: string;
+  excerpt: string;
+  byline?: string;
+  dir?: string;
+  siteName?: string;
+  publishedTime?: string;
+}
+
+export interface EnhancedRSSContent {
+  title: string;
+  description: string;
+  cleanDescription: string;
+  images: string[];
+  summary: string;
+  readTime: number;
+  externalLink: string;
+  author?: string;
+  publishDate?: string;
+  categories: string[];
+  extractedContent?: ExtractedContent;
+  isContentExtracted: boolean;
+}
+
+export type ContentDisplayStrategy = 'iframe' | 'extract' | 'progressive' | 'external';
+
+interface ContentCache {
+  [url: string]: {
+    content: ExtractedContent;
+    timestamp: number;
+    expiresAt: number;
+  };
+}
+
+class ArticleContentService {
+  private cache: ContentCache = {};
+  private readonly CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
+  private readonly CORS_PROXY = 'https://api.allorigins.win/raw?url=';
+
+  constructor() {
+    this.loadCacheFromStorage();
+  }
+
+  /**
+   * Main method to get enhanced RSS content
+   */
+  enhanceRSSContent(rssItem: RSSItem): EnhancedRSSContent {
+    const cleanDescription = this.cleanAndFormatDescription(rssItem.contentSnippet || rssItem.description || '');
+    const images = this.extractImagesFromContent(rssItem.content || rssItem.description || '');
+    const summary = this.generateSummary(cleanDescription);
+    const readTime = this.estimateReadTime(cleanDescription);
+
+    return {
+      title: rssItem.title,
+      description: rssItem.description || '',
+      cleanDescription,
+      images,
+      summary,
+      readTime,
+      externalLink: rssItem.link,
+      author: rssItem.creator || rssItem.author,
+      publishDate: rssItem.pubDate,
+      categories: rssItem.categories || [],
+      isContentExtracted: false
+    };
+  }
+
+  /**
+   * Extract full article content using progressive enhancement
+   */
+  async getArticleContent(articleUrl: string, strategy: ContentDisplayStrategy = 'progressive'): Promise<ExtractedContent | null> {
+    // Check cache first
+    const cached = this.getCachedContent(articleUrl);
+    if (cached) {
+      return cached;
+    }
+
+    try {
+      let content: ExtractedContent | null = null;
+
+      switch (strategy) {
+        case 'iframe':
+          content = await this.tryIframe(articleUrl);
+          break;
+        case 'extract':
+          content = await this.extractContent(articleUrl);
+          break;
+        case 'progressive':
+          content = await this.progressiveEnhancement(articleUrl);
+          break;
+        default:
+          return null;
+      }
+
+      // Cache successful extraction
+      if (content) {
+        this.cacheContent(articleUrl, content);
+      }
+
+      return content;
+    } catch (error) {
+      console.error('Failed to get article content:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Progressive enhancement strategy - try best method first, fallback gracefully
+   */
+  private async progressiveEnhancement(articleUrl: string): Promise<ExtractedContent | null> {
+    try {
+      // For most news sites, extraction works better than iframe due to X-Frame-Options
+      return await this.extractContent(articleUrl);
+    } catch (error) {
+      console.warn('Content extraction failed, falling back to external link:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Extract content using Mozilla Readability algorithm
+   */
+  private async extractContent(articleUrl: string): Promise<ExtractedContent | null> {
+    try {
+      const html = await this.fetchThroughProxy(articleUrl);
+      return this.parseWithReadability(html, articleUrl);
+    } catch (error) {
+      console.error('Content extraction failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Fetch HTML content through CORS proxy
+   */
+  private async fetchThroughProxy(articleUrl: string): Promise<string> {
+    const proxyUrl = `${this.CORS_PROXY}${encodeURIComponent(articleUrl)}`;
+
+    const response = await fetch(proxyUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; RSS Reader)',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    return await response.text();
+  }
+
+  /**
+   * Parse HTML using Mozilla Readability
+   */
+  private parseWithReadability(html: string, url: string): ExtractedContent | null {
+    try {
+      // Create a document for Readability
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+
+      // Set the document URL for relative link resolution
+      const baseElement = doc.createElement('base');
+      baseElement.href = url;
+      doc.head.insertBefore(baseElement, doc.head.firstChild);
+
+      // Create Readability instance and parse
+      const reader = new Readability(doc, {
+        debug: false,
+        maxElemsToParse: 5000,
+        nbTopCandidates: 5,
+        charThreshold: 500,
+        classesToPreserve: ['highlight', 'quote', 'pullquote']
+      });
+
+      const article = reader.parse();
+
+      if (!article) {
+        throw new Error('Readability failed to parse article');
+      }
+
+      return {
+        title: article.title,
+        content: article.content,
+        textContent: article.textContent,
+        excerpt: article.excerpt,
+        byline: article.byline,
+        dir: article.dir,
+        siteName: article.siteName,
+        publishedTime: article.publishedTime
+      };
+    } catch (error) {
+      console.error('Readability parsing failed:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Attempt iframe embedding (for sites that allow it)
+   */
+  private async tryIframe(articleUrl: string): Promise<ExtractedContent | null> {
+    return new Promise((resolve) => {
+      // Create a hidden iframe to test if the site allows embedding
+      const testIframe = document.createElement('iframe');
+      testIframe.src = articleUrl;
+      testIframe.style.display = 'none';
+      testIframe.sandbox = 'allow-same-origin allow-scripts';
+
+      const timeout = setTimeout(() => {
+        document.body.removeChild(testIframe);
+        resolve(null); // Iframe blocked or took too long
+      }, 3000);
+
+      testIframe.onload = () => {
+        clearTimeout(timeout);
+        document.body.removeChild(testIframe);
+
+        // If iframe loaded successfully, return basic content structure
+        resolve({
+          title: 'External Content',
+          content: `<iframe src="${articleUrl}" class="w-full h-96 border rounded-lg" sandbox="allow-same-origin allow-scripts allow-popups"></iframe>`,
+          textContent: 'Content loaded in iframe',
+          excerpt: 'External content loaded successfully'
+        });
+      };
+
+      testIframe.onerror = () => {
+        clearTimeout(timeout);
+        document.body.removeChild(testIframe);
+        resolve(null);
+      };
+
+      document.body.appendChild(testIframe);
+    });
+  }
+
+  /**
+   * Clean and format RSS description/content
+   */
+  private cleanAndFormatDescription(description: string): string {
+    if (!description) return '';
+
+    return description
+      .replace(/<[^>]+>/g, '') // Remove HTML tags
+      .replace(/&nbsp;/g, ' ') // Replace non-breaking spaces
+      .replace(/&amp;/g, '&') // Replace HTML entities
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#x27;/g, "'")
+      .replace(/\s+/g, ' ') // Normalize whitespace
+      .trim();
+  }
+
+  /**
+   * Extract images from RSS content
+   */
+  private extractImagesFromContent(content: string): string[] {
+    if (!content) return [];
+
+    const imageRegex = /<img[^>]+src\s*=\s*['"](https?:\/\/[^'"]+)['"]/gi;
+    const images: string[] = [];
+    let match;
+
+    while ((match = imageRegex.exec(content)) !== null) {
+      const imageUrl = match[1];
+      if (this.isValidImageUrl(imageUrl)) {
+        images.push(imageUrl);
+      }
+    }
+
+    // Also check for enclosure images in RSS
+    const enclosureRegex = /enclosure[^>]+url\s*=\s*['"](https?:\/\/[^'"]+)['"]/gi;
+    while ((match = enclosureRegex.exec(content)) !== null) {
+      const imageUrl = match[1];
+      if (this.isValidImageUrl(imageUrl)) {
+        images.push(imageUrl);
+      }
+    }
+
+    return [...new Set(images)]; // Remove duplicates
+  }
+
+  /**
+   * Validate if URL is likely an image
+   */
+  private isValidImageUrl(url: string): boolean {
+    return /\.(jpg|jpeg|png|gif|webp|svg|bmp)(\?.*)?$/i.test(url);
+  }
+
+  /**
+   * Generate a smart summary from content
+   */
+  private generateSummary(content: string, maxLength: number = 200): string {
+    if (!content || content.length <= maxLength) return content;
+
+    // Find the first complete sentence that fits within maxLength
+    const sentences = content.split(/[.!?]+\s+/);
+    let summary = '';
+
+    for (const sentence of sentences) {
+      if ((summary + sentence).length <= maxLength) {
+        summary += (summary ? '. ' : '') + sentence;
+      } else {
+        break;
+      }
+    }
+
+    return summary || content.substring(0, maxLength - 3) + '...';
+  }
+
+  /**
+   * Estimate reading time based on content length
+   */
+  private estimateReadTime(content: string): number {
+    if (!content) return 0;
+
+    const wordsPerMinute = 200; // Average reading speed
+    const wordCount = content.split(/\s+/).length;
+    const readTime = Math.ceil(wordCount / wordsPerMinute);
+
+    return Math.max(1, readTime); // Minimum 1 minute
+  }
+
+  /**
+   * Cache management
+   */
+  private getCachedContent(url: string): ExtractedContent | null {
+    const cached = this.cache[url];
+
+    if (!cached) return null;
+
+    if (Date.now() > cached.expiresAt) {
+      delete this.cache[url];
+      this.saveCacheToStorage();
+      return null;
+    }
+
+    return cached.content;
+  }
+
+  private cacheContent(url: string, content: ExtractedContent): void {
+    this.cache[url] = {
+      content,
+      timestamp: Date.now(),
+      expiresAt: Date.now() + this.CACHE_DURATION
+    };
+
+    this.saveCacheToStorage();
+  }
+
+  private loadCacheFromStorage(): void {
+    try {
+      const cached = localStorage.getItem('rss-content-cache');
+      if (cached) {
+        this.cache = JSON.parse(cached);
+
+        // Clean expired entries
+        const now = Date.now();
+        for (const [url, entry] of Object.entries(this.cache)) {
+          if (now > entry.expiresAt) {
+            delete this.cache[url];
+          }
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to load cache from storage:', error);
+      this.cache = {};
+    }
+  }
+
+  private saveCacheToStorage(): void {
+    try {
+      localStorage.setItem('rss-content-cache', JSON.stringify(this.cache));
+    } catch (error) {
+      console.warn('Failed to save cache to storage:', error);
+    }
+  }
+
+  /**
+   * Get content display strategy for a specific domain
+   */
+  getDisplayStrategy(url: string): ContentDisplayStrategy {
+    const domain = this.extractDomain(url);
+
+    // Known sites that block iframe embedding
+    const blockedDomains = [
+      'bloomberg.com',
+      'cnbc.com',
+      'reuters.com',
+      'ft.com',
+      'wsj.com',
+      'nytimes.com',
+      'washingtonpost.com',
+      'economist.com'
+    ];
+
+    if (blockedDomains.some(blocked => domain.includes(blocked))) {
+      return 'extract';
+    }
+
+    return 'progressive';
+  }
+
+  private extractDomain(url: string): string {
+    try {
+      return new URL(url).hostname.toLowerCase();
+    } catch {
+      return '';
+    }
+  }
+
+  /**
+   * Clear all cached content
+   */
+  clearCache(): void {
+    this.cache = {};
+    localStorage.removeItem('rss-content-cache');
+  }
+}
+
+// Create singleton instance
+export const articleContentService = new ArticleContentService();
+export default ArticleContentService;

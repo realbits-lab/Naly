@@ -22,13 +22,47 @@ interface RssSidebarProps {
 	isMobile: boolean;
 }
 
-// Iframe-compatible RSS sources (tested with Playwright MCP tool)
+// Comprehensive financial RSS sources from docs/financial-rss-feeds.md
 const DEFAULT_RSS_SOURCES: Omit<RssSource, 'id'>[] = [
-	// Bloomberg RSS sources - IFRAME COMPATIBLE ✅
+	// United States - Government & Central Bank Sources
+	{
+		name: "Federal Reserve Press Releases",
+		feedUrl: "https://www.federalreserve.gov/feeds/press_all.xml",
+		description: "Federal Reserve official press releases and policy announcements",
+		category: "central-banking",
+		isActive: true,
+		logoUrl: "https://www.federalreserve.gov/favicon.ico"
+	},
+	{
+		name: "SEC Press Releases",
+		feedUrl: "https://www.sec.gov/news/pressreleases.rss",
+		description: "U.S. Securities and Exchange Commission press releases",
+		category: "regulation",
+		isActive: true,
+		logoUrl: "https://www.sec.gov/favicon.ico"
+	},
+
+	// Bloomberg RSS sources
+	{
+		name: "Bloomberg Markets",
+		feedUrl: "https://feeds.bloomberg.com/markets/news.rss",
+		description: "Bloomberg markets and financial news",
+		category: "markets",
+		isActive: true,
+		logoUrl: "https://www.bloomberg.com/favicon.ico"
+	},
+	{
+		name: "Bloomberg Economics",
+		feedUrl: "https://feeds.bloomberg.com/economics/news.rss",
+		description: "Bloomberg economics and policy analysis",
+		category: "economics",
+		isActive: true,
+		logoUrl: "https://www.bloomberg.com/favicon.ico"
+	},
 	{
 		name: "Bloomberg Technology",
 		feedUrl: "https://feeds.bloomberg.com/technology/news.rss",
-		description: "Bloomberg technology and innovation news (iframe compatible)",
+		description: "Bloomberg technology and innovation news",
 		category: "technology",
 		isActive: true,
 		logoUrl: "https://www.bloomberg.com/favicon.ico"
@@ -36,10 +70,146 @@ const DEFAULT_RSS_SOURCES: Omit<RssSource, 'id'>[] = [
 	{
 		name: "Bloomberg Politics",
 		feedUrl: "https://feeds.bloomberg.com/politics/news.rss",
-		description: "Bloomberg politics and policy news (iframe compatible)",
+		description: "Bloomberg politics and policy news",
 		category: "politics",
 		isActive: true,
 		logoUrl: "https://www.bloomberg.com/favicon.ico"
+	},
+
+	// Reuters RSS sources
+	{
+		name: "Reuters Business",
+		feedUrl: "http://feeds.reuters.com/reuters/businessNews",
+		description: "Reuters global business news and analysis",
+		category: "business",
+		isActive: true,
+		logoUrl: "https://www.reuters.com/favicon.ico"
+	},
+	{
+		name: "Reuters Top News",
+		feedUrl: "http://feeds.reuters.com/reuters/topNews",
+		description: "Reuters breaking news and top stories",
+		category: "news",
+		isActive: true,
+		logoUrl: "https://www.reuters.com/favicon.ico"
+	},
+
+	// Financial Times
+	{
+		name: "Financial Times Home",
+		feedUrl: "https://ft.com/rss/home",
+		description: "Financial Times main news feed",
+		category: "news",
+		isActive: true,
+		logoUrl: "https://www.ft.com/favicon.ico"
+	},
+	{
+		name: "Financial Times Markets",
+		feedUrl: "https://www.ft.com/markets?format=rss",
+		description: "Financial Times markets coverage",
+		category: "markets",
+		isActive: true,
+		logoUrl: "https://www.ft.com/favicon.ico"
+	},
+
+	// Investment Analysis
+	{
+		name: "Seeking Alpha",
+		feedUrl: "https://seekingalpha.com/feed.xml",
+		description: "Seeking Alpha investment analysis and market insights",
+		category: "investment",
+		isActive: true,
+		logoUrl: "https://seekingalpha.com/favicon.ico"
+	},
+	{
+		name: "The Motley Fool",
+		feedUrl: "https://fool.com/a/feeds/partner/google",
+		description: "The Motley Fool investment advice and analysis",
+		category: "investment",
+		isActive: true,
+		logoUrl: "https://www.fool.com/favicon.ico"
+	},
+
+	// European News
+	{
+		name: "Euronews Business",
+		feedUrl: "https://feeds.feedburner.com/euronews/en/business",
+		description: "European business and economic news",
+		category: "business",
+		isActive: true,
+		logoUrl: "https://www.euronews.com/favicon.ico"
+	},
+
+	// South Korea
+	{
+		name: "Korea Economic Daily Global",
+		feedUrl: "https://kedglobal.com/newsRss",
+		description: "Korean business and economic news in English",
+		category: "business",
+		isActive: true,
+		logoUrl: "https://kedglobal.com/favicon.ico"
+	},
+	{
+		name: "BusinessKorea",
+		feedUrl: "https://businesskorea.co.kr/rss/allEnglishArticles",
+		description: "Korean business news and market analysis",
+		category: "business",
+		isActive: true,
+		logoUrl: "https://businesskorea.co.kr/favicon.ico"
+	},
+
+	// Pan-Asia & Global
+	{
+		name: "Nikkei Asia",
+		feedUrl: "https://asia.nikkei.com/rss/feed/nar",
+		description: "Asian business and economic news",
+		category: "business",
+		isActive: true,
+		logoUrl: "https://asia.nikkei.com/favicon.ico"
+	},
+	{
+		name: "South China Morning Post",
+		feedUrl: "https://scmp.com/rss",
+		description: "Hong Kong and China news coverage",
+		category: "news",
+		isActive: true,
+		logoUrl: "https://www.scmp.com/favicon.ico"
+	},
+
+	// Cryptocurrency & Digital Assets
+	{
+		name: "CoinDesk",
+		feedUrl: "https://coindesk.com/arc/outboundfeeds/rss/",
+		description: "Cryptocurrency news and blockchain analysis",
+		category: "cryptocurrency",
+		isActive: true,
+		logoUrl: "https://www.coindesk.com/favicon.ico"
+	},
+	{
+		name: "Cointelegraph",
+		feedUrl: "https://cointelegraph.com/rss",
+		description: "Blockchain and cryptocurrency industry news",
+		category: "cryptocurrency",
+		isActive: true,
+		logoUrl: "https://cointelegraph.com/favicon.ico"
+	},
+
+	// Wall Street Journal
+	{
+		name: "WSJ Markets Main",
+		feedUrl: "https://feeds.a.dj.com/rss/RSSMarketsMain.xml",
+		description: "Wall Street Journal markets coverage",
+		category: "markets",
+		isActive: true,
+		logoUrl: "https://www.wsj.com/favicon.ico"
+	},
+	{
+		name: "WSJ Business",
+		feedUrl: "https://feeds.a.dj.com/rss/WSJcomUSBusiness.xml",
+		description: "Wall Street Journal business news",
+		category: "business",
+		isActive: true,
+		logoUrl: "https://www.wsj.com/favicon.ico"
 	}
 ];
 

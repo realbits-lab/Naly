@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { RssSidebar } from "@/components/monitor/rss-sidebar";
-import { RssContentPanel } from "@/components/monitor/rss-content-panel";
+import { EnhancedRssContentPanel } from "@/components/monitor/enhanced-rss-content-panel";
 import { useScreenSize } from "@/hooks/use-screen-size";
 import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 
@@ -105,7 +105,7 @@ export function MonitorPageClient() {
 			// Show articles list
 			return (
 				<div className="w-full h-[calc(100vh-4rem)]">
-					<RssContentPanel
+					<EnhancedRssContentPanel
 						source={selectedSource}
 						articles={articles}
 						selectedArticle={null}
@@ -148,7 +148,7 @@ export function MonitorPageClient() {
 
 				{/* Main Content Area - Fixed flex-grow to prevent shifting */}
 				<div className="flex-1 min-w-0">
-					<RssContentPanel
+					<EnhancedRssContentPanel
 						source={selectedSource}
 						articles={articles}
 						selectedArticle={selectedArticle}
