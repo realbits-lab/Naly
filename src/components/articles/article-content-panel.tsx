@@ -188,7 +188,18 @@ export function ArticleContentPanel({ article }: ArticleContentPanelProps) {
 
 								<Button variant="outline" size="sm" asChild>
 									<a
-										href={`/${getCurrentLocale()}/news/${displayArticle.id}`}
+										href={(() => {
+											const locale = getCurrentLocale();
+											const articleParams = new URLSearchParams({
+												title: encodeURIComponent(displayArticle.title),
+												content: encodeURIComponent(displayArticle.content || displayArticle.summary || ""),
+												source: encodeURIComponent(displayArticle.sourcePublisher || "Financial News"),
+												category: encodeURIComponent(displayArticle.sourceCategory || "general"),
+												publishedAt: displayArticle.createdAt,
+												...(displayArticle.summary && { summary: encodeURIComponent(displayArticle.summary) })
+											});
+											return `/${locale}/news/view/${displayArticle.id}?${articleParams.toString()}`;
+										})()}
 										target="_blank"
 										rel="noopener noreferrer"
 									>
@@ -218,7 +229,18 @@ export function ArticleContentPanel({ article }: ArticleContentPanelProps) {
 											"Full content is not available for this article."}
 									</p>
 									<Button className="mt-4" asChild>
-										<a href={`/${getCurrentLocale()}/news/${displayArticle.id}`}>View Full Article</a>
+										<a href={(() => {
+											const locale = getCurrentLocale();
+											const articleParams = new URLSearchParams({
+												title: encodeURIComponent(displayArticle.title),
+												content: encodeURIComponent(displayArticle.content || displayArticle.summary || ""),
+												source: encodeURIComponent(displayArticle.sourcePublisher || "Financial News"),
+												category: encodeURIComponent(displayArticle.sourceCategory || "general"),
+												publishedAt: displayArticle.createdAt,
+												...(displayArticle.summary && { summary: encodeURIComponent(displayArticle.summary) })
+											});
+											return `/${locale}/news/view/${displayArticle.id}?${articleParams.toString()}`;
+										})()}>View Full Article</a>
 									</Button>
 								</CardContent>
 							</Card>

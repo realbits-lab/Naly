@@ -50,9 +50,17 @@ export function NewsPageClient() {
 
 	const handleArticleSelect = (article: Article) => {
 		if (isMobile) {
-			// On mobile, navigate to individual article page
+			// On mobile, navigate to individual article page with article data as URL params
 			const locale = getCurrentLocale();
-			const articlePath = `/${locale}/news/${article.id}`;
+			const articleParams = new URLSearchParams({
+				title: encodeURIComponent(article.title),
+				content: encodeURIComponent(article.content || article.summary || ""),
+				source: encodeURIComponent(article.sourcePublisher || "Financial News"),
+				category: encodeURIComponent(article.sourceCategory || "general"),
+				publishedAt: article.createdAt,
+				...(article.summary && { summary: encodeURIComponent(article.summary) })
+			});
+			const articlePath = `/${locale}/news/view/${article.id}?${articleParams.toString()}`;
 			router.push(articlePath);
 		} else {
 			// On desktop, keep current behavior (show in content panel)
