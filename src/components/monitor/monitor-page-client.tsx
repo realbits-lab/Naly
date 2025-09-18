@@ -5,6 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { RssSidebar } from "@/components/monitor/rss-sidebar";
 import { RssContentPanel } from "@/components/monitor/rss-content-panel";
 import { useScreenSize } from "@/hooks/use-screen-size";
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 
 export interface RssSource {
 	id: string;
@@ -38,22 +39,7 @@ export function MonitorPageClient() {
 	const router = useRouter();
 	const pathname = usePathname();
 	const screenSize = useScreenSize();
-
-	// Check if we're on mobile (below md breakpoint - 900px)
-	const [isMobile, setIsMobile] = useState(false);
-
-	useEffect(() => {
-		const checkMobile = () => {
-			setIsMobile(window.innerWidth < 900);
-		};
-
-		// Initial check
-		checkMobile();
-
-		// Update on resize
-		window.addEventListener('resize', checkMobile);
-		return () => window.removeEventListener('resize', checkMobile);
-	}, []);
+	const { isMobile } = useResponsiveLayout();
 
 	// Extract current locale from pathname
 	const getCurrentLocale = () => {
