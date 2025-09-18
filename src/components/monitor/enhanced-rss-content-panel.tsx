@@ -127,7 +127,31 @@ export function EnhancedRssContentPanel({
 		window.open(url, "_blank", "noopener,noreferrer");
 	};
 
-	// Enhance article content when a new article is selected
+	// Function to check database for previously fetched content
+	const checkDatabaseForContent = async (articleUrl: string): Promise<ExtractedContent | null> => {
+		try {
+			const response = await fetch(`/api/monitor/article/check?url=${encodeURIComponent(articleUrl)}`);
+			if (response.ok) {
+				const data = await response.json();
+				if (data.content) {
+					return {
+						title: data.title || '',
+						content: data.content || '',
+						textContent: data.textContent || '',
+						excerpt: data.excerpt || '',
+						byline: data.byline || '',
+						siteName: data.siteName || '',
+						publishedTime: data.publishedTime || ''
+					};
+				}
+			}
+		} catch (error) {
+			console.warn('Failed to check database for cached content:', error);
+		}
+		return null;
+	};
+
+	// Enhance article content when a new article is selected, with auto-fetch
 	useEffect(() => {
 		if (selectedArticle) {
 			const enhanced = enhanceArticleContent(selectedArticle);
@@ -135,6 +159,56 @@ export function EnhancedRssContentPanel({
 			setExtractedContent(null);
 			setExtractionError(null);
 			setViewMode('preview');
+
+			// Auto-fetch article content (check database first, then extract if needed)
+			const autoFetchContent = async () => {
+				setIsLoadingExtraction(true);
+				setExtractionError(null);
+
+				try {
+					// First, check if we have this content in the database
+					const cachedContent = await checkDatabaseForContent(selectedArticle.link);
+
+					if (cachedContent) {
+						// Use cached content from database
+						setExtractedContent(cachedContent);
+						setViewMode('extracted');
+						setEnhancedContent(prev => prev ? {
+							...prev,
+							extractedContent: cachedContent,
+							isContentExtracted: true
+						} : null);
+					} else {
+						// Not in database, extract fresh content
+						const strategy = articleContentService.getDisplayStrategy(selectedArticle.link);
+						const freshContent = await articleContentService.getArticleContent(selectedArticle.link, strategy);
+
+						if (freshContent) {
+							setExtractedContent(freshContent);
+							setViewMode('extracted');
+							setEnhancedContent(prev => prev ? {
+								...prev,
+								extractedContent: freshContent,
+								isContentExtracted: true
+							} : null);
+						} else {
+							throw new Error('Content extraction failed. The article may not be accessible or the site blocks content extraction.');
+						}
+					}
+				} catch (error) {
+					console.error('Auto-fetch error:', error);
+					setExtractionError(error instanceof Error ? error.message : 'Failed to fetch content automatically');
+					// Stay in preview mode if auto-fetch fails
+					setViewMode('preview');
+				} finally {
+					setIsLoadingExtraction(false);
+				}
+			};
+
+			// Start auto-fetch after a short delay to allow UI to update
+			setTimeout(() => {
+				autoFetchContent();
+			}, 100);
 		} else {
 			setEnhancedContent(null);
 			setExtractedContent(null);
@@ -565,13 +639,14 @@ export function EnhancedRssContentPanel({
 										</div>
 									)}
 								</div>
-								<FetchArticleButton
-									url={selectedArticle.link}
-									title="Extract Content"
-									variant="default"
+								<Button
+									variant="outline"
 									size="sm"
-									showDialog={true}
-								/>
+									onClick={() => openExternalLink(selectedArticle.link)}
+								>
+									<ExternalLink className="h-3 w-3 mr-2" />
+									View Original
+								</Button>
 							</div>
 						</CardHeader>
 						<CardContent className="p-0 flex-1 overflow-hidden">
@@ -628,33 +703,9 @@ export function EnhancedRssContentPanel({
 													</div>
 												)}
 
-												{/* Action Buttons */}
-												<div className="flex gap-2">
-													<TooltipProvider>
-														<Tooltip>
-															<TooltipTrigger asChild>
-																<Button
-																	onClick={() => extractFullContent(enhancedContent.externalLink)}
-																	size="sm"
-																	variant={viewMode === 'extracted' ? 'default' : 'outline'}
-																	disabled={isLoadingExtraction}
-																>
-																	{isLoadingExtraction ? (
-																		<Loader2 className="h-3 w-3 mr-2 animate-spin" />
-																	) : viewMode === 'extracted' ? (
-																		<RefreshCw className="h-3 w-3 mr-2" />
-																	) : (
-																		<Download className="h-3 w-3 mr-2" />
-																	)}
-																	{viewMode === 'extracted' ? 'Re-extract' : 'Extract Content'}
-																</Button>
-															</TooltipTrigger>
-															<TooltipContent>
-																<p>Extract full article content using AI</p>
-															</TooltipContent>
-														</Tooltip>
-													</TooltipProvider>
-													{viewMode === 'extracted' && (
+												{/* View Mode Toggle */}
+												{viewMode === 'extracted' && (
+													<div className="flex gap-2">
 														<Button
 															variant="ghost"
 															size="sm"
@@ -663,8 +714,8 @@ export function EnhancedRssContentPanel({
 															<Eye className="h-3 w-3 mr-2" />
 															View Preview
 														</Button>
-													)}
-												</div>
+													</div>
+												)}
 											</div>
 										</div>
 									</div>
@@ -685,24 +736,14 @@ export function EnhancedRssContentPanel({
 												<div className="p-4 border border-destructive/20 bg-destructive/5 rounded-lg max-w-md">
 													<h4 className="font-medium text-destructive mb-2">Content Extraction Failed</h4>
 													<p className="text-sm text-muted-foreground mb-4">{extractionError}</p>
-													<div className="flex gap-2">
-														<Button
-															variant="outline"
-															size="sm"
-															onClick={() => extractFullContent(selectedArticle.link)}
-														>
-															<RefreshCw className="h-3 w-3 mr-2" />
-															Retry
-														</Button>
-														<Button
-															variant="outline"
-															size="sm"
-															onClick={() => openExternalLink(selectedArticle.link)}
-														>
-															<ExternalLink className="h-3 w-3 mr-2" />
-															View Original
-														</Button>
-													</div>
+													<Button
+														variant="outline"
+														size="sm"
+														onClick={() => extractFullContent(selectedArticle.link)}
+													>
+														<RefreshCw className="h-3 w-3 mr-2" />
+														Retry
+													</Button>
 												</div>
 											</div>
 										) : viewMode === 'extracted' && extractedContent ? (
