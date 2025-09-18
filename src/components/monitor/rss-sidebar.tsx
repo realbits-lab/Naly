@@ -289,7 +289,10 @@ export function RssSidebar({
 								variant={selectedSourceId === source.id ? "default" : "ghost"}
 								size="icon"
 								onClick={() => handleSourceClick(source)}
-								className="w-8 h-8 flex-shrink-0"
+								className={cn(
+									"w-8 h-8 flex-shrink-0 selectable-source",
+									selectedSourceId === source.id && "selected-source"
+								)}
 								title={source.name}
 							>
 								{source.logoUrl ? (
@@ -353,8 +356,8 @@ export function RssSidebar({
 									variant={selectedSourceId === source.id ? "default" : "ghost"}
 									onClick={() => handleSourceClick(source)}
 									className={cn(
-										"w-full justify-start h-auto p-3 text-left transition-colors duration-150 ease-linear",
-										selectedSourceId === source.id && "bg-primary text-primary-foreground shadow-sm"
+										"w-full justify-start h-auto p-3 text-left transition-colors duration-150 ease-linear selectable-source",
+										selectedSourceId === source.id && "selected-source"
 									)}
 								>
 								<div className="flex items-start gap-3 w-full">
