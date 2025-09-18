@@ -103,7 +103,7 @@ export function NewsSidebar({
 	};
 
 	return (
-		<div className="flex flex-col bg-card border-r border-border h-full w-full">
+		<div className="flex flex-col bg-card md:border-r border-border h-full w-full">
 			{/* Header */}
 			<div className="flex items-center justify-between p-4 border-b border-border">
 				{!isCollapsed && (
@@ -115,7 +115,7 @@ export function NewsSidebar({
 				)}
 				<button
 					onClick={onToggleCollapse}
-					className="p-1 rounded-md hover:bg-muted transition-colors"
+					className="hidden md:block p-1 rounded-md hover:bg-muted transition-colors"
 				>
 					{isCollapsed ? (
 						<ChevronRight className="h-4 w-4" />
