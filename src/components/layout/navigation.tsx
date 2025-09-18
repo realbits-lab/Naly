@@ -218,6 +218,22 @@ export function Navigation() {
                     </DropdownMenuItem>
                   );
                 })}
+                {(session?.user?.role === "manager" || session?.user?.role === "writer") &&
+                  adminNavigationItems.map((item) => {
+                    const Icon = item.icon;
+                    const localizedHref = getLocalizedPath(item.href);
+                    return (
+                      <DropdownMenuItem key={item.href} asChild>
+                        <Link
+                          href={localizedHref}
+                          className="flex items-center space-x-2"
+                        >
+                          <Icon className="h-4 w-4" />
+                          <span>{item.name}</span>
+                        </Link>
+                      </DropdownMenuItem>
+                    );
+                  })}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
