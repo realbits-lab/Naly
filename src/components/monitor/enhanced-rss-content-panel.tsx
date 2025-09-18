@@ -438,9 +438,9 @@ export function EnhancedRssContentPanel({
 	return (
 		<div className="h-full flex">
 			{/* Articles List */}
-			<div className="w-1/3 border-r">
-				<Card className="h-full border-none rounded-none">
-					<CardHeader className="border-b">
+			<div className="w-1/3 border-r flex flex-col h-full">
+				<Card className="h-full border-none rounded-none flex flex-col">
+					<CardHeader className="border-b flex-shrink-0">
 						<CardTitle className="flex items-center gap-2">
 							<img
 								src={source.logoUrl}
@@ -456,8 +456,8 @@ export function EnhancedRssContentPanel({
 						</CardTitle>
 						<p className="text-sm text-muted-foreground">{source.description}</p>
 					</CardHeader>
-					<CardContent className="p-0">
-						<div className="h-[calc(100vh-12rem)] overflow-y-auto">
+					<CardContent className="p-0 flex-1 overflow-hidden">
+						<div className="h-full overflow-y-auto">
 							{loading ? (
 								<div className="p-4 space-y-4">
 									{[...Array(8)].map((_, i) => (
@@ -540,10 +540,10 @@ export function EnhancedRssContentPanel({
 			</div>
 
 			{/* Enhanced Article Content */}
-			<div className="w-2/3">
+			<div className="w-2/3 flex flex-col h-full">
 				{selectedArticle ? (
-					<Card className="h-full border-none rounded-none">
-						<CardHeader className="border-b">
+					<Card className="h-full border-none rounded-none flex flex-col">
+						<CardHeader className="border-b flex-shrink-0">
 							<CardTitle className="text-lg line-clamp-2">
 								{selectedArticle.title}
 							</CardTitle>
@@ -569,8 +569,8 @@ export function EnhancedRssContentPanel({
 								/>
 							</div>
 						</CardHeader>
-						<CardContent className="p-0">
-							<div className="h-[calc(100vh-12rem)]">
+						<CardContent className="p-0 flex-1 overflow-hidden">
+							<div className="h-full flex flex-col">
 								{/* Enhanced Article Preview Section */}
 								{enhancedContent && (
 									<div className="border-b bg-muted/20">
@@ -666,7 +666,7 @@ export function EnhancedRssContentPanel({
 								)}
 
 								{/* Enhanced Content Section */}
-								<div className="h-full">
+								<div className="flex-1 overflow-hidden">
 									<div className="h-full p-4 overflow-y-auto">
 										{isLoadingExtraction ? (
 											<div className="flex items-center justify-center h-64">
