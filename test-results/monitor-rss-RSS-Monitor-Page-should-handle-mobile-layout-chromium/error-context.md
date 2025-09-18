@@ -21,56 +21,128 @@
       - generic [ref=e24]:
         - img [ref=e28]
         - generic [ref=e33]:
-          - button "CNBC CNBC Business and financial news finance" [ref=e34]:
+          - button "Bloomberg Markets Bloomberg Markets Bloomberg markets and financial news markets" [ref=e34]:
             - generic [ref=e35]:
-              - img "CNBC" [ref=e37]
+              - img "Bloomberg Markets" [ref=e37]
               - generic [ref=e38]:
                 - generic [ref=e39]:
-                  - heading "CNBC" [level=3] [ref=e40]
+                  - heading "Bloomberg Markets" [level=3] [ref=e40]
                   - generic [ref=e41]:
                     - img
-                - paragraph [ref=e42]: Business and financial news
-                - generic [ref=e44]: finance
-          - button "Reuters Business Reuters Business Reuters business news finance" [ref=e45]:
+                - paragraph [ref=e42]: Bloomberg markets and financial news
+                - generic [ref=e44]: markets
+          - button "Bloomberg Economics Bloomberg Economics Bloomberg economics and policy news economics" [ref=e45]:
             - generic [ref=e46]:
-              - img "Reuters Business" [ref=e48]
+              - img "Bloomberg Economics" [ref=e48]
               - generic [ref=e49]:
                 - generic [ref=e50]:
-                  - heading "Reuters Business" [level=3] [ref=e51]
+                  - heading "Bloomberg Economics" [level=3] [ref=e51]
                   - generic [ref=e52]:
                     - img
-                - paragraph [ref=e53]: Reuters business news
-                - generic [ref=e55]: finance
-          - button "Bloomberg Bloomberg Bloomberg financial news finance" [ref=e56]:
+                - paragraph [ref=e53]: Bloomberg economics and policy news
+                - generic [ref=e55]: economics
+          - button "Bloomberg Technology Bloomberg Technology Bloomberg technology and innovation news technology" [ref=e56]:
             - generic [ref=e57]:
-              - img "Bloomberg" [ref=e59]
+              - img "Bloomberg Technology" [ref=e59]
               - generic [ref=e60]:
                 - generic [ref=e61]:
-                  - heading "Bloomberg" [level=3] [ref=e62]
+                  - heading "Bloomberg Technology" [level=3] [ref=e62]
                   - generic [ref=e63]:
                     - img
-                - paragraph [ref=e64]: Bloomberg financial news
-                - generic [ref=e66]: finance
-          - button "MarketWatch MarketWatch MarketWatch real-time headlines finance" [ref=e67]:
+                - paragraph [ref=e64]: Bloomberg technology and innovation news
+                - generic [ref=e66]: technology
+          - button "Bloomberg Politics Bloomberg Politics Bloomberg politics and policy news politics" [ref=e67]:
             - generic [ref=e68]:
-              - img "MarketWatch" [ref=e70]
+              - img "Bloomberg Politics" [ref=e70]
               - generic [ref=e71]:
                 - generic [ref=e72]:
-                  - heading "MarketWatch" [level=3] [ref=e73]
+                  - heading "Bloomberg Politics" [level=3] [ref=e73]
                   - generic [ref=e74]:
                     - img
-                - paragraph [ref=e75]: MarketWatch real-time headlines
-                - generic [ref=e77]: finance
-          - button "Yahoo Finance Yahoo Finance Yahoo Finance news finance" [ref=e78]:
+                - paragraph [ref=e75]: Bloomberg politics and policy news
+                - generic [ref=e77]: politics
+          - button "CNBC Top News CNBC Top News CNBC top business and financial news business" [ref=e78]:
             - generic [ref=e79]:
-              - img "Yahoo Finance" [ref=e81]
+              - img "CNBC Top News" [ref=e81]
               - generic [ref=e82]:
                 - generic [ref=e83]:
-                  - heading "Yahoo Finance" [level=3] [ref=e84]
+                  - heading "CNBC Top News" [level=3] [ref=e84]
                   - generic [ref=e85]:
                     - img
-                - paragraph [ref=e86]: Yahoo Finance news
-                - generic [ref=e88]: finance
+                - paragraph [ref=e86]: CNBC top business and financial news
+                - generic [ref=e88]: business
+          - button "CNBC World Markets CNBC World Markets CNBC international markets and analysis markets" [ref=e89]:
+            - generic [ref=e90]:
+              - img "CNBC World Markets" [ref=e92]
+              - generic [ref=e93]:
+                - generic [ref=e94]:
+                  - heading "CNBC World Markets" [level=3] [ref=e95]
+                  - generic [ref=e96]:
+                    - img
+                - paragraph [ref=e97]: CNBC international markets and analysis
+                - generic [ref=e99]: markets
+          - button "CNBC US Markets CNBC US Markets CNBC US markets and earnings markets" [ref=e100]:
+            - generic [ref=e101]:
+              - img "CNBC US Markets" [ref=e103]
+              - generic [ref=e104]:
+                - generic [ref=e105]:
+                  - heading "CNBC US Markets" [level=3] [ref=e106]
+                  - generic [ref=e107]:
+                    - img
+                - paragraph [ref=e108]: CNBC US markets and earnings
+                - generic [ref=e110]: markets
+          - button "Financial Times Home Financial Times main news feed finance" [ref=e111]:
+            - generic [ref=e112]:
+              - generic [ref=e113]:
+                - img
+              - generic [ref=e114]:
+                - generic [ref=e115]:
+                  - heading "Financial Times Home" [level=3] [ref=e116]
+                  - generic [ref=e117]:
+                    - img
+                - paragraph [ref=e118]: Financial Times main news feed
+                - generic [ref=e120]: finance
+          - button "Financial Times Markets Financial Times markets and trading news markets" [ref=e121]:
+            - generic [ref=e122]:
+              - generic [ref=e123]:
+                - img
+              - generic [ref=e124]:
+                - generic [ref=e125]:
+                  - heading "Financial Times Markets" [level=3] [ref=e126]
+                  - generic [ref=e127]:
+                    - img
+                - paragraph [ref=e128]: Financial Times markets and trading news
+                - generic [ref=e130]: markets
+          - button "Fox Business Economy Fox Business Economy Fox Business economic news and analysis economy" [ref=e131]:
+            - generic [ref=e132]:
+              - img "Fox Business Economy" [ref=e134]
+              - generic [ref=e135]:
+                - generic [ref=e136]:
+                  - heading "Fox Business Economy" [level=3] [ref=e137]
+                  - generic [ref=e138]:
+                    - img
+                - paragraph [ref=e139]: Fox Business economic news and analysis
+                - generic [ref=e141]: economy
+          - button "Fox Business Markets Fox Business Markets Fox Business markets and trading news markets" [ref=e142]:
+            - generic [ref=e143]:
+              - img "Fox Business Markets" [ref=e145]
+              - generic [ref=e146]:
+                - generic [ref=e147]:
+                  - heading "Fox Business Markets" [level=3] [ref=e148]
+                  - generic [ref=e149]:
+                    - img
+                - paragraph [ref=e150]: Fox Business markets and trading news
+                - generic [ref=e152]: markets
+          - button "Forbes Business Forbes Business Forbes business news and insights (100% success rate) business" [ref=e153]:
+            - generic [ref=e154]:
+              - img "Forbes Business" [ref=e156]
+              - generic [ref=e157]:
+                - generic [ref=e158]:
+                  - heading "Forbes Business" [level=3] [ref=e159]
+                  - generic [ref=e160]:
+                    - img
+                - paragraph [ref=e161]: Forbes business news and insights (100% success rate)
+                - generic [ref=e163]: business
   - region "Notifications alt+T"
-  - alert [ref=e89]
+  - alert [ref=e164]
 ```

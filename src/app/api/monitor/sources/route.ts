@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { rssSources } from "@/lib/schema/rss";
 import { eq } from "drizzle-orm";
 
-// Default RSS sources based on compatibility testing (100% success rate sources)
+// Verified RSS sources with 100% content extraction success
 const DEFAULT_RSS_SOURCES = [
 	// Bloomberg RSS sources (100% success rate)
 	{
@@ -15,10 +15,10 @@ const DEFAULT_RSS_SOURCES = [
 		logoUrl: "https://www.bloomberg.com/favicon.ico"
 	},
 	{
-		name: "Bloomberg Wealth",
-		feedUrl: "https://feeds.bloomberg.com/wealth/news.rss",
-		description: "Bloomberg wealth and investment news",
-		category: "wealth",
+		name: "Bloomberg Economics",
+		feedUrl: "https://feeds.bloomberg.com/economics/news.rss",
+		description: "Bloomberg economics and policy news",
+		category: "economics",
 		isActive: true,
 		logoUrl: "https://www.bloomberg.com/favicon.ico"
 	},
@@ -65,10 +65,10 @@ const DEFAULT_RSS_SOURCES = [
 	},
 	// Financial Times RSS sources (100% success rate)
 	{
-		name: "Financial Times Companies",
-		feedUrl: "https://www.ft.com/companies?format=rss",
-		description: "Financial Times company news and analysis",
-		category: "companies",
+		name: "Financial Times Home",
+		feedUrl: "https://ft.com/rss/home",
+		description: "Financial Times main news feed",
+		category: "finance",
 		isActive: true,
 		logoUrl: "https://www.ft.com/favicon.ico"
 	},
@@ -80,56 +80,31 @@ const DEFAULT_RSS_SOURCES = [
 		isActive: true,
 		logoUrl: "https://www.ft.com/favicon.ico"
 	},
-	// MarketWatch RSS sources (100% success rate)
+	// Fox Business RSS sources (100% success rate)
 	{
-		name: "MarketWatch Top Stories",
-		feedUrl: "http://feeds.marketwatch.com/marketwatch/topstories/",
-		description: "MarketWatch top financial stories",
-		category: "finance",
+		name: "Fox Business Economy",
+		feedUrl: "https://moxie.foxbusiness.com/google-publisher/economy.xml",
+		description: "Fox Business economic news and analysis",
+		category: "economy",
 		isActive: true,
-		logoUrl: "https://www.marketwatch.com/favicon.ico"
+		logoUrl: "https://www.foxbusiness.com/favicon.ico"
 	},
 	{
-		name: "MarketWatch Headlines",
-		feedUrl: "http://feeds.marketwatch.com/marketwatch/realtimeheadlines/",
-		description: "MarketWatch real-time headlines",
-		category: "finance",
+		name: "Fox Business Markets",
+		feedUrl: "https://moxie.foxbusiness.com/google-publisher/markets.xml",
+		description: "Fox Business markets and trading news",
+		category: "markets",
 		isActive: true,
-		logoUrl: "https://www.marketwatch.com/favicon.ico"
+		logoUrl: "https://www.foxbusiness.com/favicon.ico"
 	},
-	// Investment Analysis sources (100% success rate)
-	{
-		name: "Seeking Alpha Articles",
-		feedUrl: "https://seekingalpha.com/feed.xml",
-		description: "Seeking Alpha investment analysis and articles",
-		category: "investment",
-		isActive: true,
-		logoUrl: "https://seekingalpha.com/favicon.ico"
-	},
+	// Verified high-quality sources
 	{
 		name: "Forbes Business",
 		feedUrl: "https://www.forbes.com/business/feed/",
-		description: "Forbes business news and insights",
+		description: "Forbes business news and insights (100% success rate)",
 		category: "business",
 		isActive: true,
 		logoUrl: "https://www.forbes.com/favicon.ico"
-	},
-	// Partial success sources (monitored)
-	{
-		name: "Yahoo Finance",
-		feedUrl: "https://finance.yahoo.com/news/rssindex",
-		description: "Yahoo Finance top stories (66.7% success rate)",
-		category: "finance",
-		isActive: true,
-		logoUrl: "https://finance.yahoo.com/favicon.ico"
-	},
-	{
-		name: "Seeking Alpha Market News",
-		feedUrl: "https://seekingalpha.com/market_currents.xml",
-		description: "Seeking Alpha breaking market news (66.7% success rate)",
-		category: "investment",
-		isActive: true,
-		logoUrl: "https://seekingalpha.com/favicon.ico"
 	}
 ];
 
