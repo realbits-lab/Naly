@@ -1,17 +1,16 @@
-import { generateObject, generateText, streamText } from "ai";
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import { generateObject, generateText, streamText, createGateway } from "ai";
 
-// Configure Google AI provider
-const google = createGoogleGenerativeAI({
-	apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.AI_GATEWAY_API_KEY,
+// Configure AI Gateway
+const gateway = createGateway({
+	apiKey: process.env.AI_GATEWAY_API_KEY,
+	// Use Vercel AI Gateway endpoint
+	baseURL: "https://ai-gateway.vercel.sh/v1/ai",
 });
 
-// Model configuration
+// Model configuration - using provider/model format for AI Gateway
 export const AI_MODELS = {
-	GEMINI_2_5_FLASH_LITE: "gemini-2.5-flash-lite",
-	GEMINI_2_5_FLASH: "gemini-2.5-flash",
-	GPT_4O_MINI: "gpt-4o-mini",
-	GPT_4O: "gpt-4o",
+	GEMINI_2_5_FLASH_LITE: "google/gemini-2.5-flash-lite",
+	GEMINI_2_5_FLASH: "google/gemini-2.5-flash",
 } as const;
 
 // Default model for most operations
@@ -34,7 +33,7 @@ export async function generateAIText({
 	const modelName = AI_MODELS[model];
 
 	const result = await generateText({
-		model: google(modelName),
+		model: gateway(modelName),
 		prompt,
 		temperature,
 		maxTokens,
@@ -60,7 +59,7 @@ export async function generateAIObject<T>({
 	const modelName = AI_MODELS[model];
 
 	const result = await generateObject({
-		model: google(modelName),
+		model: gateway(modelName),
 		prompt,
 		schema,
 		temperature,
@@ -86,7 +85,7 @@ export async function streamAIText({
 	const modelName = AI_MODELS[model];
 
 	const result = await streamText({
-		model: google(modelName),
+		model: gateway(modelName),
 		prompt,
 		temperature,
 		maxTokens,

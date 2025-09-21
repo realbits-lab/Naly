@@ -107,6 +107,16 @@ Located in `src/lib/schema/` with modular organization:
 
 ### AI Gateway
 - Use AI_GATEWAY_API_KEY instead of provider API keys when using Vercel AI Gateway
+- For recent Vercel AI Gateway features and implementation patterns, use GitHub code search (grep MCP), Context7 MCP, or web search as the service is recent and may not be in knowledge base
+- AI Gateway supports ~100 AI models without managing API keys, rate limits, or provider accounts
+- Use model string format `creator/model-name` (e.g., `openai/gpt-4o`) for automatic AI Gateway integration
+
+### Tailwind CSS v4
+- For Tailwind CSS v4 information and migration guidance, use GitHub code search (grep MCP), Context7 MCP, or web search as v4 is recent with significant architectural changes
+- v4 uses CSS-first configuration with @theme directives instead of JavaScript config
+- Built-in container queries and 3D transforms support
+- Requires Safari 16.4+, Chrome 111+, Firefox 128+ (use v3.4 for older browser support)
+- CSS variables by default with @layer rules for cascade layers
 
 ### Git Repository
 - Current branch: feature/issue-2

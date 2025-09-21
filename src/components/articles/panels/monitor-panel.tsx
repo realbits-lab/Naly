@@ -61,10 +61,10 @@ export function MonitorPanel() {
 	const [lastUpdateTime, setLastUpdateTime] = useState<Date | null>(null);
 	const [isGeneratingReport, setIsGeneratingReport] = useState(false);
 
-	// Fetch articles from database on mount
-	useEffect(() => {
-		fetchArticlesFromDatabase();
-	}, []);
+	// Don't fetch articles automatically on mount - wait for user action
+	// useEffect(() => {
+	// 	fetchArticlesFromDatabase();
+	// }, []);
 
 	const fetchArticlesFromDatabase = async () => {
 		try {

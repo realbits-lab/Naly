@@ -156,7 +156,7 @@ Format your response as a structured analysis with clear bullet points for each 
 
 		const topicsAnalysis = await generateAIText({
 			prompt: topicsPrompt,
-			model: "GPT_4O_MINI",
+			model: "GEMINI_2_5_FLASH_LITE",
 			temperature: 0.3,
 			maxTokens: 1500,
 		});
@@ -201,7 +201,7 @@ Make the report professional, actionable, and focused on providing valuable insi
 
 		const marketReport = await generateAIText({
 			prompt: reportPrompt,
-			model: "GPT_4O",
+			model: "GEMINI_2_5_FLASH",
 			temperature: 0.4,
 			maxTokens: 3000,
 		});
