@@ -5,6 +5,8 @@ import {
 	AlertTriangle,
 	BarChart3,
 	Calendar,
+	ChevronDown,
+	ChevronUp,
 	Clock,
 	Download,
 	ExternalLink,
@@ -43,6 +45,7 @@ interface Article {
 	sourceName: string;
 	sourceCategory: string;
 	sourceLogo: string | null;
+	fullContent?: string | null;
 }
 
 interface UpdateSummary {
@@ -60,26 +63,29 @@ export function MonitorPanel() {
 	const [updateSummary, setUpdateSummary] = useState<UpdateSummary | null>(null);
 	const [lastUpdateTime, setLastUpdateTime] = useState<Date | null>(null);
 	const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+	const [expandedArticles, setExpandedArticles] = useState<Set<string>>(new Set());
 
-	// Don't fetch articles automatically on mount - wait for user action
-	// useEffect(() => {
-	// 	fetchArticlesFromDatabase();
-	// }, []);
+	// Fetch database statistics on mount
+	useEffect(() => {
+		fetchDatabaseStats();
+	}, []);
 
-	const fetchArticlesFromDatabase = async () => {
+	const fetchDatabaseStats = async () => {
 		try {
 			setIsLoading(true);
-			const response = await fetch('/api/monitor/update-articles?limit=200');
+			const response = await fetch('/api/monitor/stats');
 
 			if (!response.ok) {
-				throw new Error('Failed to fetch articles');
+				throw new Error('Failed to fetch database stats');
 			}
 
 			const data = await response.json();
 			setArticles(data.articles || []);
+			setUpdateSummary(data.summary);
+			setLastUpdateTime(new Date());
 		} catch (error) {
-			console.error('Error fetching articles:', error);
-			toast.error('Failed to load articles');
+			console.error('Error fetching database stats:', error);
+			toast.error('Failed to load database statistics');
 		} finally {
 			setIsLoading(false);
 		}
@@ -106,12 +112,7 @@ export function MonitorPanel() {
 
 			const data = await response.json();
 
-			// Update articles with new data
-			setArticles(data.articles || []);
-			setUpdateSummary(data.summary);
-			setLastUpdateTime(new Date());
-
-			// Show success message with summary
+			// Show success message with fetch summary
 			if (data.summary.newArticles > 0) {
 				toast.success(
 					`Successfully fetched ${data.summary.newArticles} new articles from ${data.summary.processedSources} sources`,
@@ -134,6 +135,9 @@ export function MonitorPanel() {
 					}
 				);
 			}
+
+			// After successful update, fetch the updated database statistics
+			await fetchDatabaseStats();
 
 		} catch (error) {
 			console.error('Error updating articles:', error);
@@ -165,8 +169,8 @@ export function MonitorPanel() {
 				duration: 5000,
 			});
 
-			// Optionally refresh articles to show any newly fetched ones
-			await fetchArticlesFromDatabase();
+			// Refresh database statistics after report generation (articles will be marked as processed)
+			await fetchDatabaseStats();
 
 		} catch (error) {
 			console.error('Error generating report:', error);
@@ -215,6 +219,18 @@ export function MonitorPanel() {
 		if (hours < 24) return `${hours}h ago`;
 		const days = Math.floor(hours / 24);
 		return `${days}d ago`;
+	};
+
+	const toggleArticleExpansion = (articleId: string) => {
+		setExpandedArticles(prev => {
+			const newSet = new Set(prev);
+			if (newSet.has(articleId)) {
+				newSet.delete(articleId);
+			} else {
+				newSet.add(articleId);
+			}
+			return newSet;
+		});
 	};
 
 	return (
@@ -307,7 +323,7 @@ export function MonitorPanel() {
 											{updateSummary.totalArticles}
 										</div>
 										<div className="text-xs text-muted-foreground">
-											Total in DB
+											Showing
 										</div>
 									</div>
 								</div>
@@ -340,7 +356,7 @@ export function MonitorPanel() {
 								<Badge variant="secondary">{articles.length} articles</Badge>
 							</CardTitle>
 							<CardDescription>
-								Latest articles fetched from all RSS sources
+								Latest 10 unprocessed articles from RSS sources
 							</CardDescription>
 						</CardHeader>
 						<CardContent>
@@ -359,15 +375,18 @@ export function MonitorPanel() {
 									</div>
 								) : (
 									<div className="space-y-4">
-										{articles.map((article) => (
-											<div
-												key={article.id}
-												className={`p-4 border rounded-lg hover:bg-muted/50 transition-all ${
-													article.isNew
-														? 'ring-2 ring-primary ring-offset-2 animate-pulse-once'
-														: ''
-												}`}
-											>
+										{articles.map((article) => {
+											const isExpanded = expandedArticles.has(article.id);
+											return (
+												<div
+													key={article.id}
+													className={`p-4 border rounded-lg hover:bg-muted/50 transition-all cursor-pointer ${
+														article.isNew
+															? 'ring-2 ring-primary ring-offset-2 animate-pulse-once'
+															: ''
+													}`}
+													onClick={() => toggleArticleExpansion(article.id)}
+												>
 												{/* Article Header */}
 												<div className="flex items-start justify-between mb-2">
 													<div className="flex items-center space-x-2">
@@ -418,6 +437,20 @@ export function MonitorPanel() {
 													</p>
 												)}
 
+												{/* Expanded Content */}
+												{isExpanded && article.fullContent && (
+													<div className="mt-4 p-4 bg-muted/30 rounded-lg border-l-4 border-primary">
+														<h4 className="font-medium text-sm mb-2 flex items-center">
+															<FileText className="h-4 w-4 mr-1" />
+															Full Article Content
+														</h4>
+														<div className="text-sm text-muted-foreground max-h-96 overflow-y-auto whitespace-pre-wrap">
+															{article.fullContent.substring(0, 5000)}
+															{article.fullContent.length > 5000 && "..."}
+														</div>
+													</div>
+												)}
+
 												{/* Article Footer */}
 												<div className="flex items-center justify-between">
 													<div className="flex items-center space-x-4 text-xs text-muted-foreground">
@@ -436,19 +469,30 @@ export function MonitorPanel() {
 															</div>
 														)}
 													</div>
-													{article.link && (
-														<Button
-															variant="ghost"
-															size="sm"
-															onClick={() => window.open(article.link, '_blank')}
-														>
-															<ExternalLink className="h-3 w-3 mr-1" />
-															Read
-														</Button>
-													)}
+													<div className="flex items-center space-x-2">
+														{isExpanded ? (
+															<ChevronUp className="h-4 w-4 text-muted-foreground" />
+														) : (
+															<ChevronDown className="h-4 w-4 text-muted-foreground" />
+														)}
+														{article.link && (
+															<Button
+																variant="ghost"
+																size="sm"
+																onClick={(e) => {
+																	e.stopPropagation();
+																	window.open(article.link, '_blank');
+																}}
+															>
+																<ExternalLink className="h-3 w-3 mr-1" />
+																Read
+															</Button>
+														)}
+													</div>
 												</div>
 											</div>
-										))}
+										);
+										})}
 									</div>
 								)}
 							</ScrollArea>
