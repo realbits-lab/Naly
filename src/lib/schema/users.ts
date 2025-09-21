@@ -10,19 +10,20 @@ import type { AdapterAccountType } from "next-auth/adapters";
 
 export const userRoleEnum = pgEnum("user_role", ["reader", "writer", "manager"]);
 
-export const users = pgTable("user", {
+export const users = pgTable("users", {
 	id: text("id")
 		.primaryKey()
 		.$defaultFn(() => crypto.randomUUID()),
 	name: text("name"),
 	email: text("email").unique(),
-	emailVerified: timestamp("emailVerified", { mode: "date" }),
+	emailVerified: timestamp("emailverified", { mode: "date" }),
 	image: text("image"),
 	role: userRoleEnum("role").notNull().default("reader"),
+	password: text("password"), // Hashed password for credentials auth
 });
 
 export const accounts = pgTable(
-	"account",
+	"accounts",
 	{
 		userId: text("userId")
 			.notNull()
@@ -45,7 +46,7 @@ export const accounts = pgTable(
 	}),
 );
 
-export const sessions = pgTable("session", {
+export const sessions = pgTable("sessions", {
 	sessionToken: text("sessionToken").primaryKey(),
 	userId: text("userId")
 		.notNull()
