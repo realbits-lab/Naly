@@ -10,69 +10,56 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { MarkdownContent } from "@/components/articles/markdown-content";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { NewsService } from "@/lib/news-service";
+import { db } from "@/lib/db";
+import { generatedArticles } from "@/lib/schema";
+import { eq } from "drizzle-orm";
 
 interface NewsViewPageProps {
 	params: {
 		locale: string;
 		id: string;
 	};
-	searchParams: {
-		title?: string;
-		content?: string;
-		source?: string;
-		category?: string;
-		publishedAt?: string;
-		summary?: string;
-	};
 }
 
-// This function reconstructs the article from URL parameters or fetches fresh news
-async function getNewsArticle(id: string, searchParams: NewsViewPageProps['searchParams']) {
+// Fetch generated article from database by ID
+async function getGeneratedArticle(id: string) {
 	try {
-		// If we have URL parameters, use them to reconstruct the article
-		if (searchParams.title && searchParams.content) {
-			return {
-				id,
-				title: decodeURIComponent(searchParams.title),
-				content: decodeURIComponent(searchParams.content),
-				source: searchParams.source ? decodeURIComponent(searchParams.source) : "Financial News",
-				category: searchParams.category ? decodeURIComponent(searchParams.category) : "general",
-				publishedAt: searchParams.publishedAt || new Date().toISOString(),
-				summary: searchParams.summary ? decodeURIComponent(searchParams.summary) : undefined,
-			};
+		const [article] = await db
+			.select()
+			.from(generatedArticles)
+			.where(eq(generatedArticles.id, id))
+			.limit(1);
+
+		if (!article) {
+			return null;
 		}
 
-		// Fallback: fetch fresh news and try to find a matching article
-		const newsService = new NewsService();
-		const articles = await newsService.fetchLatestNews();
-
-		// Try to find an article that matches the ID pattern
-		const matchingArticle = articles.find(article =>
-			id.includes(article.title.slice(0, 20).replace(/\s+/g, '-').toLowerCase())
-		);
-
-		if (matchingArticle) {
-			return {
-				id,
-				title: matchingArticle.title,
-				content: matchingArticle.content,
-				source: matchingArticle.source,
-				category: matchingArticle.category,
-				publishedAt: matchingArticle.publishedAt,
-				summary: matchingArticle.summary,
-			};
-		}
-
-		return null;
+		return {
+			id: article.id,
+			title: article.title,
+			content: article.content,
+			summary: article.summary,
+			source: article.sourcePublisher || "AI Generated",
+			category: article.sourceCategory || "market-intelligence",
+			publishedAt: article.createdAt?.toISOString() || new Date().toISOString(),
+			marketAnalysis: article.marketAnalysis,
+			investmentImplications: article.investmentImplications,
+			sentiment: article.sentiment,
+			keywords: article.keywords as string[] || [],
+			entities: article.entities as string[] || [],
+			marketImpact: article.marketImpact,
+			wordCount: article.wordCount,
+			readingTime: article.readingTime,
+			aiModel: article.aiModel,
+		};
 	} catch (error) {
-		console.error("Failed to fetch news article:", error);
+		console.error("Failed to fetch generated article:", error);
 		return null;
 	}
 }
 
-export default async function NewsViewPage({ params, searchParams }: NewsViewPageProps) {
-	const article = await getNewsArticle(params.id, searchParams);
+export default async function NewsViewPage({ params }: NewsViewPageProps) {
+	const article = await getGeneratedArticle(params.id);
 
 	if (!article) {
 		notFound();
@@ -147,7 +134,7 @@ export default async function NewsViewPage({ params, searchParams }: NewsViewPag
 
 				<Card>
 					<CardHeader>
-						<CardTitle>Article Content</CardTitle>
+						<CardTitle>Market Intelligence Report</CardTitle>
 					</CardHeader>
 					<CardContent>
 						<div className="prose prose-gray dark:prose-invert max-w-none">
@@ -156,14 +143,119 @@ export default async function NewsViewPage({ params, searchParams }: NewsViewPag
 					</CardContent>
 				</Card>
 
+				{article.marketAnalysis && (
+					<Card>
+						<CardHeader>
+							<CardTitle>Market Analysis</CardTitle>
+						</CardHeader>
+						<CardContent>
+							<div className="prose prose-gray dark:prose-invert max-w-none">
+								<MarkdownContent content={article.marketAnalysis} />
+							</div>
+						</CardContent>
+					</Card>
+				)}
+
+				{article.investmentImplications && (
+					<Card>
+						<CardHeader>
+							<CardTitle>Investment Implications</CardTitle>
+						</CardHeader>
+						<CardContent>
+							<div className="prose prose-gray dark:prose-invert max-w-none">
+								<MarkdownContent content={article.investmentImplications} />
+							</div>
+						</CardContent>
+					</Card>
+				)}
+
+				{article.marketImpact && (
+					<Card>
+						<CardHeader>
+							<CardTitle>Market Impact Assessment</CardTitle>
+						</CardHeader>
+						<CardContent>
+							<p className="text-muted-foreground leading-relaxed">
+								{article.marketImpact}
+							</p>
+						</CardContent>
+					</Card>
+				)}
+
+				{(article.keywords.length > 0 || article.entities.length > 0) && (
+					<Card>
+						<CardHeader>
+							<CardTitle>Key Information</CardTitle>
+						</CardHeader>
+						<CardContent className="space-y-4">
+							{article.keywords.length > 0 && (
+								<div>
+									<h4 className="text-sm font-semibold mb-2">Keywords</h4>
+									<div className="flex flex-wrap gap-2">
+										{article.keywords.map((keyword, index) => (
+											<span
+												key={index}
+												className="inline-flex items-center px-2 py-1 rounded-md bg-primary/10 text-primary text-xs"
+											>
+												{keyword}
+											</span>
+										))}
+									</div>
+								</div>
+							)}
+							{article.entities.length > 0 && (
+								<div>
+									<h4 className="text-sm font-semibold mb-2">Key Entities</h4>
+									<div className="flex flex-wrap gap-2">
+										{article.entities.map((entity, index) => (
+											<span
+												key={index}
+												className="inline-flex items-center px-2 py-1 rounded-md bg-secondary/50 text-secondary-foreground text-xs"
+											>
+												{entity}
+											</span>
+										))}
+									</div>
+								</div>
+							)}
+						</CardContent>
+					</Card>
+				)}
+
 				<Card>
 					<CardHeader>
-						<CardTitle>Real-Time Financial News</CardTitle>
+						<CardTitle>Report Metadata</CardTitle>
 					</CardHeader>
 					<CardContent>
-						<p className="text-sm text-muted-foreground">
-							This article was generated from real-time financial data sources and web search using AI analysis.
-							Content is updated dynamically to provide the latest market insights and financial intelligence.
+						<div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-muted-foreground">
+							{article.sentiment && (
+								<div>
+									<span className="font-medium">Market Sentiment:</span>{" "}
+									<span className="capitalize">{article.sentiment}</span>
+								</div>
+							)}
+							{article.wordCount && (
+								<div>
+									<span className="font-medium">Word Count:</span>{" "}
+									{article.wordCount.toLocaleString()}
+								</div>
+							)}
+							{article.readingTime && (
+								<div>
+									<span className="font-medium">Reading Time:</span>{" "}
+									{article.readingTime} minutes
+								</div>
+							)}
+							{article.aiModel && (
+								<div>
+									<span className="font-medium">AI Model:</span>{" "}
+									{article.aiModel}
+								</div>
+							)}
+						</div>
+						<p className="text-xs text-muted-foreground mt-4">
+							This report was generated using AI analysis of real-time financial data sources and market intelligence.
+							Content is dynamically created to provide the latest market insights and investment considerations.
 						</p>
 					</CardContent>
 				</Card>

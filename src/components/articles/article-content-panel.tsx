@@ -190,15 +190,7 @@ export function ArticleContentPanel({ article }: ArticleContentPanelProps) {
 									<a
 										href={(() => {
 											const locale = getCurrentLocale();
-											const articleParams = new URLSearchParams({
-												title: encodeURIComponent(displayArticle.title),
-												content: encodeURIComponent(displayArticle.content || displayArticle.summary || ""),
-												source: encodeURIComponent(displayArticle.sourcePublisher || "Financial News"),
-												category: encodeURIComponent(displayArticle.sourceCategory || "general"),
-												publishedAt: displayArticle.createdAt,
-												...(displayArticle.summary && { summary: encodeURIComponent(displayArticle.summary) })
-											});
-											return `/${locale}/news/view/${displayArticle.id}?${articleParams.toString()}`;
+											return `/${locale}/news/view/${displayArticle.id}`;
 										})()}
 										target="_blank"
 										rel="noopener noreferrer"
@@ -231,15 +223,7 @@ export function ArticleContentPanel({ article }: ArticleContentPanelProps) {
 									<Button className="mt-4" asChild>
 										<a href={(() => {
 											const locale = getCurrentLocale();
-											const articleParams = new URLSearchParams({
-												title: encodeURIComponent(displayArticle.title),
-												content: encodeURIComponent(displayArticle.content || displayArticle.summary || ""),
-												source: encodeURIComponent(displayArticle.sourcePublisher || "Financial News"),
-												category: encodeURIComponent(displayArticle.sourceCategory || "general"),
-												publishedAt: displayArticle.createdAt,
-												...(displayArticle.summary && { summary: encodeURIComponent(displayArticle.summary) })
-											});
-											return `/${locale}/news/view/${displayArticle.id}?${articleParams.toString()}`;
+											return `/${locale}/news/view/${displayArticle.id}`;
 										})()}>View Full Article</a>
 									</Button>
 								</CardContent>
