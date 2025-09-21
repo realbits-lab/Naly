@@ -1,4 +1,4 @@
-import { MonitorPageClient } from "@/components/monitor/monitor-page-client";
+import { MonitorPanel } from "@/components/articles/panels/monitor-panel";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { UserRole } from "@/types/user";
@@ -16,5 +16,5 @@ export default async function MonitorPageRoute() {
 		redirect("/unauthorized");
 	}
 
-	return <MonitorPageClient />;
+	return <MonitorPanel />;
 }

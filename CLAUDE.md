@@ -102,8 +102,8 @@ Located in `src/lib/schema/` with modular organization:
 ### Testing
 - **Unit Tests**: Jest framework
 - **E2E Tests**: Playwright with headless option
-- **Authentication**: Use `.auth/user.json` for Google OAuth in Playwright tests
-- Default test account: jong95@gmail.com
+- **Authentication**: Use `.auth/user.json` file for id and password authentication for Playwright MCP tools
+- Default test account: manager.ua77yxv4@test.naly.com with manager role
 
 ### AI Gateway
 - Use AI_GATEWAY_API_KEY instead of provider API keys when using Vercel AI Gateway

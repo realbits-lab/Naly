@@ -13,6 +13,7 @@ import {
 	RefreshCw,
 	TrendingDown,
 	TrendingUp,
+	Zap,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -58,6 +59,7 @@ export function MonitorPanel() {
 	const [isLoading, setIsLoading] = useState(true);
 	const [updateSummary, setUpdateSummary] = useState<UpdateSummary | null>(null);
 	const [lastUpdateTime, setLastUpdateTime] = useState<Date | null>(null);
+	const [isGeneratingReport, setIsGeneratingReport] = useState(false);
 
 	// Fetch articles from database on mount
 	useEffect(() => {
@@ -141,6 +143,39 @@ export function MonitorPanel() {
 		}
 	};
 
+	const handleGenerateReport = async () => {
+		setIsGeneratingReport(true);
+
+		try {
+			toast.info('Generating comprehensive market report...', {
+				duration: 20000,
+			});
+
+			const response = await fetch('/api/monitor/generate-report', {
+				method: 'POST',
+			});
+
+			if (!response.ok) {
+				throw new Error('Failed to generate report');
+			}
+
+			const result = await response.json();
+
+			toast.success(`Market report generated successfully! Found ${result.topicsCount} key topics.`, {
+				duration: 5000,
+			});
+
+			// Optionally refresh articles to show any newly fetched ones
+			await fetchArticlesFromDatabase();
+
+		} catch (error) {
+			console.error('Error generating report:', error);
+			toast.error('Failed to generate market report. Please try again.');
+		} finally {
+			setIsGeneratingReport(false);
+		}
+	};
+
 	const getSentimentColor = (sentiment: string | null) => {
 		switch (sentiment) {
 			case "positive":
@@ -209,6 +244,16 @@ export function MonitorPanel() {
 								className={`h-4 w-4 mr-2 ${isUpdating ? "animate-spin" : ""}`}
 							/>
 							Update Articles
+						</Button>
+						<Button
+							onClick={handleGenerateReport}
+							disabled={isGeneratingReport || isUpdating}
+							variant="secondary"
+						>
+							<Zap
+								className={`h-4 w-4 mr-2 ${isGeneratingReport ? "animate-pulse" : ""}`}
+							/>
+							Generate Market Report
 						</Button>
 					</div>
 				</div>

@@ -1,25 +1,21 @@
-import { createOpenAI } from "@ai-sdk/openai";
 import { generateObject, generateText, streamText } from "ai";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
 
-if (!process.env.AI_GATEWAY_API_KEY) {
-	throw new Error("AI_GATEWAY_API_KEY is not defined");
-}
-
-// Configure OpenAI client with Vercel AI Gateway
-export const openai = createOpenAI({
-	apiKey: process.env.AI_GATEWAY_API_KEY,
-	baseURL: "https://gateway.ai.cloudflare.com/v1/naly/openai",
+// Configure Google AI provider
+const google = createGoogleGenerativeAI({
+	apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.AI_GATEWAY_API_KEY,
 });
 
 // Model configuration
 export const AI_MODELS = {
+	GEMINI_2_5_FLASH_LITE: "gemini-2.5-flash-lite",
+	GEMINI_2_5_FLASH: "gemini-2.5-flash",
 	GPT_4O_MINI: "gpt-4o-mini",
 	GPT_4O: "gpt-4o",
-	GPT_4_TURBO: "gpt-4-turbo-preview",
 } as const;
 
 // Default model for most operations
-export const DEFAULT_MODEL = "GPT_4O_MINI" as keyof typeof AI_MODELS;
+export const DEFAULT_MODEL = "GEMINI_2_5_FLASH_LITE" as keyof typeof AI_MODELS;
 
 /**
  * Generate text using AI with configurable parameters
@@ -38,13 +34,13 @@ export async function generateAIText({
 	const modelName = AI_MODELS[model];
 
 	const result = await generateText({
-		model: openai(modelName),
+		model: google(modelName),
 		prompt,
 		temperature,
 		maxTokens,
 	});
 
-	return result.text;
+	return result;
 }
 
 /**
@@ -64,7 +60,7 @@ export async function generateAIObject<T>({
 	const modelName = AI_MODELS[model];
 
 	const result = await generateObject({
-		model: openai(modelName),
+		model: google(modelName),
 		prompt,
 		schema,
 		temperature,
@@ -90,7 +86,7 @@ export async function streamAIText({
 	const modelName = AI_MODELS[model];
 
 	const result = await streamText({
-		model: openai(modelName),
+		model: google(modelName),
 		prompt,
 		temperature,
 		maxTokens,
