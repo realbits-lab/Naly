@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth";
 import { UserRole } from "@/types/user";
 import { db } from "@/lib/db";
 import { rssSources, rssArticles, generatedArticles } from "@/lib/schema";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, inArray } from "drizzle-orm";
 import { generateAIText } from "@/lib/ai";
 import Parser from "rss-parser";
 
@@ -63,59 +63,8 @@ export async function POST(request: NextRequest) {
 
 		console.log("Starting market report generation...");
 
-		// Step 1: Fetch latest RSS articles and store to DB
-		console.log("Step 1: Fetching latest RSS articles...");
-
-		const sources = await db.select().from(rssSources).where(eq(rssSources.isActive, true));
-		let totalNewArticles = 0;
-		const newArticleIds: string[] = [];
-
-		for (const source of sources) {
-			try {
-				console.log(`Fetching articles from: ${source.name}`);
-				const feed = await tryFetchRSS(source.feedUrl);
-
-				const newArticles = feed.items.slice(0, 10).map((item: any) => ({
-					sourceId: source.id,
-					title: item.title || "Untitled",
-					description: item.contentSnippet || item.summary || item.content || "",
-					content: item['content:encoded'] || item.content || item.summary || "",
-					link: item.link || "",
-					publishedAt: item.pubDate || item.isoDate || new Date(),
-					author: item.creator || item['dc:creator'] || item.author || null,
-					categories: item.categories || [],
-					guid: item.guid || `${source.id}-${Date.now()}-${Math.random()}`,
-					imageUrl: item.enclosure?.url || null,
-				}));
-
-				// Insert new articles (avoiding duplicates by link)
-				for (const article of newArticles) {
-					try {
-						const existingArticle = await db
-							.select({ id: rssArticles.id })
-							.from(rssArticles)
-							.where(eq(rssArticles.link, article.link))
-							.limit(1);
-
-						if (existingArticle.length === 0) {
-							const [inserted] = await db.insert(rssArticles).values(article).returning({ id: rssArticles.id });
-							newArticleIds.push(inserted.id);
-							totalNewArticles++;
-						}
-					} catch (insertError) {
-						console.log(`Skipping duplicate article: ${article.title}`);
-					}
-				}
-
-			} catch (error) {
-				console.error(`Error fetching from ${source.name}:`, error instanceof Error ? error.message : String(error));
-			}
-		}
-
-		console.log(`Step 1 complete: ${totalNewArticles} new articles added to database`);
-
-		// Step 2: Get recent articles for analysis (last 100 articles)
-		console.log("Step 2: Retrieving recent articles for analysis...");
+		// Step 1: Fetch latest unarchived articles from database
+		console.log("Step 1: Fetching latest unarchived articles from database...");
 
 		const recentArticles = await db
 			.select({
@@ -123,23 +72,41 @@ export async function POST(request: NextRequest) {
 				title: rssArticles.title,
 				description: rssArticles.description,
 				content: rssArticles.content,
+				fullContent: rssArticles.fullContent,
 				categories: rssArticles.categories,
 				publishedAt: rssArticles.publishedAt,
+				link: rssArticles.link,
+				author: rssArticles.author,
 			})
 			.from(rssArticles)
+			.where(eq(rssArticles.isArchived, false))
 			.orderBy(desc(rssArticles.publishedAt))
-			.limit(100);
+			.limit(10);
 
 		console.log(`Found ${recentArticles.length} recent articles for analysis`);
 
-		// Step 3: Extract key topics using AI
-		console.log("Step 3: Extracting key market topics...");
+		if (recentArticles.length === 0) {
+			return NextResponse.json(
+				{ error: "No unarchived articles found to generate report" },
+				{ status: 404 }
+			);
+		}
 
-		const articlesText = recentArticles.map(article =>
-			`Title: ${article.title}\nDescription: ${article.description || 'No description'}\nCategories: ${
-				Array.isArray(article.categories) ? article.categories.join(', ') : 'No categories'
-			}`
-		).join('\n\n');
+		// Step 2: Extract key topics using AI (changed from Step 3)
+		console.log("Step 2: Extracting key market topics...");
+
+		// Use full content if available, otherwise fall back to description/content
+		const articlesText = recentArticles.map(article => {
+			const contentToUse = article.fullContent
+				? article.fullContent.substring(0, 2000) // Use first 2000 chars of full content
+				: (article.content || article.description || 'No content available');
+
+			return `Title: ${article.title}
+Content: ${contentToUse}
+Categories: ${Array.isArray(article.categories) ? article.categories.join(', ') : 'No categories'}
+Author: ${article.author || 'Unknown'}
+Link: ${article.link}`;
+		}).join('\n\n---\n\n');
 
 		const topicsPrompt = `Analyze the following recent financial news articles and extract the most important market topics and themes. Focus on identifying key trends, sector movements, economic indicators, and significant events that could impact markets.
 
@@ -163,8 +130,8 @@ Format your response as a structured analysis with clear bullet points for each 
 
 		console.log("Topics extracted successfully");
 
-		// Step 4: Generate comprehensive market report
-		console.log("Step 4: Generating comprehensive market report...");
+		// Step 3: Generate comprehensive market report
+		console.log("Step 3: Generating comprehensive market report...");
 
 		const reportPrompt = `Based on the following market topics analysis and recent financial news data, generate a comprehensive market intelligence report suitable for investment professionals and financial analysts.
 
@@ -173,9 +140,8 @@ ${topicsAnalysis.text}
 
 Recent Market Data Context:
 - Total articles analyzed: ${recentArticles.length}
-- New articles added today: ${totalNewArticles}
-- Data sources: Multiple financial news feeds (Reuters, Bloomberg, MarketWatch, etc.)
-- Analysis timeframe: Latest market developments
+- Data sources: Multiple financial news feeds
+- Analysis timeframe: Latest market developments from database
 
 Please create a professional market intelligence report with the following structure:
 
@@ -208,8 +174,8 @@ Make the report professional, actionable, and focused on providing valuable insi
 
 		console.log("Market report generated successfully");
 
-		// Step 5: Save the generated report to database
-		console.log("Step 5: Saving report to database...");
+		// Step 4: Save the generated report to database
+		console.log("Step 4: Saving report to database...");
 
 		const reportTitle = `Market Intelligence Report - ${new Date().toLocaleDateString('en-US', {
 			year: 'numeric',
@@ -228,10 +194,13 @@ Make the report professional, actionable, and focused on providing valuable insi
 				complexity: "advanced",
 				audience: ["institutional", "professional"],
 				tags: ["market-analysis", "intelligence-report", "financial-news", "investment-research"],
-				sources: sources.map(s => ({ name: s.name, url: s.feedUrl })),
+				sources: recentArticles.map(article => ({
+					name: article.title.substring(0, 50),
+					url: article.link
+				})),
 				metadata: {
 					articlesAnalyzed: recentArticles.length,
-					newArticlesAdded: totalNewArticles,
+					articleIds: recentArticles.map(a => a.id),
 					generatedAt: new Date().toISOString(),
 					analysisType: "market-intelligence",
 				},
@@ -239,6 +208,26 @@ Make the report professional, actionable, and focused on providing valuable insi
 			.returning({ id: generatedArticles.id });
 
 		console.log(`Report saved to database with ID: ${savedReport.id}`);
+
+		// Step 5: Mark analyzed articles as archived
+		console.log("Step 5: Marking analyzed articles as archived...");
+
+		const articleIds = recentArticles.map(article => article.id);
+
+		if (articleIds.length > 0) {
+			await db
+				.update(rssArticles)
+				.set({
+					isArchived: true,
+					isProcessed: true,
+					processedAt: new Date(),
+				})
+				.where(
+					inArray(rssArticles.id, articleIds)
+				);
+		}
+
+		console.log(`Marked ${articleIds.length} articles as archived and processed`);
 
 		// Extract topic count for response
 		const topicLines = topicsAnalysis.text.split('\n').filter(line =>
@@ -250,7 +239,7 @@ Make the report professional, actionable, and focused on providing valuable insi
 			reportId: savedReport.id,
 			reportTitle,
 			articlesAnalyzed: recentArticles.length,
-			newArticlesAdded: totalNewArticles,
+			articlesArchived: articleIds.length,
 			topicsCount: Math.max(topicLines.length, 7),
 			message: "Market intelligence report generated successfully",
 		});
