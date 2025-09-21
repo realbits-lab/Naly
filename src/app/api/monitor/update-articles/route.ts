@@ -167,7 +167,7 @@ export async function POST(request: NextRequest) {
 				const articlesToInsert = [];
 
 				// Prepare article data
-				const articleDataList = feedItems.map(item => ({
+				const articleDataList = feedItems.map((item: any) => ({
 					sourceId: source.id,
 					title: item.title || "Untitled",
 					description: item.contentSnippet || item.summary || item.content || "",

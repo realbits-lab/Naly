@@ -80,7 +80,7 @@ export class AIArticleGenerator {
 			const result = await generateAIObject({
 				prompt: `${systemPrompt}\n\n${analysisPrompt}`,
 				schema: GeneratedArticleSchema,
-				model: "GPT_4O", // Use most capable model for article generation
+				model: "GEMINI_2_5_FLASH", // Use most capable model for article generation
 				temperature: 0.3, // Lower temperature for more consistent, analytical output
 			});
 

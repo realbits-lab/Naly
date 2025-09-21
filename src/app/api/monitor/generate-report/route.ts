@@ -92,14 +92,19 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
-		// Step 2: Extract key topics using AI (changed from Step 3)
-		console.log("Step 2: Extracting key market topics...");
+		// Step 2: Generate comprehensive market report with integrated topic analysis
+		console.log("Step 2: Generating comprehensive market report with topic analysis...");
 
 		// Use full content if available, otherwise fall back to description/content
 		const articlesText = recentArticles.map(article => {
 			const contentToUse = article.fullContent
 				? article.fullContent.substring(0, 2000) // Use first 2000 chars of full content
 				: (article.content || article.description || 'No content available');
+
+			console.log(`📰 Article: ${article.title}`);
+			console.log(`📄 Content source: ${article.fullContent ? 'fullContent' : 'content/description'}`);
+			console.log(`📝 Content length: ${contentToUse.length} chars`);
+			console.log(`📝 Content preview: ${contentToUse.substring(0, 200)}...`);
 
 			return `Title: ${article.title}
 Content: ${contentToUse}
@@ -108,74 +113,66 @@ Author: ${article.author || 'Unknown'}
 Link: ${article.link}`;
 		}).join('\n\n---\n\n');
 
-		const topicsPrompt = `Analyze the following recent financial news articles and extract the most important market topics and themes. Focus on identifying key trends, sector movements, economic indicators, and significant events that could impact markets.
+		console.log(`📊 Total articlesText length: ${articlesText.length} characters`);
+		console.log(`📋 ArticlesText preview (first 500 chars):`);
+		console.log(articlesText.substring(0, 500));
 
-Articles:
+		const reportPrompt = `Analyze the following recent financial news articles and generate a comprehensive market intelligence report suitable for investment professionals and financial analysts.
+
+FINANCIAL NEWS ARTICLES:
 ${articlesText}
 
-Please provide a concise analysis identifying:
+ANALYSIS REQUIREMENTS:
+First, analyze the articles to identify:
 1. Top 5-7 most significant market topics/themes
 2. Key sectors or industries mentioned frequently
 3. Notable economic indicators or events
 4. Emerging trends or patterns
 
-Format your response as a structured analysis with clear bullet points for each category.`;
+Then, using this analysis, create a comprehensive market intelligence report with the following structure:
 
-		const topicsAnalysis = await generateAIText({
-			prompt: topicsPrompt,
-			model: "GEMINI_2_5_FLASH_LITE",
-			temperature: 0.3,
-			maxTokens: 1500,
-		});
+# Executive Summary
+[2-3 sentence overview of current market conditions and key developments based on the articles]
 
-		console.log("Topics extracted successfully");
+# Key Market Themes
+[Detailed analysis of the most significant topics identified from the articles, with specific references to the news content]
 
-		// Step 3: Generate comprehensive market report
-		console.log("Step 3: Generating comprehensive market report...");
+# Sector Analysis
+[Breakdown by industry/sector with specific insights derived from the article content]
 
-		const reportPrompt = `Based on the following market topics analysis and recent financial news data, generate a comprehensive market intelligence report suitable for investment professionals and financial analysts.
+# Risk Assessment
+[Potential market risks and concerns identified from the news flow, with concrete examples from the articles]
 
-Topics Analysis:
-${topicsAnalysis.text}
+# Market Outlook
+[Short-term implications and what to watch for based on the trends identified]
 
-Recent Market Data Context:
+# Investment Considerations
+[Key factors for investment decision-making based on current themes, supported by specific article insights]
+
+CONTEXT:
 - Total articles analyzed: ${recentArticles.length}
 - Data sources: Multiple financial news feeds
 - Analysis timeframe: Latest market developments from database
 
-Please create a professional market intelligence report with the following structure:
+Make the report professional, actionable, and focused on providing valuable insights for financial decision-making. Include specific details and references from the article analysis while maintaining a clear, structured format. Ensure the analysis flows logically from topic identification through comprehensive market intelligence.`;
 
-# Executive Summary
-[2-3 sentence overview of current market conditions and key developments]
-
-# Key Market Themes
-[Detailed analysis of the most significant topics identified]
-
-# Sector Analysis
-[Breakdown by industry/sector with specific insights]
-
-# Risk Assessment
-[Potential market risks and concerns identified from the news flow]
-
-# Market Outlook
-[Short-term implications and what to watch for]
-
-# Investment Considerations
-[Key factors for investment decision-making based on current themes]
-
-Make the report professional, actionable, and focused on providing valuable insights for financial decision-making. Include specific details from the news analysis while maintaining a clear, structured format.`;
+		console.log(`🤖 Sending prompt to AI (length: ${reportPrompt.length} chars)`);
+		console.log(`🔧 AI Config: model=GEMINI_2_5_FLASH, temperature=0.4, maxTokens=65536`);
 
 		const marketReport = await generateAIText({
 			prompt: reportPrompt,
 			model: "GEMINI_2_5_FLASH",
 			temperature: 0.4,
-			maxTokens: 3000,
+			maxTokens: 65536,
 		});
 
 		console.log("Market report generated successfully");
+		console.log(`📰 Generated report length: ${marketReport.text.length} characters`);
+		console.log(`📖 Report preview (first 500 chars):`);
+		console.log(marketReport.text.substring(0, 500));
 
-		// Step 4: Save the generated report to database
-		console.log("Step 4: Saving report to database...");
+		// Step 3: Save the generated report to database
+		console.log("Step 3: Saving report to database...");
 
 		const reportTitle = `Market Intelligence Report - ${new Date().toLocaleDateString('en-US', {
 			year: 'numeric',
@@ -190,27 +187,23 @@ Make the report professional, actionable, and focused on providing valuable insi
 				title: reportTitle,
 				content: marketReport.text,
 				summary: `Comprehensive market intelligence report analyzing ${recentArticles.length} recent financial news articles, identifying key themes and investment considerations.`,
-				category: "market-intelligence",
-				complexity: "advanced",
-				audience: ["institutional", "professional"],
-				tags: ["market-analysis", "intelligence-report", "financial-news", "investment-research"],
-				sources: recentArticles.map(article => ({
-					name: article.title.substring(0, 50),
-					url: article.link
-				})),
-				metadata: {
-					articlesAnalyzed: recentArticles.length,
-					articleIds: recentArticles.map(a => a.id),
-					generatedAt: new Date().toISOString(),
-					analysisType: "market-intelligence",
-				},
+				sourceCategory: "market-intelligence",
+				marketAnalysis: marketReport.text,
+				investmentImplications: "See Market Outlook and Investment Considerations sections in the full report",
+				keywords: ["market-analysis", "intelligence-report", "financial-news", "investment-research"],
+				entities: recentArticles.map(article => article.title.substring(0, 50)),
+				marketImpact: "Comprehensive analysis of current market conditions and trends",
+				aiModel: "GEMINI_2_5_FLASH",
+				generationMethod: "ai",
+				wordCount: marketReport.text.length,
+				readingTime: Math.ceil(marketReport.text.length / 200), // Assuming 200 words per minute
 			})
 			.returning({ id: generatedArticles.id });
 
 		console.log(`Report saved to database with ID: ${savedReport.id}`);
 
-		// Step 5: Mark analyzed articles as archived
-		console.log("Step 5: Marking analyzed articles as archived...");
+		// Step 4: Mark analyzed articles as archived
+		console.log("Step 4: Marking analyzed articles as archived...");
 
 		const articleIds = recentArticles.map(article => article.id);
 
@@ -229,8 +222,8 @@ Make the report professional, actionable, and focused on providing valuable insi
 
 		console.log(`Marked ${articleIds.length} articles as archived and processed`);
 
-		// Extract topic count for response
-		const topicLines = topicsAnalysis.text.split('\n').filter(line =>
+		// Extract topic count for response from the generated report
+		const topicLines = marketReport.text.split('\n').filter((line: string) =>
 			line.trim().startsWith('-') || line.trim().startsWith('•') || /^\d+\./.test(line.trim())
 		);
 
