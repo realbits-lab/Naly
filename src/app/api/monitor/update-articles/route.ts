@@ -43,6 +43,64 @@ async function tryFetchRSS(feedUrl: string): Promise<any> {
 	}
 }
 
+// Helper function to fetch full article content from URL
+async function fetchArticleContent(url: string): Promise<string | null> {
+	try {
+		const controller = new AbortController();
+		const timeout = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+		const response = await fetch(url, {
+			signal: controller.signal,
+			headers: {
+				'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+			}
+		});
+
+		clearTimeout(timeout);
+
+		if (!response.ok) {
+			console.log(`Failed to fetch article from ${url}: ${response.status}`);
+			return null;
+		}
+
+		const html = await response.text();
+
+		// Basic HTML to text extraction (remove scripts, styles, and HTML tags)
+		const textContent = html
+			.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '') // Remove scripts
+			.replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '') // Remove styles
+			.replace(/<[^>]+>/g, ' ') // Remove HTML tags
+			.replace(/\s+/g, ' ') // Normalize whitespace
+			.trim()
+			.slice(0, 50000); // Limit to 50k characters
+
+		return textContent;
+
+	} catch (error) {
+		if (error instanceof Error && error.name === 'AbortError') {
+			console.log(`Timeout fetching article from ${url}`);
+		} else {
+			console.log(`Error fetching article from ${url}:`, error);
+		}
+		return null;
+	}
+}
+
+// Helper function to process articles in batches with parallel fetching
+async function fetchArticleContentsInBatch(articles: any[], batchSize = 5): Promise<(string | null)[]> {
+	const results: (string | null)[] = [];
+
+	for (let i = 0; i < articles.length; i += batchSize) {
+		const batch = articles.slice(i, i + batchSize);
+		const batchResults = await Promise.all(
+			batch.map(article => fetchArticleContent(article.link))
+		);
+		results.push(...batchResults);
+	}
+
+	return results;
+}
+
 export async function POST(request: NextRequest) {
 	try {
 		// Check authentication and authorization
@@ -104,28 +162,48 @@ export async function POST(request: NextRequest) {
 				console.log(`Fetching RSS feed for ${source.name}...`);
 				const feed = await tryFetchRSS(source.feedUrl);
 
-				// Process and save articles
+				// Process and save articles - limit to 5 items per source
+				const feedItems = feed.items.slice(0, 5);
 				const articlesToInsert = [];
 
-				for (const item of feed.items.slice(0, 50)) { // Limit to 50 items per source
-					const articleData = {
-						sourceId: source.id,
-						title: item.title || "Untitled",
-						description: item.contentSnippet || item.summary || item.content || "",
-						content: item['content:encoded'] || item.content || item.summary || "",
-						link: item.link || "",
-						publishedAt: item.pubDate ? new Date(item.pubDate) : new Date(),
-						author: item.creator || item['dc:creator'] || item.author || null,
-						categories: item.categories || [],
-						guid: item.guid || `${source.id}-${item.link}`,
-						imageUrl: item.enclosure?.url ||
-								 item['media:thumbnail']?.url ||
-								 item['media:content']?.url ||
-								 null,
-						isProcessed: false,
-					};
+				// Prepare article data
+				const articleDataList = feedItems.map(item => ({
+					sourceId: source.id,
+					title: item.title || "Untitled",
+					description: item.contentSnippet || item.summary || item.content || "",
+					content: item['content:encoded'] || item.content || item.summary || "",
+					link: item.link || "",
+					publishedAt: item.pubDate ? new Date(item.pubDate) : new Date(),
+					author: item.creator || item['dc:creator'] || item.author || null,
+					categories: item.categories || [],
+					guid: item.guid || `${source.id}-${item.link}`,
+					imageUrl: item.enclosure?.url ||
+							 item['media:thumbnail']?.url ||
+							 item['media:content']?.url ||
+							 null,
+					isProcessed: false,
+					fullContent: null as string | null, // Will be populated below
+				}));
 
+				// Fetch full content for all articles in parallel (batched)
+				console.log(`Fetching full content for ${articleDataList.length} articles from ${source.name}...`);
+				const fullContents = await fetchArticleContentsInBatch(articleDataList, 5);
+
+				// Combine article data with full content
+				for (let i = 0; i < articleDataList.length; i++) {
+					const { fullContent, ...baseData } = articleDataList[i];
+					const articleData = {
+						...baseData,
+						// Only include fullContent if the column exists in DB
+						// Comment out until DB migration is complete
+						// fullContent: fullContents[i],
+					};
 					articlesToInsert.push(articleData);
+
+					// Log successful content fetch for debugging
+					if (fullContents[i]) {
+						console.log(`✓ Fetched full content for: ${baseData.title || 'Untitled'} (${fullContents[i].length} chars)`);
+					}
 				}
 
 				// Batch insert articles

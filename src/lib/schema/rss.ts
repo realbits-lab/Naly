@@ -57,6 +57,7 @@ export const rssArticles = pgTable(
 		title: varchar("title", { length: 500 }).notNull(),
 		description: text("description"),
 		content: text("content"),
+		fullContent: text("full_content"), // Full article content fetched from link
 		link: varchar("link", { length: 1000 }).notNull(),
 		guid: varchar("guid", { length: 500 }), // Unique identifier from RSS feed
 
