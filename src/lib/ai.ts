@@ -1,13 +1,7 @@
-import { generateObject, generateText, streamText, createGateway } from "ai";
-
-// Configure AI Gateway
-const gateway = createGateway({
-	apiKey: process.env.AI_GATEWAY_API_KEY,
-	// Use Vercel AI Gateway endpoint
-	baseURL: "https://ai-gateway.vercel.sh/v1/ai",
-});
+import { generateObject, generateText, streamText } from "ai";
 
 // Model configuration - using provider/model format for AI Gateway
+// The AI SDK automatically uses the AI Gateway when you pass a model string in the provider/model format
 export const AI_MODELS = {
 	GEMINI_2_5_FLASH_LITE: "google/gemini-2.5-flash-lite",
 	GEMINI_2_5_FLASH: "google/gemini-2.5-flash",
@@ -33,7 +27,7 @@ export async function generateAIText({
 	const modelName = AI_MODELS[model];
 
 	const result = await generateText({
-		model: gateway(modelName),
+		model: modelName, // Direct model string - AI Gateway is used automatically
 		prompt,
 		temperature,
 		maxTokens,
@@ -59,7 +53,7 @@ export async function generateAIObject<T>({
 	const modelName = AI_MODELS[model];
 
 	const result = await generateObject({
-		model: gateway(modelName),
+		model: modelName, // Direct model string - AI Gateway is used automatically
 		prompt,
 		schema,
 		temperature,
@@ -85,7 +79,7 @@ export async function streamAIText({
 	const modelName = AI_MODELS[model];
 
 	const result = await streamText({
-		model: gateway(modelName),
+		model: modelName, // Direct model string - AI Gateway is used automatically
 		prompt,
 		temperature,
 		maxTokens,
