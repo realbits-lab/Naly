@@ -2,9 +2,27 @@ import { NextRequest, NextResponse } from "next/server";
 import { JSDOM } from "jsdom";
 import { Readability } from "@mozilla/readability";
 import DOMPurify from "dompurify";
+import { auth } from "@/lib/auth";
+import { UserRole } from "@/types/user";
 
 export async function GET(request: NextRequest) {
 	try {
+		// Check authentication and authorization
+		const session = await auth();
+
+		if (!session?.user) {
+			return NextResponse.json(
+				{ error: "Unauthorized: Please sign in" },
+				{ status: 401 }
+			);
+		}
+
+		if (session.user.role !== UserRole.MANAGER) {
+			return NextResponse.json(
+				{ error: "Forbidden: Only managers can access this endpoint" },
+				{ status: 403 }
+			);
+		}
 		const { searchParams } = new URL(request.url);
 		const articleUrl = searchParams.get('url');
 
@@ -284,7 +302,7 @@ export async function GET(request: NextRequest) {
 			);
 		}
 
-		if (error.name === 'AbortError') {
+		if (error instanceof Error && error.name === 'AbortError') {
 			return NextResponse.json(
 				{ error: "Request timeout: Article took too long to fetch" },
 				{ status: 408 }

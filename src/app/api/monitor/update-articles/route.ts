@@ -4,6 +4,8 @@ import { db } from "@/lib/db";
 import { rssSources, rssArticles } from "@/lib/schema/rss";
 import { eq, desc, and, notExists } from "drizzle-orm";
 import { DEFAULT_RSS_SOURCES } from "@/lib/constants/rss-sources";
+import { auth } from "@/lib/auth";
+import { UserRole } from "@/types/user";
 
 const parser = new Parser({
 	customFields: {
@@ -43,6 +45,22 @@ async function tryFetchRSS(feedUrl: string): Promise<any> {
 
 export async function POST(request: NextRequest) {
 	try {
+		// Check authentication and authorization
+		const session = await auth();
+
+		if (!session?.user) {
+			return NextResponse.json(
+				{ error: "Unauthorized: Please sign in" },
+				{ status: 401 }
+			);
+		}
+
+		if (session.user.role !== UserRole.MANAGER) {
+			return NextResponse.json(
+				{ error: "Forbidden: Only managers can access this endpoint" },
+				{ status: 403 }
+			);
+		}
 		// Get all active RSS sources
 		let sources = [];
 		try {
@@ -74,8 +92,8 @@ export async function POST(request: NextRequest) {
 			sources = await db.select().from(rssSources).where(eq(rssSources.isActive, true));
 		}
 
-		const fetchResults = [];
-		const newArticleIds = [];
+		const fetchResults: any[] = [];
+		const newArticleIds: string[] = [];
 		let totalNewArticles = 0;
 		let totalProcessedSources = 0;
 		let totalFailedSources = 0;
@@ -148,8 +166,8 @@ export async function POST(request: NextRequest) {
 				await db.update(rssSources)
 					.set({
 						lastFetchedAt: new Date(),
-						fetchErrorCount: (source.fetchErrorCount || 0) + 1,
-						lastFetchError: error.message,
+						fetchErrorCount: ('fetchErrorCount' in source ? (source.fetchErrorCount || 0) : 0) + 1,
+						lastFetchError: error instanceof Error ? error.message : String(error),
 					})
 					.where(eq(rssSources.id, source.id));
 
@@ -159,7 +177,7 @@ export async function POST(request: NextRequest) {
 					sourceId: source.id,
 					sourceName: source.name,
 					status: 'error',
-					error: error.message,
+					error: error instanceof Error ? error.message : String(error),
 				});
 			}
 		}
@@ -209,7 +227,7 @@ export async function POST(request: NextRequest) {
 	} catch (error) {
 		console.error("Error updating articles:", error);
 		return NextResponse.json(
-			{ error: "Failed to update articles", details: error.message },
+			{ error: "Failed to update articles", details: error instanceof Error ? error.message : String(error) },
 			{ status: 500 }
 		);
 	}
@@ -218,6 +236,22 @@ export async function POST(request: NextRequest) {
 // GET endpoint to fetch articles from database only
 export async function GET(request: NextRequest) {
 	try {
+		// Check authentication and authorization
+		const session = await auth();
+
+		if (!session?.user) {
+			return NextResponse.json(
+				{ error: "Unauthorized: Please sign in" },
+				{ status: 401 }
+			);
+		}
+
+		if (session.user.role !== UserRole.MANAGER) {
+			return NextResponse.json(
+				{ error: "Forbidden: Only managers can access this endpoint" },
+				{ status: 403 }
+			);
+		}
 		const { searchParams } = new URL(request.url);
 		const limit = parseInt(searchParams.get('limit') || '100');
 
@@ -251,7 +285,7 @@ export async function GET(request: NextRequest) {
 	} catch (error) {
 		console.error("Error fetching articles:", error);
 		return NextResponse.json(
-			{ error: "Failed to fetch articles", details: error.message },
+			{ error: "Failed to fetch articles", details: error instanceof Error ? error.message : String(error) },
 			{ status: 500 }
 		);
 	}

@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
 
 		if (existingQueueItem.length > 0) {
 			// Update priority if higher
-			if (priority > existingQueueItem[0].priority) {
+			if (existingQueueItem[0]?.priority !== null && priority > existingQueueItem[0].priority) {
 				await db
 					.update(articleFetchQueue)
 					.set({ priority, updatedAt: new Date() })
