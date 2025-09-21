@@ -191,18 +191,18 @@ export async function POST(request: NextRequest) {
 
 				// Combine article data with full content
 				for (let i = 0; i < articleDataList.length; i++) {
-					const { fullContent, ...baseData } = articleDataList[i];
+					const { fullContent: _, ...baseData } = articleDataList[i];
 					const articleData = {
 						...baseData,
-						// Only include fullContent if the column exists in DB
-						// Comment out until DB migration is complete
-						// fullContent: fullContents[i],
+						// Now including fullContent since the column has been added to DB
+						fullContent: fullContents[i],
 					};
 					articlesToInsert.push(articleData);
 
 					// Log successful content fetch for debugging
-					if (fullContents[i]) {
-						console.log(`✓ Fetched full content for: ${baseData.title || 'Untitled'} (${fullContents[i].length} chars)`);
+					const content = fullContents[i];
+					if (content) {
+						console.log(`✓ Fetched full content for: ${baseData.title || 'Untitled'} (${content.length} chars)`);
 					}
 				}
 
