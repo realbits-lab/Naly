@@ -4,15 +4,21 @@ import {
 	Activity,
 	AlertTriangle,
 	BarChart3,
-	Bot,
-	Eye,
+	Calendar,
+	ChevronDown,
+	ChevronUp,
+	Clock,
+	Download,
+	ExternalLink,
 	FileText,
+	Globe,
 	RefreshCw,
 	TrendingDown,
 	TrendingUp,
 	Zap,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { ArticleStatsCards } from "@/components/articles/article-stats-cards";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -23,100 +29,208 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
-interface MarketData {
-	symbol: string;
-	price: number;
-	change: number;
-	changePercent: number;
-	volume: number;
-}
-
-interface NewsAlert {
+interface Article {
 	id: string;
 	title: string;
-	severity: "low" | "medium" | "high";
-	timestamp: string;
-	source: string;
+	description: string;
+	link: string;
+	publishedAt: string;
+	author: string | null;
+	categories: string[] | null;
+	sentiment: string | null;
+	imageUrl: string | null;
+	isNew?: boolean;
+	sourceName: string;
+	sourceCategory: string;
+	sourceLogo: string | null;
+	fullContent?: string | null;
+}
+
+interface UpdateSummary {
+	totalSources: number;
+	processedSources: number;
+	failedSources: number;
+	newArticles: number;
+	totalArticles: number;
 }
 
 export function MonitorPanel() {
-	const [marketData, setMarketData] = useState<MarketData[]>([
-		{
-			symbol: "SPY",
-			price: 432.15,
-			change: 2.34,
-			changePercent: 0.54,
-			volume: 45234567,
-		},
-		{
-			symbol: "QQQ",
-			price: 378.92,
-			change: -1.23,
-			changePercent: -0.32,
-			volume: 23456789,
-		},
-		{
-			symbol: "TSLA",
-			price: 245.67,
-			change: 8.45,
-			changePercent: 3.56,
-			volume: 34567890,
-		},
-		{
-			symbol: "AAPL",
-			price: 189.43,
-			change: -0.87,
-			changePercent: -0.46,
-			volume: 56789012,
-		},
-	]);
+	const [articles, setArticles] = useState<Article[]>([]);
+	const [isUpdating, setIsUpdating] = useState(false);
+	const [isLoading, setIsLoading] = useState(true);
+	const [updateSummary, setUpdateSummary] = useState<UpdateSummary | null>(null);
+	const [lastUpdateTime, setLastUpdateTime] = useState<Date | null>(null);
+	const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+	const [expandedArticles, setExpandedArticles] = useState<Set<string>>(new Set());
 
-	const [newsAlerts, setNewsAlerts] = useState<NewsAlert[]>([
-		{
-			id: "1",
-			title: "Federal Reserve signals potential rate adjustment",
-			severity: "high",
-			timestamp: "2 min ago",
-			source: "Reuters",
-		},
-		{
-			id: "2",
-			title: "Tech sector earnings exceed expectations",
-			severity: "medium",
-			timestamp: "15 min ago",
-			source: "MarketWatch",
-		},
-		{
-			id: "3",
-			title: "Oil prices volatile on supply concerns",
-			severity: "medium",
-			timestamp: "1 hour ago",
-			source: "Bloomberg",
-		},
-	]);
+	// Fetch database statistics on mount
+	useEffect(() => {
+		fetchDatabaseStats();
+	}, []);
 
-	const [isRefreshing, setIsRefreshing] = useState(false);
+	const fetchDatabaseStats = async () => {
+		try {
+			setIsLoading(true);
+			const response = await fetch('/api/monitor/stats');
 
-	const handleRefresh = async () => {
-		setIsRefreshing(true);
-		// Simulate data refresh
-		setTimeout(() => {
-			setIsRefreshing(false);
-		}, 1000);
+			if (!response.ok) {
+				throw new Error('Failed to fetch database stats');
+			}
+
+			const data = await response.json();
+			setArticles(data.articles || []);
+			setUpdateSummary(data.summary);
+			setLastUpdateTime(new Date());
+		} catch (error) {
+			console.error('Error fetching database stats:', error);
+			toast.error('Failed to load database statistics');
+		} finally {
+			setIsLoading(false);
+		}
 	};
 
-	const getSeverityColor = (severity: string) => {
-		switch (severity) {
-			case "high":
-				return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200";
-			case "medium":
-				return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200";
-			case "low":
+	const handleUpdate = async () => {
+		setIsUpdating(true);
+
+		try {
+			toast.info('Fetching latest articles from all sources...', {
+				duration: 10000,
+			});
+
+			const response = await fetch('/api/monitor/update-articles', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+			});
+
+			if (!response.ok) {
+				throw new Error('Failed to update articles');
+			}
+
+			const data = await response.json();
+
+			// Show success message with fetch summary
+			if (data.summary.newArticles > 0) {
+				toast.success(
+					`Successfully fetched ${data.summary.newArticles} new articles from ${data.summary.processedSources} sources`,
+					{
+						duration: 5000,
+					}
+				);
+			} else {
+				toast.info('No new articles found', {
+					duration: 3000,
+				});
+			}
+
+			// Log any failed sources
+			if (data.summary.failedSources > 0) {
+				toast.warning(
+					`Failed to fetch from ${data.summary.failedSources} source(s). Check console for details.`,
+					{
+						duration: 5000,
+					}
+				);
+			}
+
+			// After successful update, fetch the updated database statistics
+			await fetchDatabaseStats();
+
+		} catch (error) {
+			console.error('Error updating articles:', error);
+			toast.error('Failed to update articles');
+		} finally {
+			setIsUpdating(false);
+		}
+	};
+
+	const handleGenerateReport = async () => {
+		setIsGeneratingReport(true);
+
+		try {
+			toast.info('Generating comprehensive market report...', {
+				duration: 20000,
+			});
+
+			const response = await fetch('/api/monitor/generate-report', {
+				method: 'POST',
+			});
+
+			if (!response.ok) {
+				throw new Error('Failed to generate report');
+			}
+
+			const result = await response.json();
+
+			toast.success(`Market report generated successfully! Found ${result.topicsCount} key topics.`, {
+				duration: 5000,
+			});
+
+			// Refresh database statistics after report generation (articles will be marked as processed)
+			await fetchDatabaseStats();
+
+		} catch (error) {
+			console.error('Error generating report:', error);
+			toast.error('Failed to generate market report. Please try again.');
+		} finally {
+			setIsGeneratingReport(false);
+		}
+	};
+
+	const getSentimentColor = (sentiment: string | null) => {
+		switch (sentiment) {
+			case "positive":
 				return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200";
+			case "negative":
+				return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200";
+			case "neutral":
+				return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200";
 			default:
 				return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200";
 		}
+	};
+
+	const getCategoryColor = (category: string) => {
+		const colors: Record<string, string> = {
+			markets: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
+			technology: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200",
+			economics: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
+			business: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200",
+			cryptocurrency: "bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200",
+			stocks: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200",
+			finance: "bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200",
+			investment: "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200",
+		};
+		return colors[category] || "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200";
+	};
+
+	const formatTimeAgo = (dateString: string) => {
+		const date = new Date(dateString);
+		const now = new Date();
+		const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+		if (seconds < 60) return `${seconds}s ago`;
+		const minutes = Math.floor(seconds / 60);
+		if (minutes < 60) return `${minutes}m ago`;
+		const hours = Math.floor(minutes / 60);
+		if (hours < 24) return `${hours}h ago`;
+		const days = Math.floor(hours / 24);
+		return `${days}d ago`;
+	};
+
+	const toggleArticleExpansion = (articleId: string) => {
+		setExpandedArticles(prev => {
+			const newSet = new Set(prev);
+			if (newSet.has(articleId)) {
+				newSet.delete(articleId);
+			} else {
+				newSet.add(articleId);
+			}
+			return newSet;
+		});
 	};
 
 	return (
@@ -128,22 +242,95 @@ export function MonitorPanel() {
 							Real-time Monitoring
 						</h1>
 						<p className="text-muted-foreground mt-1">
-							Track market movements, news alerts, and performance metrics
+							Track latest financial news from all RSS sources
 						</p>
 					</div>
-					<Button
-						onClick={handleRefresh}
-						disabled={isRefreshing}
-						variant="outline"
-					>
-						<RefreshCw
-							className={`h-4 w-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`}
-						/>
-						Refresh
-					</Button>
+					<div className="flex items-center gap-2">
+						{lastUpdateTime && (
+							<span className="text-sm text-muted-foreground">
+								Last updated: {formatTimeAgo(lastUpdateTime.toISOString())}
+							</span>
+						)}
+						<Button
+							onClick={handleUpdate}
+							disabled={isUpdating}
+							variant="default"
+						>
+							<RefreshCw
+								className={`h-4 w-4 mr-2 ${isUpdating ? "animate-spin" : ""}`}
+							/>
+							Update Articles
+						</Button>
+						<Button
+							onClick={handleGenerateReport}
+							disabled={isGeneratingReport || isUpdating}
+							variant="secondary"
+						>
+							<Zap
+								className={`h-4 w-4 mr-2 ${isGeneratingReport ? "animate-pulse" : ""}`}
+							/>
+							Generate Market Report
+						</Button>
+					</div>
 				</div>
 
 				<div className="space-y-6">
+					{/* Update Summary */}
+					{updateSummary && (
+						<Card>
+							<CardHeader>
+								<CardTitle className="flex items-center space-x-2">
+									<Activity className="h-5 w-5 text-primary" />
+									<span>Last Update Summary</span>
+								</CardTitle>
+							</CardHeader>
+							<CardContent>
+								<div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+									<div className="text-center p-3 border rounded-lg">
+										<div className="text-2xl font-bold text-primary">
+											{updateSummary.totalSources}
+										</div>
+										<div className="text-xs text-muted-foreground">
+											Total Sources
+										</div>
+									</div>
+									<div className="text-center p-3 border rounded-lg">
+										<div className="text-2xl font-bold text-green-600">
+											{updateSummary.processedSources}
+										</div>
+										<div className="text-xs text-muted-foreground">
+											Processed
+										</div>
+									</div>
+									<div className="text-center p-3 border rounded-lg">
+										<div className="text-2xl font-bold text-red-600">
+											{updateSummary.failedSources}
+										</div>
+										<div className="text-xs text-muted-foreground">
+											Failed
+										</div>
+									</div>
+									<div className="text-center p-3 border rounded-lg">
+										<div className="text-2xl font-bold text-blue-600">
+											{updateSummary.newArticles}
+										</div>
+										<div className="text-xs text-muted-foreground">
+											New Articles
+										</div>
+									</div>
+									<div className="text-center p-3 border rounded-lg">
+										<div className="text-2xl font-bold text-primary">
+											{updateSummary.totalArticles}
+										</div>
+										<div className="text-xs text-muted-foreground">
+											Showing
+										</div>
+									</div>
+								</div>
+							</CardContent>
+						</Card>
+					)}
+
 					{/* Article Statistics */}
 					<Card>
 						<CardHeader>
@@ -160,140 +347,155 @@ export function MonitorPanel() {
 						</CardContent>
 					</Card>
 
-					{/* Market Overview */}
+					{/* Articles List */}
 					<Card>
 						<CardHeader>
 							<CardTitle className="flex items-center space-x-2">
-								<BarChart3 className="h-5 w-5 text-primary" />
-								<span>Market Overview</span>
+								<Globe className="h-5 w-5 text-primary" />
+								<span>Latest Articles</span>
+								<Badge variant="secondary">{articles.length} articles</Badge>
 							</CardTitle>
 							<CardDescription>
-								Real-time market data for key financial instruments
+								Latest 10 unprocessed articles from RSS sources
 							</CardDescription>
 						</CardHeader>
 						<CardContent>
-							<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-								{marketData.map((item) => (
-									<div
-										key={item.symbol}
-										className="flex items-center justify-between p-4 border rounded-lg"
-									>
-										<div>
-											<div className="font-semibold">{item.symbol}</div>
-											<div className="text-2xl font-bold">
-												${item.price.toFixed(2)}
-											</div>
-										</div>
-										<div className="text-right">
-											<div
-												className={`flex items-center ${
-													item.change >= 0 ? "text-green-600" : "text-red-600"
-												}`}
-											>
-												{item.change >= 0 ? (
-													<TrendingUp className="h-4 w-4 mr-1" />
-												) : (
-													<TrendingDown className="h-4 w-4 mr-1" />
+							<ScrollArea className="h-[600px] pr-4">
+								{isLoading ? (
+									<div className="space-y-3">
+										{[...Array(5)].map((_, i) => (
+											<div key={i} className="h-24 bg-muted rounded-lg animate-pulse" />
+										))}
+									</div>
+								) : articles.length === 0 ? (
+									<div className="text-center py-8 text-muted-foreground">
+										<Globe className="h-12 w-12 mx-auto mb-4 opacity-50" />
+										<p>No articles found in database</p>
+										<p className="text-sm mt-2">Click "Update Articles" to fetch latest news</p>
+									</div>
+								) : (
+									<div className="space-y-4">
+										{articles.map((article) => {
+											const isExpanded = expandedArticles.has(article.id);
+											return (
+												<div
+													key={article.id}
+													className={`p-4 border rounded-lg hover:bg-muted/50 transition-all cursor-pointer ${
+														article.isNew
+															? 'ring-2 ring-primary ring-offset-2 animate-pulse-once'
+															: ''
+													}`}
+													onClick={() => toggleArticleExpansion(article.id)}
+												>
+												{/* Article Header */}
+												<div className="flex items-start justify-between mb-2">
+													<div className="flex items-center space-x-2">
+														{article.sourceLogo ? (
+															<img
+																src={article.sourceLogo}
+																alt={article.sourceName}
+																className="w-5 h-5 rounded"
+																onError={(e) => {
+																	e.currentTarget.style.display = 'none';
+																}}
+															/>
+														) : (
+															<Globe className="h-5 w-5 text-muted-foreground" />
+														)}
+														<span className="font-medium text-sm">
+															{article.sourceName}
+														</span>
+														<Badge className={getCategoryColor(article.sourceCategory)}>
+															{article.sourceCategory}
+														</Badge>
+														{article.sentiment && (
+															<Badge className={getSentimentColor(article.sentiment)}>
+																{article.sentiment}
+															</Badge>
+														)}
+														{article.isNew && (
+															<Badge className="bg-primary text-primary-foreground animate-pulse">
+																NEW
+															</Badge>
+														)}
+													</div>
+													<div className="flex items-center space-x-2 text-xs text-muted-foreground">
+														<Clock className="h-3 w-3" />
+														<span>{formatTimeAgo(article.publishedAt)}</span>
+													</div>
+												</div>
+
+												{/* Article Title */}
+												<h3 className="font-semibold text-foreground mb-2">
+													{article.title}
+												</h3>
+
+												{/* Article Description */}
+												{article.description && (
+													<p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+														{article.description}
+													</p>
 												)}
-												{item.change >= 0 ? "+" : ""}
-												{item.change.toFixed(2)}
-											</div>
-											<div
-												className={`text-sm ${
-													item.changePercent >= 0
-														? "text-green-600"
-														: "text-red-600"
-												}`}
-											>
-												({item.changePercent >= 0 ? "+" : ""}
-												{item.changePercent.toFixed(2)}%)
-											</div>
-										</div>
-									</div>
-								))}
-							</div>
-						</CardContent>
-					</Card>
 
-					{/* News Alerts */}
-					<Card>
-						<CardHeader>
-							<CardTitle className="flex items-center space-x-2">
-								<AlertTriangle className="h-5 w-5 text-primary" />
-								<span>News Alerts</span>
-							</CardTitle>
-							<CardDescription>
-								Breaking news and market-moving events
-							</CardDescription>
-						</CardHeader>
-						<CardContent>
-							<div className="space-y-3">
-								{newsAlerts.map((alert) => (
-									<div
-										key={alert.id}
-										className="flex items-start space-x-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors"
-									>
-										<Zap className="h-4 w-4 mt-1 text-yellow-500" />
-										<div className="flex-1">
-											<div className="flex items-center space-x-2 mb-1">
-												<Badge className={getSeverityColor(alert.severity)}>
-													{alert.severity.toUpperCase()}
-												</Badge>
-												<span className="text-xs text-muted-foreground">
-													{alert.source} • {alert.timestamp}
-												</span>
-											</div>
-											<h4 className="font-medium text-foreground">
-												{alert.title}
-											</h4>
-										</div>
-									</div>
-								))}
-							</div>
-						</CardContent>
-					</Card>
+												{/* Expanded Content */}
+												{isExpanded && article.fullContent && (
+													<div className="mt-4 p-4 bg-muted/30 rounded-lg border-l-4 border-primary">
+														<h4 className="font-medium text-sm mb-2 flex items-center">
+															<FileText className="h-4 w-4 mr-1" />
+															Full Article Content
+														</h4>
+														<div className="text-sm text-muted-foreground max-h-96 overflow-y-auto whitespace-pre-wrap">
+															{article.fullContent.substring(0, 5000)}
+															{article.fullContent.length > 5000 && "..."}
+														</div>
+													</div>
+												)}
 
-					{/* Performance Metrics */}
-					<Card>
-						<CardHeader>
-							<CardTitle className="flex items-center space-x-2">
-								<Activity className="h-5 w-5 text-primary" />
-								<span>Performance Metrics</span>
-							</CardTitle>
-							<CardDescription>
-								Article generation and engagement statistics
-							</CardDescription>
-						</CardHeader>
-						<CardContent>
-							<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-								<div className="text-center p-4 border rounded-lg">
-									<div className="text-2xl font-bold text-primary">47</div>
-									<div className="text-sm text-muted-foreground">
-										Articles Generated
+												{/* Article Footer */}
+												<div className="flex items-center justify-between">
+													<div className="flex items-center space-x-4 text-xs text-muted-foreground">
+														{article.author && (
+															<span className="flex items-center space-x-1">
+																<span>By {article.author}</span>
+															</span>
+														)}
+														{article.categories && article.categories.length > 0 && (
+															<div className="flex items-center space-x-1">
+																{article.categories.slice(0, 3).map((cat, idx) => (
+																	<Badge key={idx} variant="outline" className="text-xs">
+																		{cat}
+																	</Badge>
+																))}
+															</div>
+														)}
+													</div>
+													<div className="flex items-center space-x-2">
+														{isExpanded ? (
+															<ChevronUp className="h-4 w-4 text-muted-foreground" />
+														) : (
+															<ChevronDown className="h-4 w-4 text-muted-foreground" />
+														)}
+														{article.link && (
+															<Button
+																variant="ghost"
+																size="sm"
+																onClick={(e) => {
+																	e.stopPropagation();
+																	window.open(article.link, '_blank');
+																}}
+															>
+																<ExternalLink className="h-3 w-3 mr-1" />
+																Read
+															</Button>
+														)}
+													</div>
+												</div>
+											</div>
+										);
+										})}
 									</div>
-									<div className="text-xs text-green-600 mt-1">
-										+12% this week
-									</div>
-								</div>
-								<div className="text-center p-4 border rounded-lg">
-									<div className="text-2xl font-bold text-primary">2.4K</div>
-									<div className="text-sm text-muted-foreground">
-										Total Views
-									</div>
-									<div className="text-xs text-green-600 mt-1">
-										+8% this week
-									</div>
-								</div>
-								<div className="text-center p-4 border rounded-lg">
-									<div className="text-2xl font-bold text-primary">94%</div>
-									<div className="text-sm text-muted-foreground">
-										Accuracy Score
-									</div>
-									<div className="text-xs text-green-600 mt-1">
-										+2% this week
-									</div>
-								</div>
-							</div>
+								)}
+							</ScrollArea>
 						</CardContent>
 					</Card>
 				</div>

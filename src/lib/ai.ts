@@ -1,25 +1,14 @@
-import { createOpenAI } from "@ai-sdk/openai";
 import { generateObject, generateText, streamText } from "ai";
 
-if (!process.env.AI_GATEWAY_API_KEY) {
-	throw new Error("AI_GATEWAY_API_KEY is not defined");
-}
-
-// Configure OpenAI client with Vercel AI Gateway
-export const openai = createOpenAI({
-	apiKey: process.env.AI_GATEWAY_API_KEY,
-	baseURL: "https://gateway.ai.cloudflare.com/v1/naly/openai",
-});
-
-// Model configuration
+// Model configuration - using provider/model format for AI Gateway
+// The AI SDK automatically uses the AI Gateway when you pass a model string in the provider/model format
 export const AI_MODELS = {
-	GPT_4O_MINI: "gpt-4o-mini",
-	GPT_4O: "gpt-4o",
-	GPT_4_TURBO: "gpt-4-turbo-preview",
+	GEMINI_2_5_FLASH_LITE: "google/gemini-2.5-flash-lite",
+	GEMINI_2_5_FLASH: "google/gemini-2.5-flash",
 } as const;
 
 // Default model for most operations
-export const DEFAULT_MODEL = "GPT_4O_MINI" as keyof typeof AI_MODELS;
+export const DEFAULT_MODEL = "GEMINI_2_5_FLASH_LITE" as keyof typeof AI_MODELS;
 
 /**
  * Generate text using AI with configurable parameters
@@ -38,13 +27,13 @@ export async function generateAIText({
 	const modelName = AI_MODELS[model];
 
 	const result = await generateText({
-		model: openai(modelName),
+		model: modelName, // Direct model string - AI Gateway is used automatically
 		prompt,
 		temperature,
 		maxTokens,
 	});
 
-	return result.text;
+	return result;
 }
 
 /**
@@ -64,7 +53,7 @@ export async function generateAIObject<T>({
 	const modelName = AI_MODELS[model];
 
 	const result = await generateObject({
-		model: openai(modelName),
+		model: modelName, // Direct model string - AI Gateway is used automatically
 		prompt,
 		schema,
 		temperature,
@@ -90,7 +79,7 @@ export async function streamAIText({
 	const modelName = AI_MODELS[model];
 
 	const result = await streamText({
-		model: openai(modelName),
+		model: modelName, // Direct model string - AI Gateway is used automatically
 		prompt,
 		temperature,
 		maxTokens,

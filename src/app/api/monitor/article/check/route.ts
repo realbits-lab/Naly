@@ -2,9 +2,27 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { rssArticles } from '@/lib/schema/rss';
 import { eq } from 'drizzle-orm';
+import { auth } from '@/lib/auth';
+import { UserRole } from '@/types/user';
 
 export async function GET(request: NextRequest) {
 	try {
+		// Check authentication and authorization
+		const session = await auth();
+
+		if (!session?.user) {
+			return NextResponse.json(
+				{ error: 'Unauthorized: Please sign in' },
+				{ status: 401 }
+			);
+		}
+
+		if (session.user.role !== UserRole.MANAGER) {
+			return NextResponse.json(
+				{ error: 'Forbidden: Only managers can access this endpoint' },
+				{ status: 403 }
+			);
+		}
 		const { searchParams } = new URL(request.url);
 		const url = searchParams.get('url');
 
@@ -19,12 +37,10 @@ export async function GET(request: NextRequest) {
 		const existingArticle = await db
 			.select({
 				title: rssArticles.title,
-				content: rssArticles.extractedContent,
-				textContent: rssArticles.extractedTextContent,
-				excerpt: rssArticles.excerpt,
-				byline: rssArticles.byline,
-				siteName: rssArticles.siteName,
-				publishedTime: rssArticles.publishedAt,
+				content: rssArticles.content,
+				description: rssArticles.description,
+				author: rssArticles.author,
+				publishedAt: rssArticles.publishedAt,
 			})
 			.from(rssArticles)
 			.where(eq(rssArticles.link, url))
@@ -35,11 +51,11 @@ export async function GET(request: NextRequest) {
 			return NextResponse.json({
 				title: existingArticle[0].title,
 				content: existingArticle[0].content,
-				textContent: existingArticle[0].textContent,
-				excerpt: existingArticle[0].excerpt,
-				byline: existingArticle[0].byline,
-				siteName: existingArticle[0].siteName,
-				publishedTime: existingArticle[0].publishedTime,
+				textContent: existingArticle[0].content,
+				excerpt: existingArticle[0].description,
+				byline: existingArticle[0].author,
+				siteName: null,
+				publishedTime: existingArticle[0].publishedAt,
 				cached: true
 			});
 		}

@@ -3,9 +3,27 @@ import { db } from "@/lib/db";
 import { rssSources } from "@/lib/schema/rss";
 import { eq } from "drizzle-orm";
 import { DEFAULT_RSS_SOURCES } from "@/lib/constants/rss-sources";
+import { auth } from "@/lib/auth";
+import { UserRole } from "@/types/user";
 
 export async function GET(request: NextRequest) {
 	try {
+		// Check authentication and authorization
+		const session = await auth();
+
+		if (!session?.user) {
+			return NextResponse.json(
+				{ error: "Unauthorized: Please sign in" },
+				{ status: 401 }
+			);
+		}
+
+		if (session.user.role !== UserRole.MANAGER) {
+			return NextResponse.json(
+				{ error: "Forbidden: Only managers can access this endpoint" },
+				{ status: 403 }
+			);
+		}
 		// Try to get sources from database
 		let sources;
 		try {
@@ -83,6 +101,22 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
 	try {
+		// Check authentication and authorization
+		const session = await auth();
+
+		if (!session?.user) {
+			return NextResponse.json(
+				{ error: "Unauthorized: Please sign in" },
+				{ status: 401 }
+			);
+		}
+
+		if (session.user.role !== UserRole.MANAGER) {
+			return NextResponse.json(
+				{ error: "Forbidden: Only managers can access this endpoint" },
+				{ status: 403 }
+			);
+		}
 		const body = await request.json();
 		const { name, feedUrl, description, category, logoUrl, websiteUrl } = body;
 

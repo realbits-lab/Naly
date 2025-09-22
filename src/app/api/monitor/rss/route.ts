@@ -4,6 +4,8 @@ import { db } from "@/lib/db";
 import { rssSources, rssArticles } from "@/lib/schema/rss";
 import { eq, desc } from "drizzle-orm";
 import { DEFAULT_RSS_SOURCES } from "@/lib/constants/rss-sources";
+import { auth } from "@/lib/auth";
+import { UserRole } from "@/types/user";
 
 const parser = new Parser({
 	customFields: {
@@ -120,6 +122,22 @@ const MOCK_RSS_DATA: Record<string, any[]> = {
 
 export async function GET(request: NextRequest) {
 	try {
+		// Check authentication and authorization
+		const session = await auth();
+
+		if (!session?.user) {
+			return NextResponse.json(
+				{ error: "Unauthorized: Please sign in" },
+				{ status: 401 }
+			);
+		}
+
+		if (session.user.role !== UserRole.MANAGER) {
+			return NextResponse.json(
+				{ error: "Forbidden: Only managers can access this endpoint" },
+				{ status: 403 }
+			);
+		}
 		const { searchParams } = new URL(request.url);
 		const sourceId = searchParams.get('sourceId');
 
@@ -159,7 +177,7 @@ export async function GET(request: NextRequest) {
 			// Attempt to fetch the RSS feed with CORS proxy fallback
 			const feed = await tryFetchRSS(source.feedUrl);
 
-			articles = feed.items.map((item, index) => ({
+			articles = feed.items.map((item: any, index: number) => ({
 				id: `${sourceId}-${item.guid || index}`,
 				title: item.title || "Untitled",
 				description: item.contentSnippet || item.summary || item.content || "",
@@ -174,7 +192,7 @@ export async function GET(request: NextRequest) {
 			}));
 
 		} catch (fetchError) {
-			console.log(`Failed to fetch RSS feed for ${source.name}, using mock data:`, fetchError.message);
+			console.log(`Failed to fetch RSS feed for ${source.name}, using mock data:`, fetchError instanceof Error ? fetchError.message : 'Unknown error');
 
 			// Use mock data if available
 			const mockData = MOCK_RSS_DATA[sourceId] || [];

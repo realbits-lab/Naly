@@ -144,11 +144,11 @@ export async function POST(request: NextRequest) {
 		const relatedInfo = newsResult.relatedInfo;
 
 		// Generate AI-powered comprehensive article
-		let generatedArticles;
+		let generatedArticleVariations;
 
 		if (aiOptions.generateVariations) {
 			console.log(`Generating ${aiOptions.variationCount} article variations...`);
-			generatedArticles = await aiArticleGenerator.generateArticleVariations(
+			generatedArticleVariations = await aiArticleGenerator.generateArticleVariations(
 				selectedArticle,
 				relatedInfo,
 				aiOptions.variationCount
@@ -164,11 +164,11 @@ export async function POST(request: NextRequest) {
 					focusArea: aiOptions.focusArea,
 				}
 			);
-			generatedArticles = [singleArticle];
+			generatedArticleVariations = [singleArticle];
 		}
 
 		// Use the first (or best) generated article
-		const primaryGeneratedArticle = generatedArticles[0];
+		const primaryGeneratedArticle = generatedArticleVariations[0];
 
 		// Validate article quality
 		const qualityCheck = aiArticleGenerator.validateArticleQuality(primaryGeneratedArticle);
@@ -312,8 +312,8 @@ export async function POST(request: NextRequest) {
 				options: aiOptions,
 				qualityScore: qualityCheck.score,
 				qualityIssues: qualityCheck.issues,
-				variationsGenerated: generatedArticles.length,
-				variations: aiOptions.generateVariations ? generatedArticles.map((article, index) => ({
+				variationsGenerated: generatedArticleVariations.length,
+				variations: aiOptions.generateVariations ? generatedArticleVariations.map((article, index) => ({
 					index,
 					title: article.title,
 					summary: article.executive_summary,
