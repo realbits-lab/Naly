@@ -47,29 +47,23 @@ export function ArticleContentPanel({ article }: ArticleContentPanelProps) {
 		return localeMatch ? localeMatch[1] : 'en';
 	};
 
-	const fetchFullArticle = useCallback(async (articleId: string) => {
-		try {
+	// Use cached article data directly instead of fetching individual articles
+	// The articles from the list API already contain all necessary data
+	useEffect(() => {
+		if (article) {
 			setLoading(true);
-			const response = await fetch(`/api/articles/${articleId}`);
-			if (response.ok) {
-				const data = await response.json();
-				setFullArticle(data.article);
-			} else {
+			// Show brief skeleton animation for better UX when switching articles
+			const loadTimer = setTimeout(() => {
 				setFullArticle(article);
-			}
-		} catch (error) {
-			console.error("Failed to fetch full article:", error);
-			setFullArticle(article);
-		} finally {
+				setLoading(false);
+			}, 200); // Brief delay to show skeleton animation
+
+			return () => clearTimeout(loadTimer);
+		} else {
+			setFullArticle(null);
 			setLoading(false);
 		}
 	}, [article]);
-
-	useEffect(() => {
-		if (article) {
-			fetchFullArticle(article.id);
-		}
-	}, [article, fetchFullArticle]);
 
 	const getSentimentColor = (sentiment?: string) => {
 		switch (sentiment) {
