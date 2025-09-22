@@ -246,23 +246,35 @@ ${marketReport}
 COMPANY FINANCIAL DATA:
 ${JSON.stringify(financialSummary, null, 2)}
 
+CRITICAL NUMERICAL DATA PRESERVATION REQUIREMENTS:
+- PRESERVE ALL NUMERICAL DATA EXACTLY as provided in the financial data
+- DO NOT round, approximate, or summarize any financial figures
+- Include EXACT stock prices with full decimal precision (e.g., $156.7834, not "$157")
+- Include EXACT revenue figures with full precision (e.g., $24,318,000,000, not "$24.3B")
+- Include EXACT market cap, employee counts, and all financial metrics
+- Include EXACT percentage changes from price performance data
+- Preserve all decimal places, commas, and currency symbols exactly as provided
+- When referencing historical prices, use exact values from the data
+- All financial ratios and metrics must be calculated and displayed with full precision
+
 INSTRUCTIONS:
 1. Keep the entire original market report exactly as is
 2. Add a new section at the end titled "# Featured Company Deep-Dive: ${companyName} (${ticker})"
-3. Create a comprehensive analysis using the financial data provided
+3. Create a comprehensive analysis using the financial data provided with COMPLETE numerical accuracy
 4. Use markdown formatting throughout
 5. Make the analysis professional and actionable for investors
+6. PRESERVE every single number from the financial data without any rounding or approximation
 
 The new section should include:
-- Company overview and position in the market
-- Recent financial performance analysis
-- Key business developments and news
-- Investment thesis and risk factors
-- Price performance and technical considerations
-- SEC filings insights
-- Conclusion and investment recommendation
+- Company overview and position in the market (with EXACT market cap, employee count)
+- Recent financial performance analysis (with EXACT revenue, net income, assets figures)
+- Key business developments and news (with EXACT dates and figures mentioned)
+- Investment thesis and risk factors (with PRECISE financial metrics)
+- Price performance and technical considerations (with EXACT stock prices and percentage changes)
+- SEC filings insights (with EXACT filing dates and figures)
+- Conclusion and investment recommendation (with PRECISE price targets and ratios)
 
-Format the entire response in clean markdown with proper headers, bullet points, and tables where appropriate.`;
+Format the entire response in clean markdown with proper headers, bullet points, and tables where appropriate. MOST IMPORTANTLY: Every single financial number, percentage, dollar amount, and metric must be preserved EXACTLY as provided in the source data without any rounding, approximation, or summarization.`;
 
 	const enhancedReport = await generateAIText({
 		prompt: enhancementPrompt,
@@ -404,6 +416,17 @@ Link: ${article.link}`;
 FINANCIAL NEWS ARTICLES:
 ${articlesText}
 
+CRITICAL NUMERICAL DATA PRESERVATION REQUIREMENTS:
+- PRESERVE ALL NUMERICAL DATA EXACTLY as stated in the source articles
+- DO NOT round, approximate, or summarize any financial figures
+- Include EXACT stock prices (e.g., $156.78, not "around $157")
+- Include EXACT percentage changes (e.g., +3.24%, not "about 3%")
+- Include EXACT revenue/earnings figures (e.g., $24.318 billion, not "$24.3B")
+- Include EXACT market cap, employee counts, and all financial metrics
+- Quote specific numbers directly from the articles with proper attribution
+- When citing growth rates, use the exact percentages provided
+- Preserve decimal places and currency symbols as written in source material
+
 ANALYSIS REQUIREMENTS:
 First, analyze the articles to identify:
 1. Top 5-7 most significant market topics/themes
@@ -417,26 +440,26 @@ Then, using this analysis, create a comprehensive market intelligence report wit
 [2-3 sentence overview of current market conditions and key developments based on the articles]
 
 # Key Market Themes
-[Detailed analysis of the most significant topics identified from the articles, with specific references to the news content]
+[Detailed analysis of the most significant topics identified from the articles, with specific references to the news content and EXACT numerical data]
 
 # Sector Analysis
-[Breakdown by industry/sector with specific insights derived from the article content]
+[Breakdown by industry/sector with specific insights derived from the article content, including ALL EXACT financial figures]
 
 # Risk Assessment
-[Potential market risks and concerns identified from the news flow, with concrete examples from the articles]
+[Potential market risks and concerns identified from the news flow, with concrete examples from the articles including PRECISE numerical data]
 
 # Market Outlook
-[Short-term implications and what to watch for based on the trends identified]
+[Short-term implications and what to watch for based on the trends identified, with EXACT forecasts and projections when available]
 
 # Investment Considerations
-[Key factors for investment decision-making based on current themes, supported by specific article insights]
+[Key factors for investment decision-making based on current themes, supported by specific article insights with COMPLETE numerical accuracy]
 
 CONTEXT:
 - Total articles analyzed: ${recentArticles.length}
 - Data sources: Multiple financial news feeds
 - Analysis timeframe: Latest market developments from database
 
-Make the report professional, actionable, and focused on providing valuable insights for financial decision-making. Include specific details and references from the article analysis while maintaining a clear, structured format. Ensure the analysis flows logically from topic identification through comprehensive market intelligence.`;
+Make the report professional, actionable, and focused on providing valuable insights for financial decision-making. Include specific details and references from the article analysis while maintaining a clear, structured format. Ensure the analysis flows logically from topic identification through comprehensive market intelligence. MOST IMPORTANTLY: Preserve every single number, percentage, dollar amount, and financial metric EXACTLY as stated in the source articles without any rounding or approximation.`;
 
 		console.log(`🤖 Sending prompt to AI (length: ${reportPrompt.length} chars)`);
 		console.log(`🔧 AI Config: model=GEMINI_2_5_FLASH, temperature=0.4, maxTokens=65536`);
