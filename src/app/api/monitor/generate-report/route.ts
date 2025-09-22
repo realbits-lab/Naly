@@ -198,6 +198,9 @@ async function fetchFinancialData(ticker: string) {
 async function enhanceReportWithCompanyAnalysis(marketReport: string, companyName: string, ticker: string, financialData: any): Promise<string> {
 	console.log(`📝 Enhancing market report with analysis for ${companyName} (${ticker})`);
 
+	// Import the post-processing function
+	const { ensureCompleteDataTables } = await import('@/lib/ai');
+
 	// Prepare financial data summary for AI
 	const financialSummary = {
 		companyFacts: financialData.facts ? {
@@ -308,15 +311,24 @@ IMPORTANT: Each time series MUST be presented as a complete table with every sin
 
 Format the entire response in clean markdown with proper headers, bullet points, and tables where appropriate. MOST IMPORTANTLY: Every single financial number, percentage, dollar amount, and metric must be preserved EXACTLY as provided in the source data without any rounding, approximation, or summarization.`;
 
+	// Use GPT-4O for better table formatting if available, otherwise fall back to Gemini
+	const modelToUse = process.env.OPENAI_API_KEY ? "GPT_4O" : "GEMINI_2_5_FLASH";
+
 	const enhancedReport = await generateAIText({
 		prompt: enhancementPrompt,
-		model: "GEMINI_2_5_FLASH",
-		temperature: 0.3,
+		model: modelToUse as any,
+		temperature: 0.1, // Lower temperature for precise table formatting
 		maxTokens: 65536,
 	});
 
-	console.log('✅ Market report enhanced with company analysis');
-	return enhancedReport.text;
+	// Post-process to ensure complete data tables
+	const reportWithCompleteTables = ensureCompleteDataTables(
+		enhancedReport.text,
+		financialSummary
+	);
+
+	console.log('✅ Market report enhanced with company analysis and complete data tables');
+	return reportWithCompleteTables;
 }
 
 export async function POST(request: NextRequest) {
@@ -496,10 +508,13 @@ Make the report professional, actionable, and focused on providing valuable insi
 		console.log(`🤖 Sending prompt to AI (length: ${reportPrompt.length} chars)`);
 		console.log(`🔧 AI Config: model=GEMINI_2_5_FLASH, temperature=0.4, maxTokens=65536`);
 
+		// Use better model for complex report generation if available
+		const reportModel = process.env.OPENAI_API_KEY ? "GPT_4O" : "GEMINI_2_5_FLASH";
+
 		const marketReport = await generateAIText({
 			prompt: reportPrompt,
-			model: "GEMINI_2_5_FLASH",
-			temperature: 0.4,
+			model: reportModel as any,
+			temperature: 0.1, // Lower temperature for more deterministic table generation
 			maxTokens: 65536,
 		});
 
