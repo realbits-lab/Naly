@@ -133,21 +133,37 @@ export class NalySWRCacheProvider implements Cache<any> {
    */
   private setupBroadcastChannel(): void {
     if ('BroadcastChannel' in window) {
-      this.broadcastChannel = new BroadcastChannel('naly_cache_sync')
+      try {
+        this.broadcastChannel = new BroadcastChannel('naly_cache_sync')
 
-      this.broadcastChannel.addEventListener('message', (event) => {
-        switch (event.data.type) {
-          case 'cache_update':
-            this.handleRealtimeUpdate(event.data)
-            break
-          case 'cache_invalidate':
-            this.handleInvalidation(event.data.key)
-            break
-          case 'cache_clear':
-            this.memoryCache.clear()
-            break
-        }
-      })
+        this.broadcastChannel.addEventListener('message', (event) => {
+          try {
+            switch (event.data.type) {
+              case 'cache_update':
+                this.handleRealtimeUpdate(event.data)
+                break
+              case 'cache_invalidate':
+                this.handleInvalidation(event.data.key)
+                break
+              case 'cache_clear':
+                this.memoryCache.clear()
+                break
+            }
+          } catch (error) {
+            console.warn('🔄 [Cache] BroadcastChannel message error:', error.message)
+          }
+        })
+
+        this.broadcastChannel.addEventListener('error', (error) => {
+          console.warn('🔄 [Cache] BroadcastChannel error:', error)
+          this.broadcastChannel = null
+        })
+
+        console.log('🔄 [Cache] BroadcastChannel initialized')
+      } catch (error) {
+        console.warn('🔄 [Cache] Failed to initialize BroadcastChannel:', error.message)
+        this.broadcastChannel = null
+      }
     }
   }
 
@@ -323,12 +339,18 @@ export class NalySWRCacheProvider implements Cache<any> {
    */
   private broadcastUpdate(key: string, value: CachedState): void {
     if (this.broadcastChannel) {
-      this.broadcastChannel.postMessage({
-        type: 'cache_update',
-        key,
-        value,
-        timestamp: Date.now()
-      })
+      try {
+        this.broadcastChannel.postMessage({
+          type: 'cache_update',
+          key,
+          value,
+          timestamp: Date.now()
+        })
+      } catch (error) {
+        console.warn('🔄 [Cache] BroadcastChannel error:', error.message)
+        // Reset channel on error
+        this.broadcastChannel = null
+      }
     }
   }
 
@@ -379,11 +401,17 @@ export class NalySWRCacheProvider implements Cache<any> {
 
     // Broadcast invalidation
     if (this.broadcastChannel) {
-      this.broadcastChannel.postMessage({
-        type: 'cache_invalidate',
-        key,
-        timestamp: Date.now()
-      })
+      try {
+        this.broadcastChannel.postMessage({
+          type: 'cache_invalidate',
+          key,
+          timestamp: Date.now()
+        })
+      } catch (error) {
+        console.warn('🔄 [Cache] BroadcastChannel error:', error.message)
+        // Reset channel on error
+        this.broadcastChannel = null
+      }
     }
 
     this.metrics.recordDelete(key)
@@ -425,13 +453,38 @@ export class NalySWRCacheProvider implements Cache<any> {
     this.localStorage?.removeItem('naly_swr_cache')
 
     if (this.broadcastChannel) {
-      this.broadcastChannel.postMessage({
-        type: 'cache_clear',
-        timestamp: Date.now()
-      })
+      try {
+        this.broadcastChannel.postMessage({
+          type: 'cache_clear',
+          timestamp: Date.now()
+        })
+      } catch (error) {
+        console.warn('🔄 [Cache] BroadcastChannel error:', error.message)
+        // Reset channel on error
+        this.broadcastChannel = null
+      }
     }
 
     this.metrics.recordClear()
+  }
+
+  /**
+   * Cleanup resources
+   */
+  public cleanup(): void {
+    if (this.broadcastChannel) {
+      try {
+        this.broadcastChannel.close()
+        console.log('🔄 [Cache] BroadcastChannel closed')
+      } catch (error) {
+        console.warn('🔄 [Cache] Error closing BroadcastChannel:', error.message)
+      }
+      this.broadcastChannel = null
+    }
+
+    if (this.syncTimeout) {
+      clearTimeout(this.syncTimeout)
+    }
   }
 
   /**
@@ -445,13 +498,8 @@ export class NalySWRCacheProvider implements Cache<any> {
    * Cleanup and dispose
    */
   dispose(): void {
-    if (this.syncTimeout) {
-      clearTimeout(this.syncTimeout)
-    }
-
-    if (this.broadcastChannel) {
-      this.broadcastChannel.close()
-    }
+    // Use the new cleanup method with proper error handling
+    this.cleanup()
 
     // Final sync before disposal
     this.syncToStorage(true)
