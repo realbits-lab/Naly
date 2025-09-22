@@ -309,6 +309,13 @@ The new section should include:
 
 IMPORTANT: Each time series MUST be presented as a complete table with every single data point - no summaries!
 
+RAW DATA PRESERVATION REQUIREMENTS:
+- Include a "Data Tables" section with complete time series in table format
+- Add a "Raw Data" section at the end with JSON code blocks containing all numerical data
+- Every single data point must be preserved - no omissions, no summaries
+- Tables should show ALL periods/dates provided in the data
+- Include metadata about data sources and timestamps
+
 Format the entire response in clean markdown with proper headers, bullet points, and tables where appropriate. MOST IMPORTANTLY: Every single financial number, percentage, dollar amount, and metric must be preserved EXACTLY as provided in the source data without any rounding, approximation, or summarization.`;
 
 	// Use GPT-4O for better table formatting if available, otherwise fall back to Gemini
@@ -503,7 +510,15 @@ CONTEXT:
 - Data sources: Multiple financial news feeds
 - Analysis timeframe: Latest market developments from database
 
-Make the report professional, actionable, and focused on providing valuable insights for financial decision-making. Include specific details and references from the article analysis while maintaining a clear, structured format. Ensure the analysis flows logically from topic identification through comprehensive market intelligence. MOST IMPORTANTLY: Preserve every single number, percentage, dollar amount, and financial metric EXACTLY as stated in the source articles without any rounding or approximation.`;
+Make the report professional, actionable, and focused on providing valuable insights for financial decision-making. Include specific details and references from the article analysis while maintaining a clear, structured format. Ensure the analysis flows logically from topic identification through comprehensive market intelligence. MOST IMPORTANTLY: Preserve every single number, percentage, dollar amount, and financial metric EXACTLY as stated in the source articles without any rounding or approximation.
+
+APPEND at the end of the report:
+## Source Article Data
+Include a table or list with:
+- Article titles
+- Key numerical data from each article
+- Publication timestamps
+- Categories/topics covered`;
 
 		console.log(`🤖 Sending prompt to AI (length: ${reportPrompt.length} chars)`);
 		console.log(`🔧 AI Config: model=GEMINI_2_5_FLASH, temperature=0.4, maxTokens=65536`);
@@ -561,12 +576,27 @@ Make the report professional, actionable, and focused on providing valuable insi
 						ticker,
 						financialData
 					);
-					console.log(`✅ Enhanced report generated (${finalReport.length} characters)`);
+
+					// Import data preservation function
+					const { generateCompleteDataSection } = await import('@/lib/ai');
+
+					// Always append complete data section
+					finalReport += generateCompleteDataSection(recentArticles, financialData);
+
+					console.log(`✅ Enhanced report generated with complete data preservation (${finalReport.length} characters)`);
 				} else {
 					console.log(`⚠️ Failed to fetch financial data for ${ticker}, using original report`);
+
+					// Still append article data even without financial data
+					const { generateCompleteDataSection } = await import('@/lib/ai');
+					finalReport = marketReport.text + generateCompleteDataSection(recentArticles);
 				}
 			} else {
 				console.log(`⚠️ No ticker available for ${companyAnalysis.companyName}, using original report`);
+
+				// Still append article data even without ticker
+				const { generateCompleteDataSection } = await import('@/lib/ai');
+				finalReport = marketReport.text + generateCompleteDataSection(recentArticles);
 			}
 
 		} catch (error) {

@@ -302,38 +302,99 @@ Every cell must be filled with actual data or "N/A" if truly missing.
 }
 
 /**
- * Post-process AI-generated report to ensure complete data tables
+ * Post-process AI-generated report to ensure complete data tables and raw data
  */
 export function ensureCompleteDataTables(
 	reportContent: string,
 	financialData: any
 ): string {
-	// This function can be expanded to:
-	// 1. Parse the AI response
-	// 2. Find incomplete tables
-	// 3. Rebuild them with complete data
-	// 4. Replace in the report
+	// Always append complete raw data section regardless of what AI generated
+	let dataAppendix = `
 
-	// For now, we'll append a data appendix if tables are incomplete
-	if (financialData.historicalPrices?.daily_prices?.length > 0) {
-		const hasCompleteTable = reportContent.includes(financialData.historicalPrices.daily_prices[0].date);
+---
 
-		if (!hasCompleteTable) {
-			const appendix = `
+# Complete Data Appendix
 
-## Data Appendix: Complete Time Series
+## Raw Financial Data
 
-### Historical Stock Prices (30-Day Series)
-${generateManualTable(financialData.historicalPrices.daily_prices, "stock_prices")}
-
-### Quarterly Financial Performance
-${generateManualTable(financialData.financialHighlights, "quarterly")}
+### Company Information
+\`\`\`json
+${JSON.stringify(financialData.companyFacts, null, 2)}
+\`\`\`
 `;
-			return reportContent + appendix;
-		}
+
+	// Add historical prices if available
+	if (financialData.pricePerformance?.daily_prices?.length > 0) {
+		dataAppendix += `
+
+### Complete Stock Price Series (All ${financialData.pricePerformance.daily_prices.length} Days)
+${generateManualTable(financialData.pricePerformance.daily_prices, "stock_prices")}
+
+### Raw Price Data
+\`\`\`json
+${JSON.stringify(financialData.pricePerformance.daily_prices, null, 2)}
+\`\`\`
+`;
 	}
 
-	return reportContent;
+	// Add quarterly/annual financials if available
+	if (financialData.financialHighlights?.length > 0) {
+		dataAppendix += `
+
+### Complete Financial Performance (All Periods)
+${generateManualTable(financialData.financialHighlights, "quarterly")}
+
+### Raw Financial Data
+\`\`\`json
+${JSON.stringify(financialData.financialHighlights, null, 2)}
+\`\`\`
+`;
+	}
+
+	// Add recent news if available
+	if (financialData.recentNews && financialData.recentNews !== 'Not available') {
+		dataAppendix += `
+
+### Recent News Articles
+${financialData.recentNews.map((article: any, index: number) => `
+#### ${index + 1}. ${article.title}
+- **Date**: ${article.published_at}
+- **Summary**: ${article.summary}
+`).join('\n')}
+
+### Raw News Data
+\`\`\`json
+${JSON.stringify(financialData.recentNews, null, 2)}
+\`\`\`
+`;
+	}
+
+	// Add SEC filings if available
+	if (financialData.recentFilings && financialData.recentFilings !== 'Not available') {
+		dataAppendix += `
+
+### SEC Filings
+| Form Type | Date Filed | Description |
+|:----------|:-----------|:------------|
+${financialData.recentFilings.map((filing: any) =>
+	`| ${filing.form_type} | ${filing.date_filed} | ${filing.description || 'N/A'} |`
+).join('\n')}
+
+### Raw Filing Data
+\`\`\`json
+${JSON.stringify(financialData.recentFilings, null, 2)}
+\`\`\`
+`;
+	}
+
+	dataAppendix += `
+
+---
+
+*Note: This data appendix contains all raw financial data used in this report. All numbers are preserved exactly as received from data sources without any rounding or approximation.*
+`;
+
+	return reportContent + dataAppendix;
 }
 
 /**
@@ -365,4 +426,106 @@ function generateManualTable(data: any[], type: string): string {
 	}
 
 	return "Unsupported table type";
+}
+
+/**
+ * Generate complete data preservation section for reports
+ */
+export function generateCompleteDataSection(
+	articleData: any[],
+	financialData?: any
+): string {
+	let dataSection = `
+
+---
+
+# Complete Data Record
+
+## Source Articles Summary
+
+| Title | Published | Categories | Key Numbers |
+|:------|:----------|:-----------|:------------|
+${articleData.map(article => {
+	// Extract key numbers from content
+	const numbers = (article.fullContent || article.content || '')
+		.match(/\$[\d,]+(?:\.\d+)?(?:\s*(?:billion|million|thousand))?|\d+(?:\.\d+)?%/gi) || [];
+
+	return `| ${article.title?.substring(0, 60)}... | ${article.publishedAt || 'N/A'} | ${
+		Array.isArray(article.categories) ? article.categories.slice(0, 3).join(', ') : 'N/A'
+	} | ${numbers.slice(0, 3).join(', ')} |`;
+}).join('\n')}
+
+## Extracted Numerical Data
+
+### All Financial Figures
+${articleData.map(article => {
+	const content = article.fullContent || article.content || '';
+	const revenues = content.match(/(?:revenue|sales).*?\$[\d,]+(?:\.\d+)?(?:\s*(?:billion|million))?/gi) || [];
+	const earnings = content.match(/(?:income|profit|earnings).*?\$[\d,]+(?:\.\d+)?(?:\s*(?:billion|million))?/gi) || [];
+	const percentages = content.match(/\d+(?:\.\d+)?%/g) || [];
+
+	return `
+**${article.title}**
+- Revenues: ${revenues.join('; ') || 'None found'}
+- Earnings: ${earnings.join('; ') || 'None found'}
+- Percentages: ${percentages.slice(0, 10).join(', ') || 'None found'}
+`;
+}).join('\n')}
+
+## Raw Article Content
+
+<details>
+<summary>Click to expand raw article data</summary>
+
+\`\`\`json
+${JSON.stringify(articleData.map(a => ({
+	title: a.title,
+	publishedAt: a.publishedAt,
+	categories: a.categories,
+	link: a.link,
+	contentLength: (a.fullContent || a.content || '').length,
+	hasFullContent: !!a.fullContent
+})), null, 2)}
+\`\`\`
+
+</details>
+`;
+
+	// Add financial data section if available
+	if (financialData) {
+		dataSection += `
+
+## Financial Data Summary
+
+### Key Metrics
+- Company: ${financialData.companyFacts?.name || 'N/A'}
+- Market Cap: ${financialData.companyFacts?.marketCap || 'N/A'}
+- Employees: ${financialData.companyFacts?.employees || 'N/A'}
+
+### Performance Summary
+- Current Stock Price: ${financialData.pricePerformance?.current_price || 'N/A'}
+- 30-Day Change: ${financialData.pricePerformance?.price_change_percentage || 'N/A'}%
+- Data Points Available: ${financialData.pricePerformance?.daily_prices?.length || 0} days
+
+### Complete Financial Dataset
+<details>
+<summary>Click to expand complete financial data</summary>
+
+\`\`\`json
+${JSON.stringify(financialData, null, 2)}
+\`\`\`
+
+</details>
+`;
+	}
+
+	dataSection += `
+
+---
+
+*Data Preservation Notice: This section contains all raw data used in this report. All numbers are exact as provided by source systems.*
+*Generated: ${new Date().toISOString()}*
+`;
+
+	return dataSection;
 }
