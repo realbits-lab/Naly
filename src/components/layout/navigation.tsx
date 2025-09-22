@@ -34,14 +34,14 @@ const navigationItems = [
     href: "news", // Remove leading slash to be prefixed with locale
     icon: Newspaper,
   },
+];
+
+const adminNavigationItems = [
   {
     name: "Monitor",
     href: "monitor", // Remove leading slash to be prefixed with locale
     icon: Monitor,
   },
-];
-
-const adminNavigationItems = [
   {
     name: "Write",
     href: "write", // Remove leading slash to be prefixed with locale

@@ -3,6 +3,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { generatedArticles } from "@/lib/schema";
+import { generateETag, checkETagMatch, addCacheHeaders } from "@/lib/cache/utils/etag";
 
 export async function GET(request: NextRequest) {
 	try {
@@ -12,6 +13,9 @@ export async function GET(request: NextRequest) {
 		const category = searchParams.get("category");
 		const sentiment = searchParams.get("sentiment");
 		const search = searchParams.get("search");
+
+		// Get If-None-Match header for ETag validation
+		const ifNoneMatch = request.headers.get('If-None-Match');
 
 		// Build where conditions - show all public articles
 		const whereConditions = [];
@@ -61,7 +65,8 @@ export async function GET(request: NextRequest) {
 
 		const totalCount = totalCountResult[0]?.count || 0;
 
-		return NextResponse.json({
+		// Prepare response data
+		const responseData = {
 			articles,
 			pagination: {
 				total: totalCount,
@@ -74,7 +79,37 @@ export async function GET(request: NextRequest) {
 				sentiment,
 				search,
 			},
+		};
+
+		// Generate ETag for response data
+		const etag = generateETag(responseData);
+
+		// Check if client has matching ETag
+		if (checkETagMatch(etag, ifNoneMatch)) {
+			console.log('🎯 [Cache] ETag match - returning 304 Not Modified');
+			return new NextResponse(null, {
+				status: 304,
+				headers: {
+					'ETag': etag,
+					'Cache-Control': 'public, max-age=60, stale-while-revalidate=300'
+				}
+			});
+		}
+
+		// Return response with cache headers
+		const response = NextResponse.json(responseData);
+
+		// Add cache headers
+		addCacheHeaders(response.headers, {
+			etag,
+			maxAge: 60, // 1 minute
+			sMaxAge: 300, // 5 minutes for CDN
+			staleWhileRevalidate: 300 // 5 minutes stale-while-revalidate
 		});
+
+		console.log('📤 [Cache] Sending response with ETag:', etag);
+
+		return response;
 	} catch (error) {
 		console.error("Failed to fetch articles:", error);
 		return NextResponse.json(
