@@ -300,5 +300,11 @@ export class ApiKeyService {
   }
 }
 
+// Create singleton instance
+const apiKeyServiceInstance = new ApiKeyService();
+
+// Add API_SCOPES to the instance for testing
+(apiKeyServiceInstance as any).API_SCOPES = API_SCOPES;
+
 // Export singleton instance
-export const apiKeyService = new ApiKeyService();
+export const apiKeyService = apiKeyServiceInstance;
