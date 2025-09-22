@@ -150,3 +150,6 @@ test-results/
 
 .vercel
 .env*.local
+
+# Articles directory
+articles/

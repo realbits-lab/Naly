@@ -12,7 +12,7 @@ export interface ApiAuthContext {
   };
 }
 
-export async function withApiAuth(
+export function withApiAuth(
   handler: (req: NextRequest, context: ApiAuthContext) => Promise<NextResponse>,
   requiredScope?: ApiScope
 ) {
@@ -20,8 +20,11 @@ export async function withApiAuth(
     const startTime = Date.now();
 
     try {
+      console.log('[API Auth] Starting authentication for:', req.url);
+
       // Extract API key from Authorization header
       const authHeader = req.headers.get('Authorization');
+      console.log('[API Auth] Auth header present:', !!authHeader);
 
       if (!authHeader || !authHeader.startsWith('Bearer naly_')) {
         return NextResponse.json(

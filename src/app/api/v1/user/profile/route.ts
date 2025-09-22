@@ -44,8 +44,7 @@ export const GET = withApiAuth(
       }
 
       // Get additional user statistics
-      const stats = await getUs
-Stats(context.apiKey.userId);
+      const stats = await getUserStats(context.apiKey.userId);
 
       return NextResponse.json({
         success: true,
