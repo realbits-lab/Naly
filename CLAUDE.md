@@ -132,3 +132,4 @@ Located in `src/lib/schema/` with modular organization:
 - All database operations use Drizzle ORM with type-safe queries
 - Error handling follows a structured approach with ApplicationError types
 - Use 4000 port for pnpm dev command in localhost
+- Save all generated or tested articles in the `articles/` directory (this directory is gitignored)

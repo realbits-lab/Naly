@@ -52,11 +52,6 @@ export const analysisTypeEnum = pgEnum("analysis_type_enum", [
 	"TECHNICAL_ANALYSIS",
 ]);
 
-export const contentStatusEnum = pgEnum("content_status_enum", [
-	"draft",
-	"published",
-	"archived",
-]);
 
 // Events table
 export const events = pgTable(
@@ -135,35 +130,9 @@ export const analysisResults = pgTable(
 	}),
 );
 
-// Narratives table
-export const narratives = pgTable(
-	"narratives",
-	{
-		id: uuid("id").primaryKey().defaultRandom(),
-		eventId: uuid("event_id").references(() => events.id),
-		headline: varchar("headline").notNull(),
-		summary: varchar("summary"),
-		explanation: varchar("explanation"),
-		prediction: varchar("prediction"),
-		deepDive: varchar("deep_dive"),
-		metadata: jsonb("metadata"),
-		visualizations: jsonb("visualizations"),
-		status: contentStatusEnum("status").default("draft"),
-		version: decimal("version").default("1"),
-		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
-		updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
-	},
-	(table) => ({
-		eventIdIdx: index("idx_narratives_event_id").on(table.eventId),
-		statusIdx: index("idx_narratives_status").on(table.status, table.createdAt),
-	}),
-);
 
 // Alias exports for backwards compatibility
 export const marketEvents = events;
 export const causalAnalyses = analysisResults;
 export const predictiveAnalyses = analysisResults;
 export const modelPerformances = analysisResults;
-export const intelligentNarratives = narratives;
-export const narrativeValidations = narratives;
-export const visualizations = narratives;

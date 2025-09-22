@@ -13,7 +13,7 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
 	title: "Naly - AI-Powered Financial Intelligence",
 	description:
-		"Transform complex market data into clear, explanatory narratives and actionable, probabilistic forecasts.",
+		"Transform complex market data into clear, actionable insights and probabilistic forecasts.",
 	keywords:
 		"financial intelligence, market analysis, AI predictions, stock analysis, investment insights",
 	authors: [{ name: "Naly Team" }],
@@ -24,14 +24,14 @@ export const metadata: Metadata = {
 		url: "https://naly.ai",
 		title: "Naly - AI-Powered Financial Intelligence",
 		description:
-			"Transform complex market data into clear, explanatory narratives and actionable, probabilistic forecasts.",
+			"Transform complex market data into clear, actionable insights and probabilistic forecasts.",
 		siteName: "Naly",
 	},
 	twitter: {
 		card: "summary_large_image",
 		title: "Naly - AI-Powered Financial Intelligence",
 		description:
-			"Transform complex market data into clear, explanatory narratives and actionable, probabilistic forecasts.",
+			"Transform complex market data into clear, actionable insights and probabilistic forecasts.",
 		creator: "@naly_ai",
 	},
 };
