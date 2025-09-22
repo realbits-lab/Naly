@@ -92,15 +92,17 @@ export function useCachedArticles(options: UseCachedArticlesOptions = {}): UseCa
 
   const abortControllerRef = useRef<AbortController>()
 
-  // Build cache key
-  const key = [
-    '/api/articles',
+  // Build cache key with proper URL format
+  const baseUrl = '/api/articles'
+  const queryParams = [
     `limit=${limit}`,
     `offset=${offset}`,
     category && `category=${category}`,
     ticker && `ticker=${ticker}`,
     sentiment && `sentiment=${sentiment}`
   ].filter(Boolean).join('&')
+
+  const key = queryParams ? `${baseUrl}?${queryParams}` : baseUrl
 
   // Fetcher with hybrid cache strategy
   const fetcher = async (url: string): Promise<Article[]> => {
