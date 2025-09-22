@@ -42,58 +42,63 @@ export function ArticleListSkeleton() {
 
 export function ArticleContentSkeleton() {
 	return (
-		<div className="max-w-4xl mx-auto p-6">
-			{/* Title skeleton */}
-			<div className="mb-8">
-				<div className="space-y-2 mb-4">
-					<Skeleton className="h-8 w-full" />
-					<Skeleton className="h-8 w-4/5" />
-					<Skeleton className="h-8 w-3/4" />
+		<div className="h-full overflow-y-auto bg-background">
+			<div className="max-w-4xl mx-auto p-6 min-h-full">
+				{/* Title skeleton */}
+				<div className="mb-8">
+					<div className="space-y-3 mb-4">
+						<Skeleton className="h-9 w-full animate-pulse" />
+						<Skeleton className="h-9 w-4/5 animate-pulse" />
+						<Skeleton className="h-9 w-3/4 animate-pulse" />
+					</div>
+
+					{/* Summary skeleton */}
+					<div className="space-y-3 mb-6">
+						<Skeleton className="h-6 w-full animate-pulse" />
+						<Skeleton className="h-6 w-5/6 animate-pulse" />
+						<Skeleton className="h-6 w-4/5 animate-pulse" />
+					</div>
+
+					{/* Metadata skeleton */}
+					<div className="flex flex-wrap items-center gap-4 pb-4 border-b border-border mb-4">
+						<div className="flex items-center">
+							<Skeleton className="h-4 w-4 mr-2 rounded animate-pulse" />
+							<Skeleton className="h-4 w-32 animate-pulse" />
+						</div>
+						<div className="flex items-center">
+							<Skeleton className="h-4 w-4 mr-2 rounded animate-pulse" />
+							<Skeleton className="h-4 w-20 animate-pulse" />
+						</div>
+						<div className="flex items-center">
+							<Skeleton className="h-4 w-4 mr-2 rounded animate-pulse" />
+							<Skeleton className="h-4 w-24 animate-pulse" />
+						</div>
+						<Skeleton className="h-6 w-20 rounded-full animate-pulse" />
+						<Skeleton className="h-6 w-16 rounded-full animate-pulse" />
+					</div>
+
+					{/* Action buttons skeleton */}
+					<div className="flex items-center gap-2 mt-4">
+						<Skeleton className="h-9 w-20 rounded-md animate-pulse" />
+						<Skeleton className="h-9 w-24 rounded-md animate-pulse" />
+						<Skeleton className="h-9 w-32 rounded-md animate-pulse" />
+					</div>
 				</div>
 
-				{/* Summary skeleton */}
-				<div className="space-y-2 mb-6">
-					<Skeleton className="h-5 w-full" />
-					<Skeleton className="h-5 w-5/6" />
-					<Skeleton className="h-5 w-4/5" />
+				{/* Content skeleton */}
+				<div className="prose prose-lg max-w-none">
+					<div className="space-y-6">
+						{[...Array(12)].map((_, i) => (
+							<div key={i} className="space-y-3">
+								<Skeleton className="h-4 w-full animate-pulse" />
+								<Skeleton className="h-4 w-11/12 animate-pulse" />
+								<Skeleton className="h-4 w-5/6 animate-pulse" />
+								<Skeleton className="h-4 w-4/5 animate-pulse" />
+								{(i + 1) % 3 === 0 && <div className="py-3" />}
+							</div>
+						))}
+					</div>
 				</div>
-
-				{/* Metadata skeleton */}
-				<div className="flex flex-wrap items-center gap-4 pb-4 border-b border-border mb-4">
-					<div className="flex items-center">
-						<Skeleton className="h-4 w-4 mr-2" />
-						<Skeleton className="h-4 w-32" />
-					</div>
-					<div className="flex items-center">
-						<Skeleton className="h-4 w-4 mr-2" />
-						<Skeleton className="h-4 w-20" />
-					</div>
-					<div className="flex items-center">
-						<Skeleton className="h-4 w-4 mr-2" />
-						<Skeleton className="h-4 w-24" />
-					</div>
-					<Skeleton className="h-6 w-20 rounded-full" />
-					<Skeleton className="h-6 w-16 rounded-full" />
-				</div>
-
-				{/* Action buttons skeleton */}
-				<div className="flex items-center gap-2">
-					<Skeleton className="h-8 w-20" />
-					<Skeleton className="h-8 w-24" />
-					<Skeleton className="h-8 w-32" />
-				</div>
-			</div>
-
-			{/* Content skeleton */}
-			<div className="space-y-4">
-				{[...Array(8)].map((_, i) => (
-					<div key={i} className="space-y-2">
-						<Skeleton className="h-4 w-full" />
-						<Skeleton className="h-4 w-5/6" />
-						<Skeleton className="h-4 w-4/5" />
-						{i === 3 && <div className="py-2" />} {/* Add spacing for paragraphs */}
-					</div>
-				))}
 			</div>
 		</div>
 	);

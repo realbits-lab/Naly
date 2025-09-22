@@ -52,11 +52,11 @@ export function ArticleContentPanel({ article }: ArticleContentPanelProps) {
 	useEffect(() => {
 		if (article) {
 			setLoading(true);
-			// Show brief skeleton animation for better UX when switching articles
+			// Show skeleton animation for better UX when switching articles
 			const loadTimer = setTimeout(() => {
 				setFullArticle(article);
 				setLoading(false);
-			}, 200); // Brief delay to show skeleton animation
+			}, 500); // Slightly longer delay to showcase the enhanced skeleton animation
 
 			return () => clearTimeout(loadTimer);
 		} else {

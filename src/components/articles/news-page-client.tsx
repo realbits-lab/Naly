@@ -26,10 +26,13 @@ export function NewsPageClient() {
 	const screenSize = useScreenSize();
 
 	// Check if we're on mobile (below md breakpoint - 900px)
-	// Use window.innerWidth for initial check to handle hydration
+	// Use mounted state to prevent hydration mismatches
 	const [isMobile, setIsMobile] = useState(false);
+	const [mounted, setMounted] = useState(false);
 
 	useEffect(() => {
+		setMounted(true);
+
 		const checkMobile = () => {
 			setIsMobile(window.innerWidth < 900);
 		};
@@ -63,6 +66,30 @@ export function NewsPageClient() {
 	const handleToggleCollapse = () => {
 		setIsCollapsed(!isCollapsed);
 	};
+
+	// Prevent hydration mismatch by ensuring consistent rendering
+	if (!mounted) {
+		// During SSR and initial render, always show desktop layout
+		return (
+			<div className="flex h-[calc(100vh-4rem)] max-w-7xl mx-auto px-4 relative">
+				{/* Sidebar - Fixed width to prevent shifting */}
+				<div className={`flex-shrink-0 transition-all duration-300 ${isCollapsed ? 'w-16' : 'w-80'}`}>
+					<NewsSidebar
+						selectedArticleId={selectedArticle?.id || null}
+						onArticleSelect={handleArticleSelect}
+						isCollapsed={isCollapsed}
+						onToggleCollapse={handleToggleCollapse}
+						autoSelectFirst={true} // Auto-select first article on desktop
+					/>
+				</div>
+
+				{/* Main Content Area - Fixed flex-grow to prevent shifting */}
+				<div className="flex-1 min-w-0">
+					<ArticleContentPanel article={selectedArticle} />
+				</div>
+			</div>
+		);
+	}
 
 	if (isMobile) {
 		// Mobile layout: Show only article list (sidebar content)
