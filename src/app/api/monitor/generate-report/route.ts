@@ -5,7 +5,6 @@ import { db } from "@/lib/db";
 import { rssSources, rssArticles, generatedArticles } from "@/lib/schema";
 import { eq, desc, inArray } from "drizzle-orm";
 import { generateAIText } from "@/lib/ai";
-import { google } from '@ai-sdk/google';
 import { generateObject } from 'ai';
 import { z } from 'zod';
 import Parser from "rss-parser";
@@ -60,7 +59,7 @@ async function identifyRelevantCompany(marketReport: string): Promise<z.infer<ty
 	console.log("🔍 Identifying most relevant company from market report...");
 
 	const result = await generateObject({
-		model: google('gemini-2.0-flash-exp'),
+		model: 'google/gemini-2.5-flash',
 		schema: CompanyIdentificationSchema,
 		prompt: `Analyze this market intelligence report and identify the single most relevant company that would benefit from detailed financial analysis.
 
@@ -90,7 +89,7 @@ async function searchCompanyTicker(companyName: string): Promise<string | null> 
 
 	try {
 		const result = await generateObject({
-			model: google('gemini-2.0-flash-exp'),
+			model: 'google/gemini-2.5-flash',
 			schema: z.object({
 				ticker: z.string().describe('The stock ticker symbol found'),
 				exchange: z.string().describe('The stock exchange (NYSE, NASDAQ, etc.)'),
@@ -278,21 +277,70 @@ Format the entire response in clean markdown with proper headers, bullet points,
 
 export async function POST(request: NextRequest) {
 	try {
-		// Check authentication and authorization
-		const session = await auth();
+		// Check authentication and authorization (support both session and API key)
+		let userId: string;
+		let userRole: UserRole;
 
-		if (!session?.user) {
-			return NextResponse.json(
-				{ error: "Unauthorized: Please sign in" },
-				{ status: 401 }
-			);
-		}
+		// First, try API key authentication
+		const apiKey = request.headers.get('X-API-Key') ||
+		              (request.headers.get('Authorization')?.startsWith('Bearer naly_') ?
+		               request.headers.get('Authorization')?.replace('Bearer ', '') : null);
 
-		if (session.user.role !== UserRole.MANAGER) {
-			return NextResponse.json(
-				{ error: "Forbidden: Only managers can access this endpoint" },
-				{ status: 403 }
-			);
+		if (apiKey) {
+			console.log('🔑 Authenticating with API key...');
+			// Import and validate API key
+			const { apiKeyService } = await import('@/lib/services/api-key-service');
+			const keyRecord = await apiKeyService.validateApiKey(apiKey);
+
+			if (!keyRecord) {
+				return NextResponse.json(
+					{ error: "Invalid or expired API key" },
+					{ status: 401 }
+				);
+			}
+
+			// Get user details from API key
+			const { users } = await import('@/lib/schema');
+			const { eq } = await import('drizzle-orm');
+
+			const [user] = await db
+				.select()
+				.from(users)
+				.where(eq(users.id, keyRecord.userId))
+				.limit(1);
+
+			if (!user || user.role !== UserRole.MANAGER) {
+				return NextResponse.json(
+					{ error: "Forbidden: Only managers can access this endpoint" },
+					{ status: 403 }
+				);
+			}
+
+			userId = user.id;
+			userRole = user.role as UserRole;
+			console.log('✅ API key authentication successful');
+		} else {
+			// Fall back to session authentication
+			console.log('🔐 Authenticating with session...');
+			const session = await auth();
+
+			if (!session?.user) {
+				return NextResponse.json(
+					{ error: "Unauthorized: Please sign in" },
+					{ status: 401 }
+				);
+			}
+
+			if (session.user.role !== UserRole.MANAGER) {
+				return NextResponse.json(
+					{ error: "Forbidden: Only managers can access this endpoint" },
+					{ status: 403 }
+				);
+			}
+
+			userId = session.user.id;
+			userRole = session.user.role;
+			console.log('✅ Session authentication successful');
 		}
 
 		console.log("Starting market report generation...");
@@ -468,7 +516,7 @@ Make the report professional, actionable, and focused on providing valuable insi
 		const [savedReport] = await db
 			.insert(generatedArticles)
 			.values({
-				userId: session.user.id,
+				userId: userId,
 				title: reportTitle,
 				content: finalReport,
 				summary: `Enhanced market intelligence report analyzing ${recentArticles.length} recent financial news articles with detailed company analysis, identifying key themes and investment considerations.`,
