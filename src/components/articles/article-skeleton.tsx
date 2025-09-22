@@ -1,38 +1,93 @@
 import { Skeleton } from "@/components/ui/skeleton";
 
+export function NewsSidebarSkeleton() {
+	return (
+		<div className="flex flex-col bg-card md:border-r border-border h-full w-full">
+			{/* Header skeleton */}
+			<div className="flex items-center justify-between p-4 border-b border-border">
+				<div className="flex items-center space-x-2">
+					<Skeleton className="h-5 w-5 rounded animate-pulse" />
+					<Skeleton className="h-6 w-12 animate-pulse" />
+					<Skeleton className="h-5 w-8 rounded animate-pulse" />
+				</div>
+				<Skeleton className="h-6 w-6 rounded animate-pulse" />
+			</div>
+
+			{/* Search and filters skeleton */}
+			<div className="p-4 border-b border-border space-y-3">
+				{/* Search input skeleton */}
+				<div className="flex items-center gap-2">
+					<Skeleton className="flex-1 h-10 rounded-md animate-pulse" />
+					<Skeleton className="h-4 w-4 animate-pulse" />
+				</div>
+
+				{/* Filters skeleton */}
+				<div className="flex items-center justify-between">
+					<Skeleton className="h-8 w-32 rounded-md animate-pulse" />
+					<div className="flex items-center gap-2">
+						<Skeleton className="h-8 w-8 rounded animate-pulse" />
+						<Skeleton className="h-8 w-8 rounded animate-pulse" />
+					</div>
+				</div>
+
+				{/* Cache stats toggle skeleton */}
+				<Skeleton className="h-4 w-24 animate-pulse" />
+			</div>
+
+			{/* Articles list skeleton */}
+			<div className="flex-1 overflow-y-auto">
+				<ArticleListSkeleton />
+			</div>
+		</div>
+	);
+}
+
 export function ArticleListSkeleton() {
 	return (
 		<div className="p-2 space-y-2">
-			{[...Array(6)].map((_, i) => (
+			{[...Array(8)].map((_, i) => (
 				<div
 					key={i}
-					className="w-full p-3 mb-2 rounded-lg border bg-card"
+					className="w-full p-3 mb-2 rounded-lg border bg-card transition-all duration-200"
 				>
-					<div className="space-y-2">
+					<div className="space-y-3">
 						{/* Title skeleton */}
-						<div className="space-y-1">
-							<Skeleton className="h-4 w-full" />
-							<Skeleton className="h-4 w-4/5" />
-							<Skeleton className="h-4 w-3/4" />
+						<div className="space-y-2">
+							<Skeleton className="h-4 w-full animate-pulse" />
+							<Skeleton className="h-4 w-4/5 animate-pulse" />
+							<Skeleton className="h-4 w-3/4 animate-pulse" />
 						</div>
 
 						{/* Summary skeleton */}
-						<div className="space-y-1">
-							<Skeleton className="h-3 w-full" />
-							<Skeleton className="h-3 w-2/3" />
+						<div className="space-y-2">
+							<Skeleton className="h-3 w-full animate-pulse" />
+							<Skeleton className="h-3 w-2/3 animate-pulse" />
+						</div>
+
+						{/* Tickers skeleton */}
+						<div className="flex gap-1">
+							<Skeleton className="h-5 w-12 rounded animate-pulse" />
+							<Skeleton className="h-5 w-10 rounded animate-pulse" />
+							<Skeleton className="h-5 w-8 rounded animate-pulse" />
 						</div>
 
 						{/* Metadata skeleton */}
 						<div className="flex items-center justify-between">
 							<div className="flex items-center">
-								<Skeleton className="h-3 w-3 rounded-full mr-1" />
-								<Skeleton className="h-3 w-20" />
+								<Skeleton className="h-3 w-3 rounded-full mr-2 animate-pulse" />
+								<Skeleton className="h-3 w-24 animate-pulse" />
 							</div>
-							<Skeleton className="h-5 w-16 rounded-full" />
+							<div className="flex items-center gap-1">
+								<Skeleton className="h-5 w-12 rounded animate-pulse" />
+								<Skeleton className="h-5 w-16 rounded animate-pulse" />
+							</div>
 						</div>
 
 						{/* Publisher skeleton */}
-						<Skeleton className="h-3 w-24" />
+						<div className="flex items-center justify-between text-xs">
+							<Skeleton className="h-3 w-20 animate-pulse" />
+							<Skeleton className="h-3 w-16 animate-pulse" />
+						</div>
 					</div>
 				</div>
 			))}

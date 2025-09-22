@@ -56,7 +56,7 @@ export function ArticleContentPanel({ article }: ArticleContentPanelProps) {
 			const loadTimer = setTimeout(() => {
 				setFullArticle(article);
 				setLoading(false);
-			}, 500); // Slightly longer delay to showcase the enhanced skeleton animation
+			}, 300); // Brief delay to show skeleton animation
 
 			return () => clearTimeout(loadTimer);
 		} else {
