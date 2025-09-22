@@ -26,6 +26,8 @@ interface Article {
 	sourceCategory?: string;
 	sentiment?: string;
 	readingTime?: number;
+	marketImpact?: string;
+	tickers?: string[];
 }
 
 interface NewsSidebarProps {
