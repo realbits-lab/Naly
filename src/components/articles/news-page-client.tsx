@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { ArticleContentPanel } from "@/components/articles/article-content-panel";
-import { NewsSidebar } from "@/components/articles/news-sidebar";
+import { NewsSidebarCached as NewsSidebar } from "@/components/articles/news-sidebar-cached";
 import { useScreenSize } from "@/hooks/use-screen-size";
 
 interface Article {

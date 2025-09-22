@@ -76,7 +76,7 @@ export function useCachedArticles(options: UseCachedArticlesOptions = {}): UseCa
   } = options
 
   // State
-  const [isOffline, setIsOffline] = useState(!navigator.onLine)
+  const [isOffline, setIsOffline] = useState(typeof window !== 'undefined' ? !navigator.onLine : false)
   const [fromCache, setFromCache] = useState(false)
   const [cacheAge, setCacheAge] = useState<number>()
   const [cacheStats, setCacheStats] = useState({
@@ -100,14 +100,25 @@ export function useCachedArticles(options: UseCachedArticlesOptions = {}): UseCa
   // Fetcher with hybrid cache strategy
   const fetcher = async (url: string): Promise<Article[]> => {
     const strategy = getCacheStrategy(category || 'regular')
+    console.log('\n🔄 [Cache] === NEW FETCH REQUEST ===')
+    console.log('📊 [Cache] Request details:', {
+      url,
+      strategy,
+      category: category || 'regular',
+      limit,
+      offset,
+      online: typeof window !== 'undefined' ? navigator.onLine : true,
+      timestamp: new Date().toISOString()
+    })
 
     // Check offline status
-    if (!navigator.onLine && enableOffline) {
-      console.log('📱 Offline mode - using cached articles')
+    if (typeof window !== 'undefined' && !navigator.onLine && enableOffline) {
+      console.log('📱 [Cache] OFFLINE MODE - attempting cached retrieval')
       setIsOffline(true)
       setFromCache(true)
 
       // Get from IndexedDB
+      console.log('💾 [Cache] Querying IndexedDB for offline articles...')
       const cached = await articleDb.getArticles({
         category,
         ticker,
@@ -119,9 +130,15 @@ export function useCachedArticles(options: UseCachedArticlesOptions = {}): UseCa
       if (cached.length > 0) {
         const age = Math.min(...cached.map(a => Date.now() - a.cachedAt))
         setCacheAge(age)
+        console.log('✅ [Cache] Found offline articles:', {
+          count: cached.length,
+          age: `${Math.round(age / 1000)}s`,
+          titles: cached.slice(0, 3).map(a => a.title)
+        })
         return convertCachedToArticles(cached)
       }
 
+      console.log('❌ [Cache] No offline data available')
       throw new Error('No cached data available offline')
     }
 
@@ -148,7 +165,9 @@ export function useCachedArticles(options: UseCachedArticlesOptions = {}): UseCa
 
   // Cache-first strategy
   const cacheFirstStrategy = async (url: string): Promise<Article[]> => {
+    console.log('📦 [Cache] Using CACHE-FIRST strategy')
     // Try IndexedDB first
+    console.log('💾 [Cache] Checking IndexedDB...')
     const cached = await articleDb.getArticles({
       category,
       ticker,
@@ -161,39 +180,60 @@ export function useCachedArticles(options: UseCachedArticlesOptions = {}): UseCa
       const age = Math.min(...cached.map(a => Date.now() - a.cachedAt))
       const maxAge = CACHE_CONFIG.TTL.REGULAR_NEWS
 
+      console.log('🔍 [Cache] Found cached articles:', {
+        count: cached.length,
+        age: `${Math.round(age / 1000)}s`,
+        maxAge: `${Math.round(maxAge / 1000)}s`,
+        isStale: age >= maxAge
+      })
+
       if (age < maxAge) {
-        console.log('✅ Cache hit (IndexedDB)')
+        console.log('✅ [Cache HIT] Using fresh IndexedDB cache')
         setFromCache(true)
         setCacheAge(age)
         return convertCachedToArticles(cached)
+      } else {
+        console.log('⚠️ [Cache] Cache is stale, fetching fresh data')
       }
+    } else {
+      console.log('📭 [Cache] No cached articles found in IndexedDB')
     }
 
     // Fallback to network
+    console.log('🌐 [Cache] Falling back to network fetch')
     return networkFetch(url)
   }
 
   // Network-first strategy
   const networkFirstStrategy = async (url: string): Promise<Article[]> => {
+    console.log('🌐 [Cache] Using NETWORK-FIRST strategy')
     try {
       // Cancel previous request
       if (abortControllerRef.current) {
+        console.log('🛑 [Cache] Cancelling previous request')
         abortControllerRef.current.abort()
       }
 
       abortControllerRef.current = new AbortController()
 
+      console.log('🚀 [Cache] Attempting network fetch (3s timeout)...')
       const result = await networkFetch(url, {
         signal: abortControllerRef.current.signal,
         timeout: 3000 // Quick timeout for network-first
       })
 
+      console.log('✅ [Cache] Network fetch successful:', {
+        articles: result.length
+      })
       return result
 
     } catch (error) {
-      console.warn('Network failed, trying cache:', error)
+      console.warn('⚠️ [Cache] Network failed, falling back to cache:', {
+        error: error instanceof Error ? error.message : 'Unknown error'
+      })
 
       // Fallback to cache
+      console.log('💾 [Cache] Checking IndexedDB fallback...')
       const cached = await articleDb.getArticles({
         category,
         ticker,
@@ -203,18 +243,26 @@ export function useCachedArticles(options: UseCachedArticlesOptions = {}): UseCa
       })
 
       if (cached.length > 0) {
+        const age = Math.min(...cached.map(a => Date.now() - a.cachedAt))
+        console.log('✅ [Cache] Using fallback cache:', {
+          count: cached.length,
+          age: `${Math.round(age / 1000)}s`
+        })
         setFromCache(true)
-        setCacheAge(Math.min(...cached.map(a => Date.now() - a.cachedAt)))
+        setCacheAge(age)
         return convertCachedToArticles(cached)
       }
 
+      console.log('❌ [Cache] No fallback cache available')
       throw error
     }
   }
 
   // Stale-while-revalidate strategy
   const staleWhileRevalidateStrategy = async (url: string): Promise<Article[]> => {
+    console.log('♻️ [Cache] Using STALE-WHILE-REVALIDATE strategy')
     // Get from cache immediately
+    console.log('💾 [Cache] Fetching from cache for immediate response...')
     const cached = await articleDb.getArticles({
       category,
       ticker,
@@ -225,31 +273,44 @@ export function useCachedArticles(options: UseCachedArticlesOptions = {}): UseCa
 
     if (cached.length > 0) {
       const age = Math.min(...cached.map(a => Date.now() - a.cachedAt))
-      console.log('📦 Returning stale cache, revalidating...')
+      console.log('📦 [Cache] Returning stale cache immediately:', {
+        count: cached.length,
+        age: `${Math.round(age / 1000)}s`,
+        strategy: 'will revalidate in background'
+      })
       setFromCache(true)
       setCacheAge(age)
 
       // Revalidate in background
+      console.log('🔄 [Cache] Starting background revalidation...')
       networkFetch(url).then(fresh => {
+        console.log('✅ [Cache] Background revalidation complete:', {
+          freshArticles: fresh.length
+        })
         mutate(key, fresh, { revalidate: false })
       }).catch(error => {
-        console.warn('Background revalidation failed:', error)
+        console.warn('⚠️ [Cache] Background revalidation failed:', error)
       })
 
       return convertCachedToArticles(cached)
     }
 
+    console.log('📭 [Cache] No stale cache available, fetching from network')
     // No cache, fetch from network
     return networkFetch(url)
   }
 
   // Network-only strategy
   const networkOnlyStrategy = async (url: string): Promise<Article[]> => {
+    console.log('🌐 [Cache] Using NETWORK-ONLY strategy (no cache)')
     return networkFetch(url)
   }
 
   // Network fetch with ETag support
   const networkFetch = async (url: string, options: any = {}): Promise<Article[]> => {
+    const fetchStart = Date.now()
+    console.log('🌐 [Cache] Starting network fetch with ETag support...')
+
     const { data, fromCache: httpCache, age } = await fetchWithETag<{
       articles: Article[]
       totalCount: number
@@ -261,15 +322,29 @@ export function useCachedArticles(options: UseCachedArticlesOptions = {}): UseCa
         : {})
     })
 
+    const fetchTime = Date.now() - fetchStart
+
     if (!httpCache && data.articles) {
       // Fresh data, cache it
+      console.log('📥 [Cache] Received FRESH data from server:', {
+        articles: data.articles.length,
+        fetchTime: `${fetchTime}ms`,
+        totalCount: data.totalCount
+      })
+      console.log('💾 [Cache] Saving to IndexedDB...')
       await cacheArticles(data.articles)
       setFromCache(false)
       setCacheAge(0)
+      console.log('✅ [Cache] Fresh data cached successfully')
     } else if (httpCache) {
-      console.log('✅ HTTP cache hit (304)')
+      console.log('✅ [Cache] HTTP cache hit (304 Not Modified):', {
+        age: age ? `${Math.round(age / 1000)}s` : 'unknown',
+        fetchTime: `${fetchTime}ms`
+      })
       setFromCache(true)
       setCacheAge(age)
+    } else {
+      console.log('⚠️ [Cache] No articles received from server')
     }
 
     return data.articles || []
@@ -277,6 +352,9 @@ export function useCachedArticles(options: UseCachedArticlesOptions = {}): UseCa
 
   // Cache articles in IndexedDB
   const cacheArticles = async (articles: Article[]): Promise<void> => {
+    const cacheStart = Date.now()
+    console.log(`💾 [Cache] Caching ${articles.length} articles to IndexedDB...`)
+
     const promises = articles.map(article => {
       const cached: Partial<CachedArticle> = {
         id: article.id,
@@ -295,7 +373,17 @@ export function useCachedArticles(options: UseCachedArticlesOptions = {}): UseCa
       return articleDb.cacheArticle(cached)
     })
 
-    await Promise.allSettled(promises)
+    const results = await Promise.allSettled(promises)
+    const succeeded = results.filter(r => r.status === 'fulfilled').length
+    const failed = results.filter(r => r.status === 'rejected').length
+    const cacheTime = Date.now() - cacheStart
+
+    console.log('💾 [Cache] IndexedDB cache complete:', {
+      succeeded,
+      failed,
+      cacheTime: `${cacheTime}ms`,
+      avgPerArticle: `${Math.round(cacheTime / articles.length)}ms`
+    })
   }
 
   // Convert cached articles to API format
@@ -331,7 +419,7 @@ export function useCachedArticles(options: UseCachedArticlesOptions = {}): UseCa
     fallbackData: undefined,
 
     // Custom online check
-    isOnline: () => navigator.onLine,
+    isOnline: () => typeof window !== 'undefined' ? navigator.onLine : true,
 
     // Custom visibility check
     isVisible: () => document.visibilityState === 'visible',
@@ -339,7 +427,7 @@ export function useCachedArticles(options: UseCachedArticlesOptions = {}): UseCa
     // Error retry with exponential backoff
     onErrorRetry: (error, key, config, revalidate, { retryCount }) => {
       // Don't retry if offline
-      if (!navigator.onLine) return
+      if (typeof window !== 'undefined' && !navigator.onLine) return
 
       // Don't retry on 4xx errors
       if (error.status >= 400 && error.status < 500) return
@@ -355,13 +443,13 @@ export function useCachedArticles(options: UseCachedArticlesOptions = {}): UseCa
 
     // Success callback
     onSuccess: (data) => {
-      console.log(`✅ Articles loaded: ${data?.length || 0}`)
+      console.log(`✅ [Cache] SWR Success: ${data?.length || 0} articles loaded`)
       updateCacheStats()
     },
 
     // Loading slow callback
     onLoadingSlow: (key, config) => {
-      console.warn('⚠️ Loading is slow for:', key)
+      console.warn('⚠️ [Cache] Loading is slow for:', key)
     }
   }
 
@@ -437,16 +525,21 @@ export function useCachedArticles(options: UseCachedArticlesOptions = {}): UseCa
   // Monitor network status
   useEffect(() => {
     const handleOnline = () => {
+      console.log('🟢 [Cache] Network is back ONLINE - refreshing data...')
       setIsOffline(false)
       refresh() // Refresh when coming online
     }
 
     const handleOffline = () => {
+      console.log('🔴 [Cache] Network went OFFLINE - using cached data only')
       setIsOffline(true)
     }
 
     window.addEventListener('online', handleOnline)
     window.addEventListener('offline', handleOffline)
+
+    // Log initial state
+    console.log(`🌐 [Cache] Initial network state: ${typeof window !== 'undefined' && navigator.onLine ? 'ONLINE' : 'OFFLINE'}`)
 
     return () => {
       window.removeEventListener('online', handleOnline)
@@ -464,9 +557,12 @@ export function useCachedArticles(options: UseCachedArticlesOptions = {}): UseCa
   // Update stats periodically
   useEffect(() => {
     updateCacheStats()
-    const interval = setInterval(updateCacheStats, 10000)
+    const interval = setInterval(() => {
+      updateCacheStats()
+      console.log('📊 [Cache] Stats updated:', cacheStats)
+    }, 10000)
     return () => clearInterval(interval)
-  }, [updateCacheStats])
+  }, [updateCacheStats, cacheStats])
 
   // Cleanup on unmount
   useEffect(() => {

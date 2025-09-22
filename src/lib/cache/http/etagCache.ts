@@ -170,15 +170,23 @@ class ETagCache {
     const startTime = performance.now()
     const cached = this.cache.get(url)
 
+    console.log('\n🌐 [HTTP Cache] Starting fetch:', {
+      url: url.substring(0, 100),
+      hasCached: !!cached,
+      cachedAge: cached ? `${Math.round((Date.now() - cached.timestamp) / 1000)}s` : 'none'
+    })
+
     // Build headers with conditional request headers
     const headers = new Headers(options.headers || {})
 
     if (cached) {
       if (cached.etag) {
         headers.set('If-None-Match', cached.etag)
+        console.log('🆔 [HTTP Cache] Adding ETag:', cached.etag)
       }
       if (cached.lastModified) {
         headers.set('If-Modified-Since', cached.lastModified)
+        console.log('📅 [HTTP Cache] Adding Last-Modified:', cached.lastModified)
       }
     }
 
@@ -193,7 +201,13 @@ class ETagCache {
       // Handle 304 Not Modified
       if (response.status === 304 && cached) {
         const age = Date.now() - cached.timestamp
-        this.metrics.recordCacheHit('etag-304', performance.now() - startTime)
+        const loadTime = performance.now() - startTime
+        console.log('✨ [HTTP Cache] 304 Not Modified - Using cached data:', {
+          age: `${Math.round(age / 1000)}s`,
+          loadTime: `${Math.round(loadTime)}ms`,
+          dataSize: cached.size
+        })
+        this.metrics.recordCacheHit('etag-304', loadTime)
 
         // Update timestamp for fresh cache
         cached.timestamp = Date.now()
@@ -247,10 +261,27 @@ class ETagCache {
           staleWhileRevalidate: cacheControl?.includes('stale-while-revalidate') || false
         }
 
+        console.log('💾 [HTTP Cache] Caching response:', {
+          etag: etag || 'none',
+          lastModified: lastModified || 'none',
+          size: entry.size,
+          maxAge: maxAge ? `${maxAge / 1000}s` : 'default',
+          cacheControl: cacheControl || 'none'
+        })
+
         this.cache.set(url, entry)
         this.saveToStorage()
         this.metrics.recordSet(url, entry.size)
+      } else {
+        console.log('📭 [HTTP Cache] No cache headers, not caching response')
       }
+
+      const loadTime = performance.now() - startTime
+      console.log('🆕 [HTTP Cache] Fresh data fetched:', {
+        status: response.status,
+        loadTime: `${Math.round(loadTime)}ms`,
+        dataSize: JSON.stringify(data).length
+      })
 
       this.metrics.recordCacheMiss('etag')
 
@@ -262,10 +293,16 @@ class ETagCache {
 
     } catch (error) {
       // Return cached data on network error if available and stale-while-revalidate is enabled
-      if (cached && (cached.staleWhileRevalidate || !navigator.onLine)) {
+      if (cached && (cached.staleWhileRevalidate || (typeof window !== 'undefined' && !navigator.onLine))) {
         const age = Date.now() - cached.timestamp
-        console.warn('Network error, returning cached data:', error)
-        this.metrics.recordCacheHit('etag-stale', performance.now() - startTime)
+        const loadTime = performance.now() - startTime
+        console.warn('⚠️ [HTTP Cache] Network error, using stale cache:', {
+          error: error instanceof Error ? error.message : 'Unknown',
+          age: `${Math.round(age / 1000)}s`,
+          loadTime: `${Math.round(loadTime)}ms`,
+          online: navigator.onLine
+        })
+        this.metrics.recordCacheHit('etag-stale', loadTime)
 
         return {
           data: cached.data,
@@ -275,6 +312,7 @@ class ETagCache {
         }
       }
 
+      console.error('❌ [HTTP Cache] Fetch failed with no fallback:', error)
       this.metrics.recordError('fetch', error)
       throw error
     }
