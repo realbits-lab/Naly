@@ -2,9 +2,37 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import dynamic from "next/dynamic";
 import { ArticleContentPanel } from "@/components/articles/article-content-panel";
-import { NewsSidebarCached as NewsSidebar } from "@/components/articles/news-sidebar-cached";
 import { useScreenSize } from "@/hooks/use-screen-size";
+
+// Dynamically import the NewsSidebar to avoid SSR hydration issues
+const NewsSidebar = dynamic(
+	() => import("@/components/articles/news-sidebar-cached").then(mod => ({ default: mod.NewsSidebarCached })),
+	{
+		ssr: false,
+		loading: () => (
+			<div className="flex flex-col bg-card md:border-r border-border h-full w-full">
+				<div className="flex items-center justify-between p-4 border-b border-border">
+					<div className="flex items-center space-x-2">
+						<div className="h-5 w-5 bg-muted rounded animate-pulse" />
+						<div className="h-6 w-12 bg-muted rounded animate-pulse" />
+						<div className="h-5 w-8 bg-muted rounded animate-pulse" />
+					</div>
+				</div>
+				<div className="p-4 space-y-3">
+					<div className="h-10 bg-muted rounded animate-pulse" />
+					<div className="h-8 bg-muted rounded animate-pulse" />
+				</div>
+				<div className="flex-1 p-2 space-y-2">
+					{[...Array(6)].map((_, i) => (
+						<div key={i} className="h-20 bg-muted rounded animate-pulse" />
+					))}
+				</div>
+			</div>
+		)
+	}
+);
 
 interface Article {
 	id: string;
