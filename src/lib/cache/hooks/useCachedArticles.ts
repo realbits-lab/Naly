@@ -13,14 +13,19 @@ interface Article {
   id: string
   title: string
   summary?: string
-  content?: string
+  marketAnalysis?: string
+  investmentImplications?: string
   createdAt: string
+  sourceTitle?: string
   sourcePublisher?: string
   sourceCategory?: string
   sentiment?: string
   readingTime?: number
-  tickers?: string[]
-  marketImpact?: string
+  keywords?: string[]
+  entities?: any[]
+  wordCount?: number
+  aiModel?: string
+  keyPoints?: string
 }
 
 interface UseCachedArticlesOptions {
@@ -351,25 +356,39 @@ export function useCachedArticles(options: UseCachedArticlesOptions = {}): UseCa
   }
 
   // Cache articles in IndexedDB
-  const cacheArticles = async (articles: Article[]): Promise<void> => {
+  const cacheArticles = async (articles: any[]): Promise<void> => {
     const cacheStart = Date.now()
     console.log(`💾 [Cache] Caching ${articles.length} articles to IndexedDB...`)
 
-    const promises = articles.map(article => {
+    const promises = articles.map((article: any) => {
+      console.log(`💾 [Cache] Processing article: ${article.title}`)
+
       const cached: Partial<CachedArticle> = {
         id: article.id,
         title: article.title,
         summary: article.summary,
-        content: article.content,
+        content: article.marketAnalysis || article.content,
+        aiContent: article.marketAnalysis,
+        textContent: article.investmentImplications,
         createdAt: article.createdAt,
         publishedAt: article.createdAt,
+        sourceTitle: article.sourceTitle,
         sourcePublisher: article.sourcePublisher,
         sourceCategory: article.sourceCategory,
         sentiment: article.sentiment as any,
         readingTime: article.readingTime,
-        tickers: article.tickers
+        keywords: article.keywords || [],
+        entities: article.entities || [],
+        wordCount: article.wordCount,
+        aiModel: article.aiModel,
+        keyPoints: article.keyPoints,
+        marketAnalysis: article.marketAnalysis,
+        investmentImplications: article.investmentImplications,
+        aiEnhanced: !!article.marketAnalysis,
+        tickers: [] // Will be extracted from entities or keywords if needed
       }
 
+      console.log(`💾 [Cache] Mapped article keys:`, Object.keys(cached))
       return articleDb.cacheArticle(cached)
     })
 
@@ -387,19 +406,24 @@ export function useCachedArticles(options: UseCachedArticlesOptions = {}): UseCa
   }
 
   // Convert cached articles to API format
-  const convertCachedToArticles = (cached: CachedArticle[]): Article[] => {
+  const convertCachedToArticles = (cached: CachedArticle[]): any[] => {
     return cached.map(c => ({
       id: c.id,
       title: c.title,
       summary: c.summary,
-      content: c.aiContent || c.content,
+      marketAnalysis: c.marketAnalysis || c.aiContent || c.content,
+      investmentImplications: c.investmentImplications || c.textContent,
       createdAt: c.createdAt || c.publishedAt,
+      sourceTitle: c.sourceTitle,
       sourcePublisher: c.sourcePublisher,
       sourceCategory: c.sourceCategory,
       sentiment: c.sentiment,
       readingTime: c.readingTime,
-      tickers: c.tickers,
-      marketImpact: c.marketImpact
+      keywords: c.keywords,
+      entities: c.entities,
+      wordCount: c.wordCount,
+      aiModel: c.aiModel,
+      keyPoints: c.keyPoints
     }))
   }
 

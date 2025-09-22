@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
+import { RegisterServiceWorker } from "./register-sw";
 
 // Initialize services (including cron scheduler)
 if (typeof window === "undefined") {
@@ -46,6 +47,7 @@ export default function RootLayout({
 			<body className={inter.className}>
 				<Providers>
 					{children}
+					<RegisterServiceWorker />
 				</Providers>
 			</body>
 		</html>

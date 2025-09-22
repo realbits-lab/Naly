@@ -16,19 +16,27 @@ export interface CachedArticle {
   textContent?: string
   summary?: string
 
+  // Financial content
+  marketAnalysis?: string
+  investmentImplications?: string
+  keyPoints?: string
+
   // Financial metadata
   tickers?: string[]
   sentiment?: 'bullish' | 'bearish' | 'neutral' | 'positive' | 'negative'
   marketImpact?: 'high' | 'medium' | 'low'
   sourceCategory?: string
   sourcePublisher?: string
+  sourceTitle?: string
 
   // AI enhancements
   aiEnhanced?: boolean
   aiContent?: string
+  aiModel?: string
   entities?: any[]
   keywords?: string[]
   topics?: string[]
+  wordCount?: number
 
   // Cache metadata
   cachedAt: number
@@ -81,16 +89,20 @@ class ArticleDatabase extends Dexie {
       articles: `
         id,
         url,
-        [category+publishedAt],
+        title,
+        [sourceCategory+publishedAt],
         [userId+read],
         [userId+bookmarked],
         cachedAt,
         accessedAt,
         *tickers,
+        *keywords,
         sentiment,
         marketImpact,
         sourceCategory,
         sourcePublisher,
+        sourceTitle,
+        aiModel,
         createdAt
       `.replace(/\s+/g, ' ').trim(),
 
