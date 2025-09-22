@@ -215,12 +215,20 @@ async function enhanceReportWithCompanyAnalysis(marketReport: string, companyNam
 			summary: article.summary
 		})) || 'Not available',
 
-		financialHighlights: financialData.financials?.data?.[0] ? {
-			revenue: financialData.financials.data[0].revenue,
-			net_income: financialData.financials.data[0].net_income,
-			total_assets: financialData.financials.data[0].total_assets,
-			period: financialData.financials.data[0].period
-		} : 'Not available',
+		// Include ALL financial periods for complete time series
+		financialHighlights: financialData.financials?.data?.length > 0 ?
+			financialData.financials.data.map((period: any) => ({
+				period: period.period,
+				fiscal_year: period.fiscal_year,
+				revenue: period.revenue,
+				net_income: period.net_income,
+				total_assets: period.total_assets,
+				total_liabilities: period.total_liabilities,
+				gross_profit: period.gross_profit,
+				operating_income: period.operating_income,
+				eps_diluted: period.eps_diluted,
+				cash_flow_from_operations: period.cash_flow_from_operations
+			})) : 'Not available',
 
 		recentFilings: financialData.secFilings?.data?.slice(0, 3).map((filing: any) => ({
 			form_type: filing.form_type,
@@ -228,13 +236,25 @@ async function enhanceReportWithCompanyAnalysis(marketReport: string, companyNam
 			description: filing.description
 		})) || 'Not available',
 
-		pricePerformance: financialData.historicalPrices?.data ? {
+		// Include COMPLETE historical price series data
+		pricePerformance: financialData.historicalPrices?.data?.length > 0 ? {
+			// Summary metrics
 			current_price: financialData.historicalPrices.data[financialData.historicalPrices.data.length - 1]?.close,
 			price_30_days_ago: financialData.historicalPrices.data[0]?.close,
-			price_change: financialData.historicalPrices.data.length > 1 ?
+			price_change_percentage: financialData.historicalPrices.data.length > 1 ?
 				((financialData.historicalPrices.data[financialData.historicalPrices.data.length - 1]?.close -
 				  financialData.historicalPrices.data[0]?.close) /
-				 financialData.historicalPrices.data[0]?.close * 100).toFixed(2) + '%' : 'N/A'
+				 financialData.historicalPrices.data[0]?.close * 100).toFixed(4) : null,
+			// Complete daily price series
+			daily_prices: financialData.historicalPrices.data.map((day: any) => ({
+				date: day.date,
+				open: day.open,
+				high: day.high,
+				low: day.low,
+				close: day.close,
+				volume: day.volume,
+				adjusted_close: day.adjusted_close
+			}))
 		} : 'Not available'
 	};
 
@@ -257,6 +277,15 @@ CRITICAL NUMERICAL DATA PRESERVATION REQUIREMENTS:
 - When referencing historical prices, use exact values from the data
 - All financial ratios and metrics must be calculated and displayed with full precision
 
+TIME SERIES DATA PRESENTATION REQUIREMENTS:
+- Present ALL time series data as properly formatted markdown tables
+- For daily stock prices: Create a table with columns: Date | Open | High | Low | Close | Volume | Adj Close
+- For quarterly/annual financials: Create a table with columns for each period showing ALL metrics
+- Include EVERY data point provided - do not summarize or skip any values
+- Use proper table alignment and formatting for readability
+- Include row for EACH day/period in the data - no aggregation or averaging
+- Sort chronologically with most recent data first
+
 INSTRUCTIONS:
 1. Keep the entire original market report exactly as is
 2. Add a new section at the end titled "# Featured Company Deep-Dive: ${companyName} (${ticker})"
@@ -267,12 +296,15 @@ INSTRUCTIONS:
 
 The new section should include:
 - Company overview and position in the market (with EXACT market cap, employee count)
-- Recent financial performance analysis (with EXACT revenue, net income, assets figures)
+- Historical Financial Performance Table: Show 3-year quarterly/annual financials with ALL metrics in a table
+- Stock Price History Table: Display complete 30-day price series with Date, Open, High, Low, Close, Volume
 - Key business developments and news (with EXACT dates and figures mentioned)
 - Investment thesis and risk factors (with PRECISE financial metrics)
-- Price performance and technical considerations (with EXACT stock prices and percentage changes)
+- Technical Analysis with Price Movement Table showing daily changes
 - SEC filings insights (with EXACT filing dates and figures)
 - Conclusion and investment recommendation (with PRECISE price targets and ratios)
+
+IMPORTANT: Each time series MUST be presented as a complete table with every single data point - no summaries!
 
 Format the entire response in clean markdown with proper headers, bullet points, and tables where appropriate. MOST IMPORTANTLY: Every single financial number, percentage, dollar amount, and metric must be preserved EXACTLY as provided in the source data without any rounding, approximation, or summarization.`;
 
