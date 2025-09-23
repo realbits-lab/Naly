@@ -146,6 +146,9 @@ importers:
       next-intl:
         specifier: ^4.3.9
         version: 4.3.9(next@14.2.32(@babel/core@7.28.4)(@opentelemetry/api@1.9.0)(@playwright/test@1.55.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)(typescript@5.9.2)
+      playwright:
+        specifier: ^1.55.0
+        version: 1.55.0
       postgres:
         specifier: ^3.4.4
         version: 3.4.7

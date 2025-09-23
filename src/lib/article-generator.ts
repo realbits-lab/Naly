@@ -1,5 +1,4 @@
-import { openai } from "@ai-sdk/openai";
-import { generateText } from "ai";
+import { generateAIText, AI_MODELS } from "./ai";
 import { InfographicGenerator } from "./infographic-generator";
 import { SlideInfographicGenerator } from "./slide-infographic-generator";
 
@@ -84,10 +83,7 @@ export class ArticleGenerator {
 		companyName: string | null
 	): Promise<string> {
 		try {
-			if (!this.apiKey) {
-				// Fallback to creative mock title
-				return this.generateMockCreativeTitle(newsArticle, relatedInfo, companyName);
-			}
+			// Always use AI for creative title generation
 
 			const titlePrompt = `You are a creative headline writer for financial news. Generate an engaging, thought-provoking title that captures attention while remaining professional.
 
@@ -117,14 +113,16 @@ Guidelines:
 - Each title should be 60-100 characters
 - Use active voice and strong verbs`;
 
-			const { text } = await generateText({
-				model: openai("gpt-4") as any,
+			const { text } = await generateAIText({
 				prompt: titlePrompt,
+				model: "GPT_4O",
 				maxTokens: 200,
 				temperature: 0.9, // Higher temperature for more creativity
 			});
 
-			const parsed = JSON.parse(text);
+			// Clean the response to handle markdown code blocks
+			const cleanText = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+			const parsed = JSON.parse(cleanText);
 			const titles = parsed.titles || [];
 
 			// Select the best title based on sentiment
@@ -206,8 +204,9 @@ Guidelines:
 				companyName
 			);
 
-			if (!this.apiKey) {
-				// Fallback to mock generation if no API key
+			// Always use AI generation - remove API key check
+			if (false) {
+				// This block is now disabled - always use AI
 				const mockArticle = this.generateMockArticle(newsArticle, relatedInfo);
 				mockArticle.title = creativeTitle;
 
@@ -260,11 +259,11 @@ Guidelines:
 
 			const prompt = this.createPrompt(newsArticle, relatedInfo);
 
-			const { text } = await generateText({
-				model: openai("gpt-4") as any,
+			const { text } = await generateAIText({
 				prompt,
-				maxTokens: 2000,
-				temperature: 0.7,
+				model: "GPT_4O", // Use AI Gateway via the ai utility
+				maxTokens: 5000, // Increased for comprehensive analysis
+				temperature: 0.6, // Slightly lower for more focused analysis
 			});
 
 			const article = this.parseGeneratedText(text, newsArticle, relatedInfo);
@@ -380,7 +379,7 @@ Guidelines:
 		newsArticle: NewsArticle,
 		relatedInfo: RelatedInfo,
 	): string {
-		return `You are a financial analyst and expert writer. Based on the following news article and related information, write a comprehensive analysis article for investors and financial professionals.
+		return `You are a senior financial analyst and expert writer. Based on the following news article and related information, write a comprehensive, data-driven analysis article for investors and financial professionals.
 
 ORIGINAL NEWS:
 Title: ${newsArticle.title}
@@ -396,24 +395,46 @@ Keywords: ${relatedInfo.keywords.join(", ")}
 
 Please provide your response in the following JSON format:
 {
-  "content": "A comprehensive 800-1000 word analysis article with clear paragraphs, professional tone, and actionable insights",
-  "summary": "A concise 2-3 sentence summary of the key points",
-  "keyPoints": ["List of 4-6 key takeaways as bullet points"],
-  "marketAnalysis": "Detailed analysis of how this news affects financial markets",
-  "investmentImplications": "Specific implications for investors and trading strategies"
+  "content": "A comprehensive 1500-2000 word analysis article with specific financial data, metrics, percentages, dollar amounts, and quantitative insights. Include multiple sections with detailed analysis.",
+  "summary": "A detailed 3-4 sentence summary highlighting key financial metrics and numerical insights",
+  "keyPoints": ["List of 6-8 key takeaways with specific numbers, percentages, or financial metrics where applicable"],
+  "marketAnalysis": "Detailed quantitative analysis with specific financial metrics, historical comparisons, and numerical forecasts",
+  "investmentImplications": "Specific investment strategies with target prices, risk assessments, and numerical portfolio allocation suggestions"
 }
 
-Note: Do not include a title field as it will be generated separately.
+CRITICAL REQUIREMENTS - MUST INCLUDE:
+1. SPECIFIC FINANCIAL METRICS: Include revenue figures, profit margins, stock price targets, market valuations, growth rates, etc.
+2. QUANTITATIVE DATA: Use percentages, dollar amounts, ratios, and specific numbers throughout
+3. HISTORICAL COMPARISONS: Compare to previous quarters/years with specific figures
+4. MARKET METRICS: Include P/E ratios, market cap changes, trading volumes, sector performance data
+5. FORECASTS WITH NUMBERS: Provide specific price targets, growth projections, timeline estimates
+6. RISK METRICS: Include volatility measures, beta coefficients, risk-adjusted returns
+7. SECTOR ANALYSIS: Compare performance to industry benchmarks with specific metrics
 
-Guidelines:
-- Write in a professional, analytical tone
-- Include specific market implications
-- Provide actionable insights for investors
-- Use clear, jargon-free language where possible
-- Structure the content with logical flow
-- Include relevant financial context and background
-- Make predictions or assessments based on the data
-- Ensure all content is original and not copied from the source`;
+STRUCTURE REQUIREMENTS:
+- Executive Summary with key financial highlights
+- Detailed Financial Analysis with tables/metrics
+- Market Impact Assessment with quantitative measures
+- Competitive Analysis with numerical comparisons
+- Risk Assessment with specific risk metrics
+- Investment Thesis with target prices and timelines
+- Conclusion with actionable recommendations
+
+TONE & STYLE:
+- Professional financial journalism style
+- Include specific citations of financial data
+- Use industry-standard financial terminology
+- Provide both bullish and bearish scenarios with probabilities
+- Include assumptions and methodology behind forecasts
+- Maintain objectivity while providing clear investment guidance
+
+EXAMPLES OF REQUIRED CONTENT:
+- "Revenue increased 23.4% YoY to $4.2B, beating consensus estimates by $340M"
+- "Trading at 24.5x forward P/E, compared to sector average of 18.2x"
+- "Target price of $185 implies 22% upside potential over 12-month horizon"
+- "Risk-adjusted return of 1.34 Sharpe ratio indicates favorable risk-reward profile"
+
+Ensure all content is original, comprehensive, and provides genuine analytical value to professional investors.`;
 	}
 
 	private parseGeneratedText(

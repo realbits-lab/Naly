@@ -8,6 +8,7 @@ import { generateAIText } from "@/lib/ai";
 import { generateObject } from 'ai';
 import { z } from 'zod';
 import Parser from "rss-parser";
+import { SlideInfographicGenerator } from "@/lib/slide-infographic-generator";
 
 const parser = new Parser({
 	customFields: {
@@ -81,6 +82,50 @@ Return the most strategically important company for further financial analysis.`
 	console.log(`🔍 Needs ticker search: ${result.object.needsTickerSearch}`);
 
 	return result.object;
+}
+
+// Extract company names directly from articles
+async function extractCompaniesFromArticles(articles: Array<{ title: string; content: { description?: string; fullContent?: string } }>): Promise<string[]> {
+	try {
+		console.log('📰 Extracting companies from article content...');
+
+		// Combine all article content for analysis
+		const allText = articles.map(article => {
+			const content = article.content?.description || article.content?.fullContent || '';
+			return `${article.title} ${content}`;
+		}).join(' ');
+
+		// Use AI to extract company names from actual article content
+		const extractionPrompt = `Extract all company names mentioned in this financial news content. Include:
+1. Public companies with stock tickers
+2. Private companies mentioned in business context
+3. Financial institutions and banks
+4. Major corporations and organizations
+
+Content to analyze:
+${allText.slice(0, 4000)}
+
+Respond with ONLY a JSON array of company names:
+["Company Name 1", "Company Name 2", "Company Name 3"]
+
+Extract actual company names mentioned in the content, not generic terms.`;
+
+		const { text } = await generateAIText({
+			prompt: extractionPrompt,
+			model: "GEMINI_2_5_FLASH" as any,
+			temperature: 0.1,
+			maxTokens: 300
+		});
+
+		const cleanText = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+		const extractedCompanies = JSON.parse(cleanText);
+
+		console.log(`🏢 Extracted ${extractedCompanies.length} companies from articles:`, extractedCompanies);
+		return extractedCompanies || [];
+	} catch (error) {
+		console.error('❌ Error extracting companies from articles:', error);
+		return [];
+	}
 }
 
 // Helper function to search for company ticker using Google
@@ -338,6 +383,174 @@ Format the entire response in clean markdown with proper headers, bullet points,
 	return reportWithCompleteTables;
 }
 
+// Generate infographic content from market report
+async function generateInfographicContent(marketReport: string, companyName?: string): Promise<string | null> {
+	try {
+		console.log('📊 Starting infographic content generation...');
+
+		// Extract key data from the market report for infographic
+		const extractedData = extractDataForInfographic(marketReport, companyName);
+
+		// Initialize the slide generator
+		const generator = new SlideInfographicGenerator();
+
+		// Generate slides
+		const slides = await generator.generateSlides(extractedData);
+
+		if (slides.length === 0) {
+			console.log('⚠️ No slides generated, falling back to simple infographic');
+			return generateSimpleInfographic(extractedData);
+		}
+
+		// Generate HTML presentation
+		const infographicHTML = generator.generateHTML(extractedData, slides);
+
+		console.log(`✅ Generated infographic with ${slides.length} slides`);
+		return infographicHTML;
+
+	} catch (error) {
+		console.error('❌ Error generating infographic content:', error);
+		return null;
+	}
+}
+
+// Extract relevant data from market report for infographic
+function extractDataForInfographic(marketReport: string, companyName?: string) {
+	// Extract title
+	const titleMatch = marketReport.match(/^#\s*(.+)$/m);
+	const title = titleMatch ? titleMatch[1] : (companyName ? `${companyName} Market Analysis` : 'Market Intelligence Report');
+
+	// Extract summary (first paragraph or executive summary section)
+	const summaryMatch = marketReport.match(/(?:## Executive Summary|## Summary)\s*\n\n([^#]+?)(?=\n##|$)/s)
+		|| marketReport.match(/^([^#\n]+(?:\n[^#\n]+)*?)(?=\n##|$)/s);
+	const summary = summaryMatch ? summaryMatch[1].trim().substring(0, 300) + '...' : 'Market analysis and insights';
+
+	// Extract key points (look for bullet points or numbered lists)
+	const keyPointsMatches = marketReport.match(/^\s*[-*]\s*(.+)$/gm)
+		|| marketReport.match(/^\s*\d+\.\s*(.+)$/gm)
+		|| [];
+	const keyPoints = keyPointsMatches.slice(0, 5).map(point =>
+		point.replace(/^\s*[-*\d.]\s*/, '').trim()
+	);
+
+	// Determine sentiment based on content
+	const positiveWords = ['growth', 'increase', 'positive', 'strong', 'gain', 'rise', 'bullish', 'opportunity'];
+	const negativeWords = ['decline', 'decrease', 'negative', 'weak', 'loss', 'fall', 'bearish', 'risk'];
+
+	const content = marketReport.toLowerCase();
+	const positiveCount = positiveWords.filter(word => content.includes(word)).length;
+	const negativeCount = negativeWords.filter(word => content.includes(word)).length;
+
+	let sentiment: "positive" | "negative" | "neutral" = "neutral";
+	if (positiveCount > negativeCount) sentiment = "positive";
+	else if (negativeCount > positiveCount) sentiment = "negative";
+
+	// Extract entities (companies, organizations)
+	const entityMatches = marketReport.match(/\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*(?:\s+(?:Inc|Corp|LLC|Ltd|Company|Bank|Group)\.?)?/g) || [];
+	const entities = [...new Set(entityMatches.slice(0, 8))];
+
+	// Extract keywords
+	const keywordMatches = marketReport.match(/\b(?:market|financial|stock|price|revenue|earnings|growth|analysis|forecast|trend|investment|trading|economic|sector|industry)\b/gi) || [];
+	const keywords = [...new Set(keywordMatches.map(k => k.toLowerCase()).slice(0, 10))];
+
+	// Extract market analysis section
+	const marketAnalysisMatch = marketReport.match(/(?:## Market Analysis|## Analysis)\s*\n\n([^#]+?)(?=\n##|$)/s);
+	const marketAnalysis = marketAnalysisMatch ? marketAnalysisMatch[1].trim().substring(0, 200) + '...' : undefined;
+
+	// Extract investment implications
+	const investmentMatch = marketReport.match(/(?:## Investment|## Implications|## Outlook)\s*\n\n([^#]+?)(?=\n##|$)/s);
+	const investmentImplications = investmentMatch ? investmentMatch[1].trim().substring(0, 200) + '...' : undefined;
+
+	return {
+		title,
+		summary,
+		keyPoints: keyPoints.length > 0 ? keyPoints : ['Market analysis in progress', 'Key insights being processed', 'Comprehensive data review'],
+		sentiment,
+		entities,
+		keywords,
+		marketAnalysis,
+		investmentImplications,
+		wordCount: marketReport.length,
+		readingTime: Math.ceil(marketReport.split(' ').length / 200),
+		companyName
+	};
+}
+
+// Fallback simple infographic generator
+function generateSimpleInfographic(data: any): string {
+	const sentimentColor = data.sentiment === 'positive' ? '#10b981' :
+		data.sentiment === 'negative' ? '#ef4444' : '#6366f1';
+
+	return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${data.title}</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px; margin: 0; color: #333;
+        }
+        .infographic {
+            max-width: 800px; margin: 0 auto; background: white;
+            border-radius: 15px; padding: 40px; box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        .header { text-align: center; margin-bottom: 30px; }
+        .title { font-size: 2.5em; font-weight: bold; color: ${sentimentColor}; margin-bottom: 10px; }
+        .summary { font-size: 1.2em; line-height: 1.6; margin-bottom: 30px; }
+        .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .metric { text-align: center; padding: 20px; background: #f8fafc; border-radius: 10px; }
+        .metric-value { font-size: 2em; font-weight: bold; color: ${sentimentColor}; }
+        .metric-label { font-size: 0.9em; color: #64748b; margin-top: 5px; }
+        .key-points { margin-bottom: 30px; }
+        .point { padding: 15px; margin: 10px 0; background: #f1f5f9; border-left: 4px solid ${sentimentColor}; border-radius: 0 8px 8px 0; }
+        .sentiment-badge {
+            display: inline-block; padding: 8px 16px; background: ${sentimentColor};
+            color: white; border-radius: 20px; font-weight: 600; text-transform: uppercase;
+            font-size: 0.8em; letter-spacing: 1px;
+        }
+    </style>
+</head>
+<body>
+    <div class="infographic">
+        <div class="header">
+            <div class="title">${data.title}</div>
+            <div class="sentiment-badge">${data.sentiment}</div>
+        </div>
+
+        <div class="summary">${data.summary}</div>
+
+        <div class="metrics">
+            <div class="metric">
+                <div class="metric-value">${data.readingTime}</div>
+                <div class="metric-label">Min Read</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value">${data.entities.length}</div>
+                <div class="metric-label">Key Entities</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value">${data.keywords.length}</div>
+                <div class="metric-label">Keywords</div>
+            </div>
+        </div>
+
+        <div class="key-points">
+            <h3 style="color: ${sentimentColor}; margin-bottom: 15px;">Key Insights</h3>
+            ${data.keyPoints.map((point: string) => `<div class="point">${point}</div>`).join('')}
+        </div>
+
+        <div style="text-align: center; margin-top: 30px; font-size: 0.9em; color: #64748b;">
+            Generated on ${new Date().toLocaleDateString()}
+        </div>
+    </div>
+</body>
+</html>`;
+}
+
 export async function POST(request: NextRequest) {
 	try {
 		// Check authentication and authorization (support both session and API key)
@@ -542,59 +755,76 @@ Include a table or list with:
 		console.log("Step 2.5: Starting enhanced company analysis...");
 
 		let finalReport = marketReport.text;
+		let companyAnalysis = null;
 
 		try {
-			// Find the most relevant company from the market report
-			const companyAnalysis = await identifyRelevantCompany(marketReport.text);
-			console.log(`🏢 Selected company for analysis: ${companyAnalysis.companyName}`);
+			// Extract companies directly from the articles instead of using market report analysis
+			const extractedCompanies = await extractCompaniesFromArticles(recentArticles);
 
-			let ticker = companyAnalysis.ticker;
+			if (extractedCompanies.length > 0) {
+				console.log(`🏢 Found ${extractedCompanies.length} companies in articles:`, extractedCompanies);
 
-			// Search for ticker if needed
-			if (companyAnalysis.needsTickerSearch || !ticker) {
-				console.log(`🔍 Searching for ticker symbol for ${companyAnalysis.companyName}...`);
-				const searchedTicker = await searchCompanyTicker(companyAnalysis.companyName);
+				// Use the first/most relevant company for detailed analysis
+				const selectedCompany = extractedCompanies[0];
+				console.log(`🎯 Selected company for analysis: ${selectedCompany}`);
+
+				// Create a mock analysis object for compatibility
+				companyAnalysis = {
+					companyName: selectedCompany,
+					ticker: null,
+					needsTickerSearch: true,
+					reasoning: `Selected from ${extractedCompanies.length} companies extracted from article content`
+				};
+
+				// Search for ticker
+				console.log(`🔍 Searching for ticker symbol for ${selectedCompany}...`);
+				const searchedTicker = await searchCompanyTicker(selectedCompany);
+				let ticker = searchedTicker;
+
 				if (searchedTicker) {
 					ticker = searchedTicker;
 					console.log(`✅ Ticker found via search: ${ticker}`);
+
+					// Fetch financial data
+					console.log(`📊 Fetching comprehensive financial data for ${selectedCompany} (${ticker})...`);
+					const financialData = await fetchFinancialData(ticker);
+
+					if (financialData) {
+						console.log(`💼 Enhancing report with detailed analysis for ${selectedCompany} (${ticker})`);
+
+						// Enhance the report with comprehensive company analysis
+						const enhancedReport = await enhanceReportWithCompanyAnalysis(
+							marketReport.text,
+							selectedCompany,
+							ticker,
+							financialData
+						);
+
+						finalReport = enhancedReport;
+
+						// Import and append complete data tables
+						const { generateCompleteDataSection } = await import('@/lib/ai');
+						finalReport += generateCompleteDataSection(recentArticles, financialData);
+
+						console.log(`✅ Enhanced report generated with complete data preservation (${finalReport.length} characters)`);
+					} else {
+						console.log(`⚠️ Failed to fetch financial data for ${ticker}, using original report`);
+
+						// Still append article data even without financial data
+						const { generateCompleteDataSection } = await import('@/lib/ai');
+						finalReport = marketReport.text + generateCompleteDataSection(recentArticles);
+					}
 				} else {
-					console.log(`⚠️ Could not find ticker for ${companyAnalysis.companyName}, skipping financial data analysis`);
-				}
-			}
+					console.log(`⚠️ Could not find ticker for ${selectedCompany}, skipping financial data analysis`);
 
-			// Fetch comprehensive financial data if we have a ticker
-			if (ticker) {
-				console.log(`📊 Fetching comprehensive financial data for ${ticker}...`);
-				const financialData = await fetchFinancialData(ticker);
-
-				if (financialData) {
-					console.log(`💼 Enhancing report with detailed analysis for ${companyAnalysis.companyName} (${ticker})`);
-					// Enhance the market report with company analysis
-					finalReport = await enhanceReportWithCompanyAnalysis(
-						marketReport.text,
-						companyAnalysis.companyName,
-						ticker,
-						financialData
-					);
-
-					// Import data preservation function
-					const { generateCompleteDataSection } = await import('@/lib/ai');
-
-					// Always append complete data section
-					finalReport += generateCompleteDataSection(recentArticles, financialData);
-
-					console.log(`✅ Enhanced report generated with complete data preservation (${finalReport.length} characters)`);
-				} else {
-					console.log(`⚠️ Failed to fetch financial data for ${ticker}, using original report`);
-
-					// Still append article data even without financial data
+					// Still append article data even without ticker
 					const { generateCompleteDataSection } = await import('@/lib/ai');
 					finalReport = marketReport.text + generateCompleteDataSection(recentArticles);
 				}
 			} else {
-				console.log(`⚠️ No ticker available for ${companyAnalysis.companyName}, using original report`);
+				console.log('⚠️ No companies found in articles, using original report');
 
-				// Still append article data even without ticker
+				// Still append article data
 				const { generateCompleteDataSection } = await import('@/lib/ai');
 				finalReport = marketReport.text + generateCompleteDataSection(recentArticles);
 			}
@@ -604,14 +834,95 @@ Include a table or list with:
 			console.log(`📄 Using original market report without company enhancement`);
 		}
 
-		// Step 3: Save the enhanced report to database
-		console.log("Step 3: Saving report to database...");
+		// Step 3: Generate infographics and prepare enhanced report
+		console.log("Step 3: Generating infographics and preparing final report...");
 
-		const reportTitle = `Market Intelligence Report - ${new Date().toLocaleDateString('en-US', {
-			year: 'numeric',
-			month: 'long',
-			day: 'numeric'
-		})}`;
+		// Generate infographic content if we have company data
+		let infographicContent = null;
+		let finalCompanyName = null;
+
+		try {
+			// Check if we have a company from the analysis step
+			if (companyAnalysis && companyAnalysis.companyName) {
+				finalCompanyName = companyAnalysis.companyName;
+				console.log(`🏢 Using company from analysis step: ${finalCompanyName}`);
+			} else {
+				// Debug: Show first 500 characters of finalReport for analysis
+				console.log('🔍 DEBUG: First 500 chars of finalReport:', finalReport.substring(0, 500));
+
+				// Extract company name from the final report for title
+				console.log('🔍 DEBUG: Testing company extraction patterns...');
+
+				// Look for common company patterns in the report
+				const patterns = [
+					/Featured Company Deep-Dive: (.+?) \(/,
+					/##\s*([A-Z][^\n]+Bank|[A-Z][^\n]+Corp|[A-Z][^\n]+Inc|[A-Z][^\n]+Ltd|[A-Z][^\n]+Company)/,
+					/Canadian Imperial Bank of Commerce|CIBC/,
+					// New patterns for common company names
+					/\b(Binance|Tesla|Apple|Microsoft|Google|Amazon|Meta|Netflix|Nvidia|OpenAI)\b/i,
+					// Pattern for "Company Name" or Company Name mentioned prominently
+					/\*\*([A-Z][a-zA-Z\s&.]{2,30})\*\*/,
+					// Pattern for company names in quotes
+					/"([A-Z][a-zA-Z\s&.]{2,30})"/,
+					// Pattern for company names at start of sentences
+					/\b([A-Z][a-zA-Z\s&.]{2,30}(?:Inc|Corp|LLC|Ltd|Company|Bank|Group)\.?)\b/
+				];
+
+				let companyMatch = null;
+				for (let i = 0; i < patterns.length; i++) {
+					const match = finalReport.match(patterns[i]);
+					if (match) {
+						companyMatch = match;
+						console.log(`🔍 DEBUG: Pattern ${i + 1} match:`, match);
+						break;
+					}
+				}
+
+				if (companyMatch) {
+					finalCompanyName = companyMatch[1] || companyMatch[0];
+					console.log(`🏢 Extracted company name for title: ${finalCompanyName}`);
+				} else {
+					console.log('⚠️ No company name found in finalReport for title extraction');
+				}
+			}
+
+			// Generate infographic content regardless of company name
+			console.log('📊 Starting infographic content generation...');
+			try {
+				infographicContent = await generateInfographicContent(finalReport, finalCompanyName);
+				console.log('📊 Infographic generation completed successfully');
+				if (infographicContent) {
+					console.log('📊 Infographic content length:', infographicContent.length);
+				} else {
+					console.log('⚠️ Infographic content is null');
+				}
+			} catch (infographicError) {
+				console.error('❌ Error in infographic generation:', infographicError);
+			}
+
+		} catch (error) {
+			console.error('❌ Error extracting company name or generating infographics:', error);
+		}
+
+		// Step 4: Save the enhanced report to database
+		console.log("Step 4: Saving report to database...");
+
+		// Create creative title with company name format: "Company Name: Creative Title"
+		let reportTitle;
+		if (finalCompanyName) {
+			const creativeTitle = `Global Market Intelligence Insights - ${new Date().toLocaleDateString('en-US', {
+				year: 'numeric',
+				month: 'long',
+				day: 'numeric'
+			})}`;
+			reportTitle = `${finalCompanyName}: ${creativeTitle}`;
+		} else {
+			reportTitle = `Market Intelligence Report - ${new Date().toLocaleDateString('en-US', {
+				year: 'numeric',
+				month: 'long',
+				day: 'numeric'
+			})}`;
+		}
 
 		const [savedReport] = await db
 			.insert(generatedArticles)
@@ -635,7 +946,7 @@ Include a table or list with:
 
 		console.log(`Report saved to database with ID: ${savedReport.id}`);
 
-		// Step 4: Mark analyzed articles as archived
+		// Step 5: Mark analyzed articles as archived
 		console.log("Step 4: Marking analyzed articles as archived...");
 
 		const articleIds = recentArticles.map(article => article.id);
@@ -655,6 +966,9 @@ Include a table or list with:
 
 		console.log(`Marked ${articleIds.length} articles as archived and processed`);
 
+		// Step 6: Final response preparation
+		console.log('Step 6: Preparing final response...');
+
 		// Extract topic count for response from the enhanced report
 		const topicLines = finalReport.split('\n').filter((line: string) =>
 			line.trim().startsWith('-') || line.trim().startsWith('•') || /^\d+\./.test(line.trim())
@@ -667,6 +981,8 @@ Include a table or list with:
 			articlesAnalyzed: recentArticles.length,
 			articlesArchived: articleIds.length,
 			topicsCount: Math.max(topicLines.length, 7),
+			companyAnalyzed: finalCompanyName || null,
+			infographicsGenerated: infographicContent ? true : false,
 			message: "Enhanced market intelligence report with comprehensive company analysis generated successfully",
 		});
 

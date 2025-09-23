@@ -1,5 +1,4 @@
-import { openai } from "@ai-sdk/openai";
-import { generateText } from "ai";
+import { generateAIText } from "./ai";
 
 interface SlideData {
 	title: string;
@@ -96,15 +95,17 @@ Slide 6: Conclusion with sentiment indicator
 
 Keep all text extremely concise. Each slide should be understandable in 5 seconds.`;
 
-		const { text } = await generateText({
-			model: openai("gpt-4") as any,
+		const { text } = await generateAIText({
 			prompt,
+			model: "GPT_4O",
 			temperature: 0.7,
 			maxTokens: 1500,
 		});
 
 		try {
-			const parsed = JSON.parse(text);
+			// Clean the response to handle markdown code blocks
+			const cleanText = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+			const parsed = JSON.parse(cleanText);
 			return parsed.slides || [];
 		} catch (error) {
 			console.error('Failed to parse AI response:', error);
