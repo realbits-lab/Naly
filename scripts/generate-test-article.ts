@@ -8,7 +8,7 @@ import * as path from 'path';
 async function generateTestArticle() {
   console.log('🚀 Generating test article with creative title...');
 
-  const generator = new ArticleGenerator(process.env.OPENAI_API_KEY);
+  const generator = new ArticleGenerator(process.env.AI_GATEWAY_API_KEY);
 
   // Sample news data about Apple's breakthrough
   const testNews = {
@@ -56,14 +56,14 @@ async function generateTestArticle() {
       sourceCategory: testNews.category,
 
       // Analysis metadata
-      sentiment: generatedArticle.sentiment,
-      keywords: generatedArticle.keywords,
-      entities: generatedArticle.entities,
+      sentiment: generatedArticle.metadata?.sentiment || relatedInfo.sentiment,
+      keywords: generatedArticle.keywords || relatedInfo.keywords,
+      entities: generatedArticle.entities || relatedInfo.entities,
       marketImpact: generatedArticle.marketImpact,
 
       // Article metadata
-      wordCount: generatedArticle.wordCount,
-      readingTime: generatedArticle.readingTime,
+      wordCount: generatedArticle.metadata?.wordCount || null,
+      readingTime: generatedArticle.metadata?.readingTime || null,
       aiModel: generatedArticle.aiModel || 'mock',
       generationMethod: generatedArticle.generationMethod || 'mock',
 
