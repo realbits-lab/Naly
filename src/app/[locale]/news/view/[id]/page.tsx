@@ -86,7 +86,7 @@ export default async function NewsViewPage({ params }: NewsViewPageProps) {
 						{article.title}
 					</h1>
 
-					<div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+					<div className="flex flex-wrap items-center gap-4 text-sm text-foreground/80">
 						<div className="flex items-center">
 							<Calendar className="mr-1 h-4 w-4" />
 							{new Date(article.publishedAt).toLocaleDateString("en-US", {
@@ -125,7 +125,7 @@ export default async function NewsViewPage({ params }: NewsViewPageProps) {
 							<CardTitle>Summary</CardTitle>
 						</CardHeader>
 						<CardContent>
-							<p className="text-muted-foreground leading-relaxed">
+							<p className="text-foreground/90 leading-relaxed">
 								{article.summary}
 							</p>
 						</CardContent>
@@ -175,7 +175,7 @@ export default async function NewsViewPage({ params }: NewsViewPageProps) {
 							<CardTitle>Market Impact Assessment</CardTitle>
 						</CardHeader>
 						<CardContent>
-							<p className="text-muted-foreground leading-relaxed">
+							<p className="text-foreground/90 leading-relaxed">
 								{article.marketImpact}
 							</p>
 						</CardContent>
@@ -227,7 +227,7 @@ export default async function NewsViewPage({ params }: NewsViewPageProps) {
 						<CardTitle>Report Metadata</CardTitle>
 					</CardHeader>
 					<CardContent>
-						<div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-muted-foreground">
+						<div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-foreground/80">
 							{article.sentiment && (
 								<div>
 									<span className="font-medium">Market Sentiment:</span>{" "}
@@ -253,7 +253,7 @@ export default async function NewsViewPage({ params }: NewsViewPageProps) {
 								</div>
 							)}
 						</div>
-						<p className="text-xs text-muted-foreground mt-4">
+						<p className="text-xs text-foreground/70 mt-4">
 							This report was generated using AI analysis of real-time financial data sources and market intelligence.
 							Content is dynamically created to provide the latest market insights and investment considerations.
 						</p>
