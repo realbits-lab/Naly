@@ -40,14 +40,168 @@ export class ArticleGenerator {
 		this.apiKey = apiKey || process.env.OPENAI_API_KEY;
 	}
 
+	private extractCompanyName(entities: string[]): string | null {
+		// Common company patterns and known companies
+		const knownCompanies = [
+			'Google', 'Amazon', 'Apple', 'Microsoft', 'Meta', 'Facebook', 'Netflix', 'Tesla',
+			'OpenAI', 'Anthropic', 'NVIDIA', 'Intel', 'AMD', 'IBM', 'Oracle', 'Salesforce',
+			'Adobe', 'Uber', 'Lyft', 'Airbnb', 'Twitter', 'X', 'SpaceX', 'Boeing', 'Lockheed Martin',
+			'JPMorgan', 'Goldman Sachs', 'Bank of America', 'Wells Fargo', 'Citigroup',
+			'Walmart', 'Target', 'Costco', 'Home Depot', 'Starbucks', 'McDonald\'s',
+			'Coca-Cola', 'PepsiCo', 'Disney', 'Warner Bros', 'Sony', 'Samsung', 'LG',
+			'Toyota', 'Ford', 'GM', 'Volkswagen', 'BMW', 'Mercedes-Benz', 'Ferrari',
+			'Pfizer', 'Johnson & Johnson', 'Moderna', 'AstraZeneca', 'Merck',
+			'ExxonMobil', 'Chevron', 'Shell', 'BP', 'Saudi Aramco'
+		];
+
+		for (const entity of entities) {
+			for (const company of knownCompanies) {
+				if (entity.toLowerCase().includes(company.toLowerCase())) {
+					return company;
+				}
+			}
+			// Check if entity looks like a company name (has Inc., Corp., Ltd., etc.)
+			if (/\b(Inc\.?|Corp\.?|Corporation|Ltd\.?|LLC|Company|Co\.)\b/i.test(entity)) {
+				return entity.replace(/\b(Inc\.?|Corp\.?|Corporation|Ltd\.?|LLC|Company|Co\.)\b/gi, '').trim();
+			}
+		}
+		return entities[0] || null; // Return first entity as fallback
+	}
+
+	async generateCreativeTitle(
+		newsArticle: NewsArticle,
+		relatedInfo: RelatedInfo,
+		companyName: string | null
+	): Promise<string> {
+		try {
+			if (!this.apiKey) {
+				// Fallback to creative mock title
+				return this.generateMockCreativeTitle(newsArticle, relatedInfo, companyName);
+			}
+
+			const titlePrompt = `You are a creative headline writer for financial news. Generate an engaging, thought-provoking title that captures attention while remaining professional.
+
+Original News: ${newsArticle.title}
+Category: ${newsArticle.category}
+Sentiment: ${relatedInfo.sentiment}
+Key Entities: ${relatedInfo.entities.join(', ')}
+
+Create 3 different creative titles with different styles:
+1. A question that sparks curiosity
+2. A bold statement or prediction
+3. An analytical insight
+
+Respond ONLY with a JSON object in this exact format:
+{
+  "titles": [
+    "Title 1 (question style)",
+    "Title 2 (bold statement)",
+    "Title 3 (analytical insight)"
+  ]
+}
+
+Guidelines:
+- Be creative and engaging
+- Avoid clickbait - maintain professional credibility
+- Make it relevant to investors and financial professionals
+- Each title should be 60-100 characters
+- Use active voice and strong verbs`;
+
+			const { text } = await generateText({
+				model: openai("gpt-4"),
+				prompt: titlePrompt,
+				maxTokens: 200,
+				temperature: 0.9, // Higher temperature for more creativity
+			});
+
+			const parsed = JSON.parse(text);
+			const titles = parsed.titles || [];
+
+			// Select the best title based on sentiment
+			let selectedTitle = titles[0];
+			if (relatedInfo.sentiment === 'positive' && titles[1]) {
+				selectedTitle = titles[1]; // Bold statement for positive news
+			} else if (relatedInfo.sentiment === 'neutral' && titles[2]) {
+				selectedTitle = titles[2]; // Analytical insight for neutral news
+			}
+
+			// Add company prefix if available
+			if (companyName) {
+				return `${companyName}: ${selectedTitle}`;
+			}
+			return selectedTitle;
+
+		} catch (error) {
+			console.error("Failed to generate creative title with AI:", error);
+			return this.generateMockCreativeTitle(newsArticle, relatedInfo, companyName);
+		}
+	}
+
+	private generateMockCreativeTitle(
+		newsArticle: NewsArticle,
+		relatedInfo: RelatedInfo,
+		companyName: string | null
+	): string {
+		// Creative title templates based on sentiment and category
+		const templates = {
+			positive: [
+				"What This Breakthrough Means for Investors",
+				"The Hidden Opportunity Everyone's Missing",
+				"Why Smart Money Is Moving Now",
+				"This Could Change Everything in {category}",
+				"The Turning Point We've Been Waiting For"
+			],
+			negative: [
+				"The Risk Nobody's Talking About",
+				"What Went Wrong and What's Next",
+				"The Warning Signs Were There All Along",
+				"Why Investors Should Pay Attention Now",
+				"The {category} Shakeup Has Just Begun"
+			],
+			neutral: [
+				"Decoding the Latest {category} Developments",
+				"What the Data Really Tells Us",
+				"The Strategy Shift You Need to Know",
+				"Understanding the New Market Dynamics",
+				"The {category} Landscape Is Evolving"
+			]
+		};
+
+		const sentimentTemplates = templates[relatedInfo.sentiment] || templates.neutral;
+		const randomIndex = Math.floor(Math.random() * sentimentTemplates.length);
+		let title = sentimentTemplates[randomIndex];
+
+		// Replace category placeholder
+		title = title.replace('{category}', newsArticle.category.charAt(0).toUpperCase() + newsArticle.category.slice(1));
+
+		// Add company prefix if available
+		if (companyName) {
+			return `${companyName}: ${title}`;
+		}
+		return title;
+	}
+
 	async generateArticle(
 		newsArticle: NewsArticle,
 		relatedInfo: RelatedInfo,
 	): Promise<GeneratedArticle> {
 		try {
+			// Extract company name from entities
+			const companyName = this.extractCompanyName(relatedInfo.entities);
+
+			// Generate creative title first
+			const creativeTitle = await this.generateCreativeTitle(
+				newsArticle,
+				relatedInfo,
+				companyName
+			);
+
 			if (!this.apiKey) {
 				// Fallback to mock generation if no API key
-				return this.generateMockArticle(newsArticle, relatedInfo);
+				return {
+					...this.generateMockArticle(newsArticle, relatedInfo),
+					title: creativeTitle
+				};
 			}
 
 			const prompt = this.createPrompt(newsArticle, relatedInfo);
@@ -59,11 +213,23 @@ export class ArticleGenerator {
 				temperature: 0.7,
 			});
 
-			return this.parseGeneratedText(text, newsArticle, relatedInfo);
+			const article = this.parseGeneratedText(text, newsArticle, relatedInfo);
+			// Override with creative title
+			article.title = creativeTitle;
+			return article;
 		} catch (error) {
 			console.error("Failed to generate article with AI:", error);
 			// Fallback to mock generation
-			return this.generateMockArticle(newsArticle, relatedInfo);
+			const companyName = this.extractCompanyName(relatedInfo.entities);
+			const creativeTitle = await this.generateCreativeTitle(
+				newsArticle,
+				relatedInfo,
+				companyName
+			);
+			return {
+				...this.generateMockArticle(newsArticle, relatedInfo),
+				title: creativeTitle
+			};
 		}
 	}
 
@@ -87,13 +253,14 @@ Keywords: ${relatedInfo.keywords.join(", ")}
 
 Please provide your response in the following JSON format:
 {
-  "title": "An engaging, informative title for the analysis article",
   "content": "A comprehensive 800-1000 word analysis article with clear paragraphs, professional tone, and actionable insights",
   "summary": "A concise 2-3 sentence summary of the key points",
   "keyPoints": ["List of 4-6 key takeaways as bullet points"],
   "marketAnalysis": "Detailed analysis of how this news affects financial markets",
   "investmentImplications": "Specific implications for investors and trading strategies"
 }
+
+Note: Do not include a title field as it will be generated separately.
 
 Guidelines:
 - Write in a professional, analytical tone
@@ -115,7 +282,7 @@ Guidelines:
 			const parsed = JSON.parse(text);
 
 			return {
-				title: parsed.title || "Generated Financial Analysis",
+				title: "Generated Financial Analysis", // Title will be overridden with creative title
 				content: parsed.content || text,
 				summary:
 					parsed.summary || "AI-generated analysis of recent financial news",
@@ -136,7 +303,7 @@ Guidelines:
 		} catch (error) {
 			// If parsing fails, treat the entire text as content
 			return {
-				title: "AI-Generated Financial Analysis",
+				title: "AI-Generated Financial Analysis", // Title will be overridden with creative title
 				content: text,
 				summary:
 					"Analysis of recent financial developments and market implications",
