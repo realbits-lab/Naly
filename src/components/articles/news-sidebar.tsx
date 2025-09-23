@@ -132,7 +132,7 @@ export function NewsSidebar({
 					{/* Search and Filters */}
 					<div className="p-4 border-b border-border space-y-3">
 						<div className="relative">
-							<Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+							<Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-foreground/60" />
 							<input
 								type="text"
 								placeholder="Search articles..."
@@ -198,13 +198,13 @@ export function NewsSidebar({
 											</h3>
 
 											{article.summary && (
-												<p className="text-xs text-muted-foreground line-clamp-2">
+												<p className="text-xs text-foreground/70 line-clamp-2">
 													{article.summary}
 												</p>
 											)}
 
 											<div className="flex items-center justify-between">
-												<div className="flex items-center text-xs text-muted-foreground">
+												<div className="flex items-center text-xs text-foreground/60">
 													<Clock className="h-3 w-3 mr-1" />
 													<span>
 														{new Date(article.createdAt).toLocaleDateString()}
@@ -221,7 +221,7 @@ export function NewsSidebar({
 											</div>
 
 											{article.sourcePublisher && (
-												<div className="text-xs text-muted-foreground">
+												<div className="text-xs text-foreground/60">
 													{article.sourcePublisher}
 												</div>
 											)}
@@ -230,7 +230,7 @@ export function NewsSidebar({
 								))}
 
 								{filteredArticles.length === 0 && !loading && (
-									<div className="text-center py-8 text-muted-foreground">
+									<div className="text-center py-8 text-foreground/60">
 										<Newspaper className="h-12 w-12 mx-auto mb-4 opacity-50" />
 										<p>No articles found</p>
 									</div>

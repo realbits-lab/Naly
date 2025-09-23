@@ -89,7 +89,7 @@ export function NewsPageClient() {
 						onArticleSelect={handleArticleSelect}
 						isCollapsed={isCollapsed}
 						onToggleCollapse={handleToggleCollapse}
-						autoSelectFirst={true} // Auto-select first article on desktop
+						autoSelectFirst={false} // Don't auto-select first article
 					/>
 				</div>
 
@@ -128,7 +128,7 @@ export function NewsPageClient() {
 					onArticleSelect={handleArticleSelect}
 					isCollapsed={isCollapsed}
 					onToggleCollapse={handleToggleCollapse}
-					autoSelectFirst={true} // Auto-select first article on desktop
+					autoSelectFirst={false} // Don't auto-select first article
 				/>
 			</div>
 
