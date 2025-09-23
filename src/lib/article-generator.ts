@@ -1,5 +1,7 @@
 import { openai } from "@ai-sdk/openai";
 import { generateText } from "ai";
+import { InfographicGenerator } from "./infographic-generator";
+import { SlideInfographicGenerator } from "./slide-infographic-generator";
 
 interface NewsArticle {
 	title: string;
@@ -26,6 +28,7 @@ interface GeneratedArticle {
 	keyPoints: string[];
 	marketAnalysis: string;
 	investmentImplications: string;
+	infographicContent?: string;
 	metadata: {
 		wordCount: number;
 		readingTime: number;
@@ -36,8 +39,15 @@ interface GeneratedArticle {
 }
 
 export class ArticleGenerator {
-	constructor(private apiKey?: string) {
+	private infographicGenerator: InfographicGenerator;
+	private slideInfographicGenerator: SlideInfographicGenerator;
+	private useSlideFormat: boolean = true; // Default to new slide format
+
+	constructor(private apiKey?: string, useSlideFormat: boolean = true) {
 		this.apiKey = apiKey || process.env.OPENAI_API_KEY;
+		this.infographicGenerator = new InfographicGenerator();
+		this.slideInfographicGenerator = new SlideInfographicGenerator(this.apiKey);
+		this.useSlideFormat = useSlideFormat;
 	}
 
 	private extractCompanyName(entities: string[]): string | null {
@@ -108,7 +118,7 @@ Guidelines:
 - Use active voice and strong verbs`;
 
 			const { text } = await generateText({
-				model: openai("gpt-4"),
+				model: openai("gpt-4") as any,
 				prompt: titlePrompt,
 				maxTokens: 200,
 				temperature: 0.9, // Higher temperature for more creativity
@@ -198,16 +208,60 @@ Guidelines:
 
 			if (!this.apiKey) {
 				// Fallback to mock generation if no API key
-				return {
-					...this.generateMockArticle(newsArticle, relatedInfo),
-					title: creativeTitle
-				};
+				const mockArticle = this.generateMockArticle(newsArticle, relatedInfo);
+				mockArticle.title = creativeTitle;
+
+				// Generate infographic for mock article too
+				if (this.useSlideFormat) {
+					const slides = await this.slideInfographicGenerator.generateSlides({
+						title: creativeTitle,
+						summary: mockArticle.summary,
+						keyPoints: mockArticle.keyPoints,
+						sentiment: relatedInfo.sentiment,
+						entities: relatedInfo.entities,
+						keywords: relatedInfo.keywords,
+						marketAnalysis: mockArticle.marketAnalysis,
+						investmentImplications: mockArticle.investmentImplications,
+						wordCount: mockArticle.metadata.wordCount,
+						readingTime: mockArticle.metadata.readingTime,
+						companyName
+					});
+					mockArticle.infographicContent = this.slideInfographicGenerator.generateHTML({
+						title: creativeTitle,
+						summary: mockArticle.summary,
+						keyPoints: mockArticle.keyPoints,
+						sentiment: relatedInfo.sentiment,
+						entities: relatedInfo.entities,
+						keywords: relatedInfo.keywords,
+						marketAnalysis: mockArticle.marketAnalysis,
+						investmentImplications: mockArticle.investmentImplications,
+						wordCount: mockArticle.metadata.wordCount,
+						readingTime: mockArticle.metadata.readingTime,
+						companyName
+					}, slides);
+				} else {
+					mockArticle.infographicContent = this.infographicGenerator.generateInfographic({
+					title: creativeTitle,
+					summary: mockArticle.summary,
+					keyPoints: mockArticle.keyPoints,
+					sentiment: relatedInfo.sentiment,
+					entities: relatedInfo.entities,
+					keywords: relatedInfo.keywords,
+					marketAnalysis: mockArticle.marketAnalysis,
+					investmentImplications: mockArticle.investmentImplications,
+					wordCount: mockArticle.metadata.wordCount,
+					readingTime: mockArticle.metadata.readingTime,
+						companyName
+					});
+				}
+
+				return mockArticle;
 			}
 
 			const prompt = this.createPrompt(newsArticle, relatedInfo);
 
 			const { text } = await generateText({
-				model: openai("gpt-4"),
+				model: openai("gpt-4") as any,
 				prompt,
 				maxTokens: 2000,
 				temperature: 0.7,
@@ -216,6 +270,51 @@ Guidelines:
 			const article = this.parseGeneratedText(text, newsArticle, relatedInfo);
 			// Override with creative title
 			article.title = creativeTitle;
+
+			// Generate infographic content (use slide format if enabled)
+			if (this.useSlideFormat) {
+				const slides = await this.slideInfographicGenerator.generateSlides({
+					title: creativeTitle,
+					summary: article.summary,
+					keyPoints: article.keyPoints,
+					sentiment: relatedInfo.sentiment,
+					entities: relatedInfo.entities,
+					keywords: relatedInfo.keywords,
+					marketAnalysis: article.marketAnalysis,
+					investmentImplications: article.investmentImplications,
+					wordCount: article.metadata.wordCount,
+					readingTime: article.metadata.readingTime,
+					companyName
+				});
+				article.infographicContent = this.slideInfographicGenerator.generateHTML({
+					title: creativeTitle,
+					summary: article.summary,
+					keyPoints: article.keyPoints,
+					sentiment: relatedInfo.sentiment,
+					entities: relatedInfo.entities,
+					keywords: relatedInfo.keywords,
+					marketAnalysis: article.marketAnalysis,
+					investmentImplications: article.investmentImplications,
+					wordCount: article.metadata.wordCount,
+					readingTime: article.metadata.readingTime,
+					companyName
+				}, slides);
+			} else {
+				article.infographicContent = this.infographicGenerator.generateInfographic({
+				title: creativeTitle,
+				summary: article.summary,
+				keyPoints: article.keyPoints,
+				sentiment: relatedInfo.sentiment,
+				entities: relatedInfo.entities,
+				keywords: relatedInfo.keywords,
+				marketAnalysis: article.marketAnalysis,
+				investmentImplications: article.investmentImplications,
+				wordCount: article.metadata.wordCount,
+				readingTime: article.metadata.readingTime,
+					companyName
+				});
+			}
+
 			return article;
 		} catch (error) {
 			console.error("Failed to generate article with AI:", error);
@@ -226,10 +325,54 @@ Guidelines:
 				relatedInfo,
 				companyName
 			);
-			return {
-				...this.generateMockArticle(newsArticle, relatedInfo),
-				title: creativeTitle
-			};
+			const fallbackArticle = this.generateMockArticle(newsArticle, relatedInfo);
+			fallbackArticle.title = creativeTitle;
+
+			// Generate infographic for fallback article
+			if (this.useSlideFormat) {
+				const slides = await this.slideInfographicGenerator.generateSlides({
+					title: creativeTitle,
+					summary: fallbackArticle.summary,
+					keyPoints: fallbackArticle.keyPoints,
+					sentiment: relatedInfo.sentiment,
+					entities: relatedInfo.entities,
+					keywords: relatedInfo.keywords,
+					marketAnalysis: fallbackArticle.marketAnalysis,
+					investmentImplications: fallbackArticle.investmentImplications,
+					wordCount: fallbackArticle.metadata.wordCount,
+					readingTime: fallbackArticle.metadata.readingTime,
+					companyName
+				});
+				fallbackArticle.infographicContent = this.slideInfographicGenerator.generateHTML({
+					title: creativeTitle,
+					summary: fallbackArticle.summary,
+					keyPoints: fallbackArticle.keyPoints,
+					sentiment: relatedInfo.sentiment,
+					entities: relatedInfo.entities,
+					keywords: relatedInfo.keywords,
+					marketAnalysis: fallbackArticle.marketAnalysis,
+					investmentImplications: fallbackArticle.investmentImplications,
+					wordCount: fallbackArticle.metadata.wordCount,
+					readingTime: fallbackArticle.metadata.readingTime,
+					companyName
+				}, slides);
+			} else {
+				fallbackArticle.infographicContent = this.infographicGenerator.generateInfographic({
+				title: creativeTitle,
+				summary: fallbackArticle.summary,
+				keyPoints: fallbackArticle.keyPoints,
+				sentiment: relatedInfo.sentiment,
+				entities: relatedInfo.entities,
+				keywords: relatedInfo.keywords,
+				marketAnalysis: fallbackArticle.marketAnalysis,
+				investmentImplications: fallbackArticle.investmentImplications,
+				wordCount: fallbackArticle.metadata.wordCount,
+				readingTime: fallbackArticle.metadata.readingTime,
+					companyName
+				});
+			}
+
+			return fallbackArticle;
 		}
 	}
 

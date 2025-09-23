@@ -1,4 +1,5 @@
 import {
+	boolean,
 	index,
 	integer,
 	jsonb,
@@ -45,6 +46,10 @@ export const generatedArticles = pgTable(
 		sourceLanguage: varchar("source_language", { length: 5 }).notNull().default("en"), // 'en', 'ko'
 		hasTranslations: text("has_translations").notNull().default("false"), // 'true', 'false'
 
+		// Infographic content
+		infographicContent: text("infographic_content"), // Standalone HTML with embedded CSS/JS
+		hasInfographic: boolean("has_infographic").default(false),
+
 		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
 		updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 	},
@@ -57,6 +62,7 @@ export const generatedArticles = pgTable(
 		),
 		sentimentIdx: index("idx_generated_articles_sentiment").on(table.sentiment),
 		sourceLanguageIdx: index("idx_generated_articles_source_language").on(table.sourceLanguage),
+		hasInfographicIdx: index("idx_generated_articles_has_infographic").on(table.hasInfographic),
 	}),
 );
 
