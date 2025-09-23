@@ -133,3 +133,13 @@ Located in `src/lib/schema/` with modular organization:
 - Error handling follows a structured approach with ApplicationError types
 - Use 4000 port for pnpm dev command in localhost
 - Save all generated or tested articles in the `articles/` directory (this directory is gitignored)
+
+### Article Generation Guidelines
+- **ALWAYS use the real generate-report API** (`/api/monitor/generate-report`) for generating market intelligence articles
+- **NEVER use simplified scripts** for article generation - they lack critical features:
+  - Company identification and financial data from Financial Datasets API
+  - Company-specific titles with extracted company names
+  - Infographic generation capabilities
+  - Complete enhanced reporting with comprehensive data analysis
+- The real API includes company deep-dive analysis, ticker lookup, financial data integration, and infographic content
+- For testing article generation, use the proper API workflow that processes RSS articles and generates professional-grade reports
