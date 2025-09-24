@@ -1,0 +1,229 @@
+name: Issue Automation
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  issues: write
+  repository-projects: write
+
+jobs:
+  assign-issue:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Assign Milestone
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.issue;
+
+            // Get all milestones
+            const milestones = await github.rest.issues.listMilestones({
+              owner: issue.owner,
+              repo: issue.repo,
+              state: 'open'
+            });
+
+            // Find the 'alpha-1' milestone
+            const targetMilestone = milestones.data.find(m => m.title === 'alpha-1');
+
+            if (targetMilestone) {
+              // Assign the milestone to the issue
+              await github.rest.issues.update({
+                owner: issue.owner,
+                repo: issue.repo,
+                issue_number: issue.number,
+                milestone: targetMilestone.number
+              });
+              console.log(`Assigned milestone 'alpha-1' to issue #${issue.number}`);
+            } else {
+              console.log("Milestone 'alpha-1' not found");
+            }
+
+      - name: Add to Project
+        uses: actions/add-to-project@v0.5.0
+        with:
+          project-url: https://github.com/users/${{ github.repository_owner }}/projects/1
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+      - name: Set Project Fields
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.issue;
+            const projectOwner = context.repo.owner;
+
+            try {
+              // Get the project
+              const projectsResponse = await github.graphql(`
+                query($owner: String!) {
+                  user(login: $owner) {
+                    projectsV2(first: 10) {
+                      nodes {
+                        id
+                        title
+                        fields(first: 20) {
+                          nodes {
+                            ... on ProjectV2Field {
+                              id
+                              name
+                            }
+                            ... on ProjectV2SingleSelectField {
+                              id
+                              name
+                              options {
+                                id
+                                name
+                              }
+                            }
+                            ... on ProjectV2IterationField {
+                              id
+                              name
+                              configuration {
+                                iterations {
+                                  id
+                                  title
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              `, {
+                owner: projectOwner
+              });
+
+              // Find the Naly project
+              const project = projectsResponse.user.projectsV2.nodes.find(p => p.title === 'Naly');
+
+              if (!project) {
+                console.log("Project 'Naly' not found");
+                return;
+              }
+
+              // Get the issue's project item ID
+              const itemResponse = await github.graphql(`
+                query($owner: String!, $repo: String!, $issueNumber: Int!) {
+                  repository(owner: $owner, name: $repo) {
+                    issue(number: $issueNumber) {
+                      projectItems(first: 10) {
+                        nodes {
+                          id
+                          project {
+                            id
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              `, {
+                owner: issue.owner,
+                repo: issue.repo,
+                issueNumber: issue.number
+              });
+
+              const projectItem = itemResponse.repository.issue.projectItems.nodes.find(
+                item => item.project.id === project.id
+              );
+
+              if (!projectItem) {
+                console.log("Issue not yet added to project, waiting...");
+                return;
+              }
+
+              // Find field IDs and option IDs
+              const statusField = project.fields.nodes.find(f => f.name === 'Status');
+              const sprintField = project.fields.nodes.find(f => f.name === 'Sprint' || f.name === 'Iteration');
+
+              // Set Status to 'Todo'
+              if (statusField && statusField.options) {
+                const todoOption = statusField.options.find(o => o.name === 'Todo');
+                if (todoOption) {
+                  await github.graphql(`
+                    mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $value: String!) {
+                      updateProjectV2ItemFieldValue(input: {
+                        projectId: $projectId,
+                        itemId: $itemId,
+                        fieldId: $fieldId,
+                        value: { singleSelectOptionId: $value }
+                      }) {
+                        projectV2Item {
+                          id
+                        }
+                      }
+                    }
+                  `, {
+                    projectId: project.id,
+                    itemId: projectItem.id,
+                    fieldId: statusField.id,
+                    value: todoOption.id
+                  });
+                  console.log("Set status to 'Todo'");
+                }
+              }
+
+              // Set Sprint/Iteration to 'Sprint 6'
+              if (sprintField) {
+                if (sprintField.configuration && sprintField.configuration.iterations) {
+                  // For iteration field
+                  const sprint6 = sprintField.configuration.iterations.find(i => i.title === 'Sprint 6');
+                  if (sprint6) {
+                    await github.graphql(`
+                      mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $value: String!) {
+                        updateProjectV2ItemFieldValue(input: {
+                          projectId: $projectId,
+                          itemId: $itemId,
+                          fieldId: $fieldId,
+                          value: { iterationId: $value }
+                        }) {
+                          projectV2Item {
+                            id
+                          }
+                        }
+                      }
+                    `, {
+                      projectId: project.id,
+                      itemId: projectItem.id,
+                      fieldId: sprintField.id,
+                      value: sprint6.id
+                    });
+                    console.log("Set iteration to 'Sprint 6'");
+                  }
+                } else if (sprintField.options) {
+                  // For single select field
+                  const sprint6Option = sprintField.options.find(o => o.name === 'Sprint 6');
+                  if (sprint6Option) {
+                    await github.graphql(`
+                      mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $value: String!) {
+                        updateProjectV2ItemFieldValue(input: {
+                          projectId: $projectId,
+                          itemId: $itemId,
+                          fieldId: $fieldId,
+                          value: { singleSelectOptionId: $value }
+                        }) {
+                          projectV2Item {
+                            id
+                          }
+                        }
+                      }
+                    `, {
+                      projectId: project.id,
+                      itemId: projectItem.id,
+                      fieldId: sprintField.id,
+                      value: sprint6Option.id
+                    });
+                    console.log("Set sprint to 'Sprint 6'");
+                  }
+                }
+              }
+
+            } catch (error) {
+              console.error("Error setting project fields:", error);
+            }
+        continue-on-error: true
