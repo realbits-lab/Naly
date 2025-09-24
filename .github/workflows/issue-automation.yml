@@ -42,18 +42,29 @@ jobs:
             }
 
       - name: Add to Project
+        id: add-project
         uses: actions/add-to-project@v0.5.0
         with:
           project-url: https://github.com/users/${{ github.repository_owner }}/projects/1
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
 
+      - name: Wait for Project Addition
+        if: steps.add-project.outcome == 'success'
+        run: sleep 5
+
       - name: Set Project Fields
+        if: steps.add-project.outcome == 'success'
         uses: actions/github-script@v7
         with:
           script: |
             const issue = context.issue;
             const projectOwner = context.repo.owner;
+
+            // Add retry logic for waiting for project item
+            let retries = 5;
+            let projectItem = null;
+            let project = null;
 
             try {
               // Get the project
@@ -85,6 +96,8 @@ jobs:
                                 iterations {
                                   id
                                   title
+                                  startDate
+                                  duration
                                 }
                               }
                             }
@@ -99,41 +112,49 @@ jobs:
               });
 
               // Find the Naly project
-              const project = projectsResponse.user.projectsV2.nodes.find(p => p.title === 'Naly');
+              project = projectsResponse.user.projectsV2.nodes.find(p => p.title === 'Naly');
 
               if (!project) {
                 console.log("Project 'Naly' not found");
                 return;
               }
 
-              // Get the issue's project item ID
-              const itemResponse = await github.graphql(`
-                query($owner: String!, $repo: String!, $issueNumber: Int!) {
-                  repository(owner: $owner, name: $repo) {
-                    issue(number: $issueNumber) {
-                      projectItems(first: 10) {
-                        nodes {
-                          id
-                          project {
+              // Retry logic to wait for the issue to be added to the project
+              while (retries > 0 && !projectItem) {
+                const itemResponse = await github.graphql(`
+                  query($owner: String!, $repo: String!, $issueNumber: Int!) {
+                    repository(owner: $owner, name: $repo) {
+                      issue(number: $issueNumber) {
+                        projectItems(first: 10) {
+                          nodes {
                             id
+                            project {
+                              id
+                            }
                           }
                         }
                       }
                     }
                   }
-                }
-              `, {
-                owner: issue.owner,
-                repo: issue.repo,
-                issueNumber: issue.number
-              });
+                `, {
+                  owner: issue.owner,
+                  repo: issue.repo,
+                  issueNumber: issue.number
+                });
 
-              const projectItem = itemResponse.repository.issue.projectItems.nodes.find(
-                item => item.project.id === project.id
-              );
+                projectItem = itemResponse.repository.issue.projectItems.nodes.find(
+                  item => item.project.id === project.id
+                );
+
+                if (!projectItem) {
+                  console.log(`Waiting for issue to be added to project... (${retries} retries left)`);
+                  await new Promise(resolve => setTimeout(resolve, 2000));
+                  retries--;
+                }
+              }
 
               if (!projectItem) {
-                console.log("Issue not yet added to project, waiting...");
+                console.log("Issue not added to project after retries");
                 return;
               }
 
