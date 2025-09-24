@@ -25,15 +25,46 @@ jobs:
           script: |
             const issue = context.issue;
 
-            // Get all milestones
+            // Get all open milestones
             const milestones = await github.rest.issues.listMilestones({
               owner: issue.owner,
               repo: issue.repo,
-              state: 'open'
+              state: 'open',
+              sort: 'due_on',
+              direction: 'asc'
             });
 
-            // Find the 'alpha-1' milestone
-            const targetMilestone = milestones.data.find(m => m.title === 'alpha-1');
+            if (milestones.data.length === 0) {
+              console.log("No open milestones found");
+              return;
+            }
+
+            // Find the current milestone based on different strategies
+            const today = new Date();
+            let targetMilestone = null;
+
+            // Strategy 1: Find milestone that is currently in progress (due date in future, closest to today)
+            const futureMilestones = milestones.data.filter(m => {
+              if (!m.due_on) return false;
+              return new Date(m.due_on) >= today;
+            });
+
+            if (futureMilestones.length > 0) {
+              // Get the milestone with the closest due date
+              targetMilestone = futureMilestones[0];
+              console.log(`Found current milestone by due date: '${targetMilestone.title}' (due ${targetMilestone.due_on})`);
+            } else {
+              // Strategy 2: If no future milestones, use the one with most recent due date
+              const pastMilestones = milestones.data.filter(m => m.due_on);
+              if (pastMilestones.length > 0) {
+                targetMilestone = pastMilestones[pastMilestones.length - 1];
+                console.log(`Using most recent milestone: '${targetMilestone.title}'`);
+              } else {
+                // Strategy 3: If no milestones have due dates, use the first open one
+                targetMilestone = milestones.data[0];
+                console.log(`Using first open milestone: '${targetMilestone.title}'`);
+              }
+            }
 
             if (targetMilestone) {
               // Assign the milestone to the issue
@@ -43,9 +74,9 @@ jobs:
                 issue_number: issue.number,
                 milestone: targetMilestone.number
               });
-              console.log(`Assigned milestone 'alpha-1' to issue #${issue.number}`);
+              console.log(`Assigned milestone '${targetMilestone.title}' to issue #${issue.number}`);
             } else {
-              console.log("Milestone 'alpha-1' not found");
+              console.log("Could not determine current milestone");
             }
 
       - name: Add to Project
