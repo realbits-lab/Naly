@@ -41,56 +41,51 @@ jobs:
               console.log("Milestone 'alpha-1' not found");
             }
 
-      - name: Add to Project
-        uses: actions/add-to-project@v0.5.0
-        with:
-          project-url: https://github.com/users/realbits-lab/projects/17
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Wait for Project Addition
-        run: sleep 5
-
-      - name: Set Project Fields
+      - name: Add to Project and Set Fields
         uses: actions/github-script@v7
         with:
           script: |
             const issue = context.issue;
             const projectOwner = context.repo.owner;
-            const projectNumber = 17; // Naly project number
 
             try {
-              // Get the Naly project directly by number
-              console.log(`Getting project #${projectNumber} for user ${projectOwner}...`);
+              // First, list all available projects to find Naly
+              console.log(`Searching for Naly project...`);
 
-              const projectResponse = await github.graphql(`
-                query($owner: String!, $projectNumber: Int!) {
+              // Check user projects
+              const userProjectsResponse = await github.graphql(`
+                query($owner: String!) {
                   user(login: $owner) {
-                    projectV2(number: $projectNumber) {
-                      id
-                      title
-                      fields(first: 20) {
-                        nodes {
-                          ... on ProjectV2Field {
-                            id
-                            name
-                          }
-                          ... on ProjectV2SingleSelectField {
-                            id
-                            name
-                            options {
+                    projectsV2(first: 100) {
+                      nodes {
+                        id
+                        title
+                        number
+                        url
+                        fields(first: 20) {
+                          nodes {
+                            ... on ProjectV2Field {
                               id
                               name
                             }
-                          }
-                          ... on ProjectV2IterationField {
-                            id
-                            name
-                            configuration {
-                              iterations {
+                            ... on ProjectV2SingleSelectField {
+                              id
+                              name
+                              options {
                                 id
-                                title
-                                startDate
-                                duration
+                                name
+                              }
+                            }
+                            ... on ProjectV2IterationField {
+                              id
+                              name
+                              configuration {
+                                iterations {
+                                  id
+                                  title
+                                  startDate
+                                  duration
+                                }
                               }
                             }
                           }
@@ -100,49 +95,47 @@ jobs:
                   }
                 }
               `, {
-                owner: projectOwner,
-                projectNumber: projectNumber
+                owner: projectOwner
               });
 
-              const project = projectResponse.user.projectV2;
+              console.log("Available user projects:");
+              userProjectsResponse.user.projectsV2.nodes.forEach(p => {
+                console.log(`  - "${p.title}" (#${p.number}) - ${p.url}`);
+              });
+
+              // Find the Naly project
+              let project = userProjectsResponse.user.projectsV2.nodes.find(
+                p => p.title === 'Naly' || p.title.toLowerCase().includes('naly')
+              );
 
               if (!project) {
-                console.log(`Project #${projectNumber} not found for user ${projectOwner}`);
+                console.log("Project 'Naly' not found. Please create a project named 'Naly'.");
+                console.log("You can create it at: https://github.com/realbits-lab?tab=projects");
                 return;
               }
 
-              console.log(`Found project '${project.title}' with ID: ${project.id}`);
+              console.log(`Found project '${project.title}' (#${project.number}) with ID: ${project.id}`);
 
-              // Get the issue's project item
-              const itemResponse = await github.graphql(`
-                query($owner: String!, $repo: String!, $issueNumber: Int!) {
-                  repository(owner: $owner, name: $repo) {
-                    issue(number: $issueNumber) {
-                      projectItems(first: 10) {
-                        nodes {
-                          id
-                          project {
-                            id
-                          }
-                        }
-                      }
+              // Add the issue to the project
+              console.log("Adding issue to project...");
+              const addToProjectResponse = await github.graphql(`
+                mutation($projectId: ID!, $contentId: ID!) {
+                  addProjectV2ItemById(input: {projectId: $projectId, contentId: $contentId}) {
+                    item {
+                      id
                     }
                   }
                 }
               `, {
-                owner: issue.owner,
-                repo: issue.repo,
-                issueNumber: issue.number
+                projectId: project.id,
+                contentId: context.payload.issue.node_id
               });
 
-              const projectItem = itemResponse.repository.issue.projectItems.nodes.find(
-                item => item.project.id === project.id
-              );
+              const projectItem = addToProjectResponse.addProjectV2ItemById.item;
+              console.log(`Added issue to project with item ID: ${projectItem.id}`);
 
-              if (!projectItem) {
-                console.log("Issue not found in project, may need more time");
-                return;
-              }
+              // Wait a bit for the project item to be fully created
+              await new Promise(resolve => setTimeout(resolve, 2000));
 
 
               // Find field IDs and option IDs
