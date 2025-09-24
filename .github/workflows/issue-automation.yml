@@ -85,8 +85,8 @@ jobs:
           github-token: ${{ secrets.ADD_TO_PROJECT_PAT || secrets.GITHUB_TOKEN }}
           script: |
             const issue = context.issue;
-            const projectOwner = 'realbits-lab';
-            const projectName = 'Naly';
+            const projectOwner = issue.owner;
+            const repoName = issue.repo;
 
             try {
               // Get the issue's node_id
@@ -99,34 +99,87 @@ jobs:
               const issueNodeId = issueData.data.node_id;
               console.log(`Issue #${issue.number} node_id: ${issueNodeId}`);
 
-              // First, find the project by name
-              console.log(`Searching for project '${projectName}' owned by '${projectOwner}'`);
+              // First, find projects - try to match by repository name or use the most recent one
+              console.log(`Searching for projects owned by '${projectOwner}'`);
 
-              const projectsResponse = await github.graphql(`
-                query($owner: String!) {
-                  user(login: $owner) {
-                    projectsV2(first: 20) {
-                      nodes {
-                        id
-                        title
-                        number
+              // Try to fetch projects from both user and organization contexts
+              let projects = [];
+
+              try {
+                // First try as a user
+                const userProjectsResponse = await github.graphql(`
+                  query($owner: String!) {
+                    user(login: $owner) {
+                      projectsV2(first: 20, orderBy: {field: UPDATED_AT, direction: DESC}) {
+                        nodes {
+                          id
+                          title
+                          number
+                          updatedAt
+                        }
                       }
                     }
                   }
+                `, {
+                  owner: projectOwner
+                });
+
+                if (userProjectsResponse.user && userProjectsResponse.user.projectsV2) {
+                  projects = userProjectsResponse.user.projectsV2.nodes;
+                  console.log(`Found ${projects.length} user projects`);
                 }
-              `, {
-                owner: projectOwner
-              });
+              } catch (e) {
+                console.log("Not a user account, trying as organization...");
 
-              const projects = projectsResponse.user.projectsV2.nodes;
-              const targetProject = projects.find(p => p.title === projectName);
+                // Try as an organization
+                const orgProjectsResponse = await github.graphql(`
+                  query($owner: String!) {
+                    organization(login: $owner) {
+                      projectsV2(first: 20, orderBy: {field: UPDATED_AT, direction: DESC}) {
+                        nodes {
+                          id
+                          title
+                          number
+                          updatedAt
+                        }
+                      }
+                    }
+                  }
+                `, {
+                  owner: projectOwner
+                });
 
-              if (!targetProject) {
-                console.log(`Project '${projectName}' not found. Available projects:`, projects.map(p => p.title));
+                if (orgProjectsResponse.organization && orgProjectsResponse.organization.projectsV2) {
+                  projects = orgProjectsResponse.organization.projectsV2.nodes;
+                  console.log(`Found ${projects.length} organization projects`);
+                }
+              }
+
+              if (projects.length === 0) {
+                console.log("No projects found for this user");
                 return;
               }
 
-              console.log(`Found project '${targetProject.title}' with number ${targetProject.number}`);
+              // Strategy 1: Find project that matches the repository name
+              let targetProject = projects.find(p =>
+                p.title.toLowerCase() === repoName.toLowerCase()
+              );
+
+              // Strategy 2: If no exact match, look for project containing repo name
+              if (!targetProject) {
+                targetProject = projects.find(p =>
+                  p.title.toLowerCase().includes(repoName.toLowerCase()) ||
+                  repoName.toLowerCase().includes(p.title.toLowerCase())
+                );
+              }
+
+              // Strategy 3: If still no match, use the first/most recent project
+              if (!targetProject) {
+                targetProject = projects[0];
+                console.log(`No project matching repo name '${repoName}', using first available project`);
+              }
+
+              console.log(`Selected project '${targetProject.title}' (number: ${targetProject.number}) for repository '${repoName}'`);
 
               // Add issue to project
               const addToProjectResponse = await github.graphql(`
