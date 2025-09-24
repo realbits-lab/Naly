@@ -47,17 +47,18 @@ jobs:
           script: |
             const issue = context.issue;
             const projectOwner = context.repo.owner;
+            const repoName = context.repo.repo;
 
             try {
-              // First, try to get projects from the user account
-              let projectsResponse;
               let project = null;
+              let allProjects = [];
 
+              // Try repository projects first
+              console.log(`Checking repository projects for ${projectOwner}/${repoName}...`);
               try {
-                // Try user projects first
-                projectsResponse = await github.graphql(`
-                  query($owner: String!) {
-                    user(login: $owner) {
+                const repoProjectsResponse = await github.graphql(`
+                  query($owner: String!, $repo: String!) {
+                    repository(owner: $owner, name: $repo) {
                       projectsV2(first: 20) {
                         nodes {
                           id
@@ -96,47 +97,55 @@ jobs:
                     }
                   }
                 `, {
-                  owner: projectOwner
+                  owner: projectOwner,
+                  repo: repoName
                 });
 
-                // Find the Naly project
-                project = projectsResponse.user.projectsV2.nodes.find(p => p.title === 'Naly');
+                if (repoProjectsResponse.repository.projectsV2.nodes.length > 0) {
+                  allProjects = [...allProjects, ...repoProjectsResponse.repository.projectsV2.nodes];
+                  project = repoProjectsResponse.repository.projectsV2.nodes.find(p => p.title === 'Naly');
+                  console.log(`Found ${repoProjectsResponse.repository.projectsV2.nodes.length} repository project(s)`);
+                }
+              } catch (repoError) {
+                console.log("No repository projects found");
+              }
 
-              } catch (userError) {
-                console.log("User projects not found, trying organization projects...");
-
-                // Try organization projects
-                projectsResponse = await github.graphql(`
-                  query($owner: String!) {
-                    organization(login: $owner) {
-                      projectsV2(first: 20) {
-                        nodes {
-                          id
-                          title
-                          number
-                          fields(first: 20) {
-                            nodes {
-                              ... on ProjectV2Field {
-                                id
-                                name
-                              }
-                              ... on ProjectV2SingleSelectField {
-                                id
-                                name
-                                options {
+              // If not found in repo, try user projects
+              if (!project) {
+                console.log(`Checking user projects for ${projectOwner}...`);
+                try {
+                  const userProjectsResponse = await github.graphql(`
+                    query($owner: String!) {
+                      user(login: $owner) {
+                        projectsV2(first: 20) {
+                          nodes {
+                            id
+                            title
+                            number
+                            fields(first: 20) {
+                              nodes {
+                                ... on ProjectV2Field {
                                   id
                                   name
                                 }
-                              }
-                              ... on ProjectV2IterationField {
-                                id
-                                name
-                                configuration {
-                                  iterations {
+                                ... on ProjectV2SingleSelectField {
+                                  id
+                                  name
+                                  options {
                                     id
-                                    title
-                                    startDate
-                                    duration
+                                    name
+                                  }
+                                }
+                                ... on ProjectV2IterationField {
+                                  id
+                                  name
+                                  configuration {
+                                    iterations {
+                                      id
+                                      title
+                                      startDate
+                                      duration
+                                    }
                                   }
                                 }
                               }
@@ -145,25 +154,89 @@ jobs:
                         }
                       }
                     }
-                  }
-                `, {
-                  owner: projectOwner
-                });
+                  `, {
+                    owner: projectOwner
+                  });
 
-                // Find the Naly project
-                project = projectsResponse.organization.projectsV2.nodes.find(p => p.title === 'Naly');
+                  if (userProjectsResponse.user.projectsV2.nodes.length > 0) {
+                    allProjects = [...allProjects, ...userProjectsResponse.user.projectsV2.nodes];
+                    project = userProjectsResponse.user.projectsV2.nodes.find(p => p.title === 'Naly');
+                    console.log(`Found ${userProjectsResponse.user.projectsV2.nodes.length} user project(s)`);
+                  }
+                } catch (userError) {
+                  console.log("No user projects found");
+                }
+              }
+
+              // If still not found, try organization projects
+              if (!project) {
+                console.log(`Checking organization projects for ${projectOwner}...`);
+                try {
+                  const orgProjectsResponse = await github.graphql(`
+                    query($owner: String!) {
+                      organization(login: $owner) {
+                        projectsV2(first: 20) {
+                          nodes {
+                            id
+                            title
+                            number
+                            fields(first: 20) {
+                              nodes {
+                                ... on ProjectV2Field {
+                                  id
+                                  name
+                                }
+                                ... on ProjectV2SingleSelectField {
+                                  id
+                                  name
+                                  options {
+                                    id
+                                    name
+                                  }
+                                }
+                                ... on ProjectV2IterationField {
+                                  id
+                                  name
+                                  configuration {
+                                    iterations {
+                                      id
+                                      title
+                                      startDate
+                                      duration
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  `, {
+                    owner: projectOwner
+                  });
+
+                  if (orgProjectsResponse.organization.projectsV2.nodes.length > 0) {
+                    allProjects = [...allProjects, ...orgProjectsResponse.organization.projectsV2.nodes];
+                    project = orgProjectsResponse.organization.projectsV2.nodes.find(p => p.title === 'Naly');
+                    console.log(`Found ${orgProjectsResponse.organization.projectsV2.nodes.length} organization project(s)`);
+                  }
+                } catch (orgError) {
+                  console.log("No organization projects found");
+                }
               }
 
               if (!project) {
                 console.log("Project 'Naly' not found. Available projects:");
-                if (projectsResponse.user) {
-                  projectsResponse.user.projectsV2.nodes.forEach(p => {
-                    console.log(`- ${p.title} (number: ${p.number})`);
-                  });
-                } else if (projectsResponse.organization) {
-                  projectsResponse.organization.projectsV2.nodes.forEach(p => {
-                    console.log(`- ${p.title} (number: ${p.number})`);
-                  });
+                allProjects.forEach(p => {
+                  console.log(`- ${p.title} (number: ${p.number})`);
+                });
+
+                // If no projects found at all, provide instructions
+                if (allProjects.length === 0) {
+                  console.log("No projects found. Please create a project named 'Naly' at:");
+                  console.log(`  https://github.com/${projectOwner}/${repoName}/projects/new`);
+                  console.log(`  or https://github.com/${projectOwner}?tab=projects`);
                 }
                 return;
               }
