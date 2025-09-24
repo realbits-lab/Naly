@@ -69,9 +69,9 @@ jobs:
             try {
               // Get the project and its fields
               const projectResponse = await github.graphql(`
-                query($owner: String!, $number: Int!) {
+                query($owner: String!, $projectNumber: Int!) {
                   user(login: $owner) {
-                    projectV2(number: $number) {
+                    projectV2(number: $projectNumber) {
                       id
                       title
                       fields(first: 20) {
