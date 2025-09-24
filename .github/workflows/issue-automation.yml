@@ -1,5 +1,12 @@
 name: Issue Automation
 
+# IMPORTANT: To make this workflow work with GitHub Projects:
+# 1. Create a Personal Access Token (PAT) at https://github.com/settings/tokens/new
+# 2. Select scopes: 'project' (required), 'repo' (for private repos)
+# 3. Add the token to your repository secrets as 'ADD_TO_PROJECT_PAT'
+#    Settings → Secrets and variables → Actions → New repository secret
+# 4. The default GITHUB_TOKEN cannot access projects, you MUST use a PAT
+
 on:
   issues:
     types: [opened]
@@ -45,7 +52,7 @@ jobs:
         uses: actions/add-to-project@v0.5.0
         with:
           project-url: https://github.com/users/realbits-lab/projects/17
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.ADD_TO_PROJECT_PAT || secrets.GITHUB_TOKEN }}
 
       - name: Wait for Project Addition
         run: sleep 5
@@ -53,6 +60,7 @@ jobs:
       - name: Set Project Fields
         uses: actions/github-script@v7
         with:
+          github-token: ${{ secrets.ADD_TO_PROJECT_PAT || secrets.GITHUB_TOKEN }}
           script: |
             const issue = context.issue;
             const projectOwner = 'realbits-lab';
