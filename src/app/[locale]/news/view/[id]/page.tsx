@@ -125,7 +125,7 @@ export default async function NewsViewPage({ params }: NewsViewPageProps) {
 							<CardTitle>Summary</CardTitle>
 						</CardHeader>
 						<CardContent>
-							<p className="text-muted-foreground leading-relaxed">
+							<p className="text-foreground leading-relaxed">
 								{article.summary}
 							</p>
 						</CardContent>
@@ -175,7 +175,7 @@ export default async function NewsViewPage({ params }: NewsViewPageProps) {
 							<CardTitle>Market Impact Assessment</CardTitle>
 						</CardHeader>
 						<CardContent>
-							<p className="text-muted-foreground leading-relaxed">
+							<p className="text-foreground leading-relaxed">
 								{article.marketImpact}
 							</p>
 						</CardContent>

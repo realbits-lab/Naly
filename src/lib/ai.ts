@@ -353,13 +353,19 @@ ${JSON.stringify(financialData.financialHighlights, null, 2)}
 
 	// Add recent news if available
 	if (financialData.recentNews && financialData.recentNews !== 'Not available') {
-		dataAppendix += `
+		// Ensure recentNews is an array
+		const newsArray = Array.isArray(financialData.recentNews)
+			? financialData.recentNews
+			: (financialData.recentNews.data ? financialData.recentNews.data : []);
+
+		if (newsArray.length > 0) {
+			dataAppendix += `
 
 ### Recent News Articles
-${financialData.recentNews.map((article: any, index: number) => `
-#### ${index + 1}. ${article.title}
-- **Date**: ${article.published_at}
-- **Summary**: ${article.summary}
+${newsArray.map((article: any, index: number) => `
+#### ${index + 1}. ${article.title || 'No title'}
+- **Date**: ${article.published_at || article.date || 'N/A'}
+- **Summary**: ${article.summary || article.description || 'N/A'}
 `).join('\n')}
 
 ### Raw News Data
@@ -367,17 +373,24 @@ ${financialData.recentNews.map((article: any, index: number) => `
 ${JSON.stringify(financialData.recentNews, null, 2)}
 \`\`\`
 `;
+		}
 	}
 
 	// Add SEC filings if available
 	if (financialData.recentFilings && financialData.recentFilings !== 'Not available') {
-		dataAppendix += `
+		// Ensure recentFilings is an array
+		const filingsArray = Array.isArray(financialData.recentFilings)
+			? financialData.recentFilings
+			: (financialData.recentFilings.data ? financialData.recentFilings.data : []);
+
+		if (filingsArray.length > 0) {
+			dataAppendix += `
 
 ### SEC Filings
 | Form Type | Date Filed | Description |
 |:----------|:-----------|:------------|
-${financialData.recentFilings.map((filing: any) =>
-	`| ${filing.form_type} | ${filing.date_filed} | ${filing.description || 'N/A'} |`
+${filingsArray.map((filing: any) =>
+	`| ${filing.form_type || 'N/A'} | ${filing.date_filed || filing.filed_date || 'N/A'} | ${filing.description || 'N/A'} |`
 ).join('\n')}
 
 ### Raw Filing Data
@@ -385,6 +398,7 @@ ${financialData.recentFilings.map((filing: any) =>
 ${JSON.stringify(financialData.recentFilings, null, 2)}
 \`\`\`
 `;
+		}
 	}
 
 	dataAppendix += `
@@ -401,31 +415,54 @@ ${JSON.stringify(financialData.recentFilings, null, 2)}
  * Manually generate a markdown table from data
  */
 function generateManualTable(data: any[], type: string): string {
-	if (!data || data.length === 0) return "No data available";
-
-	if (type === "stock_prices") {
-		let table = "| Date | Open | High | Low | Close | Volume |\n";
-		table += "|:-----|-----:|-----:|-----:|------:|-------:|\n";
-
-		data.forEach(row => {
-			table += `| ${row.date} | $${row.open} | $${row.high} | $${row.low} | $${row.close} | ${row.volume?.toLocaleString() || 'N/A'} |\n`;
-		});
-
-		return table;
+	// Ensure data is an array and has content
+	if (!data || !Array.isArray(data) || data.length === 0) {
+		return "No data available";
 	}
 
-	if (type === "quarterly") {
-		let table = "| Period | Revenue | Net Income | EPS | Gross Margin |\n";
-		table += "|:-------|--------:|-----------:|----:|-------------:|\n";
+	try {
+		if (type === "stock_prices") {
+			let table = "| Date | Open | High | Low | Close | Volume |\n";
+			table += "|:-----|-----:|-----:|-----:|------:|-------:|\n";
 
-		data.forEach(row => {
-			table += `| ${row.period} | $${row.revenue?.toLocaleString() || 'N/A'} | $${row.net_income?.toLocaleString() || 'N/A'} | $${row.eps_diluted || 'N/A'} | ${row.gross_margin || 'N/A'} |\n`;
-		});
+			data.forEach(row => {
+				// Safely access row properties
+				const date = row?.date || 'N/A';
+				const open = row?.open ? `$${row.open}` : 'N/A';
+				const high = row?.high ? `$${row.high}` : 'N/A';
+				const low = row?.low ? `$${row.low}` : 'N/A';
+				const close = row?.close ? `$${row.close}` : 'N/A';
+				const volume = row?.volume ? row.volume.toLocaleString() : 'N/A';
 
-		return table;
+				table += `| ${date} | ${open} | ${high} | ${low} | ${close} | ${volume} |\n`;
+			});
+
+			return table;
+		}
+
+		if (type === "quarterly") {
+			let table = "| Period | Revenue | Net Income | EPS | Gross Margin |\n";
+			table += "|:-------|--------:|-----------:|----:|-------------:|\n";
+
+			data.forEach(row => {
+				// Safely access row properties
+				const period = row?.period || 'N/A';
+				const revenue = row?.revenue ? `$${row.revenue.toLocaleString()}` : 'N/A';
+				const netIncome = row?.net_income ? `$${row.net_income.toLocaleString()}` : 'N/A';
+				const eps = row?.eps_diluted ? `$${row.eps_diluted}` : 'N/A';
+				const grossMargin = row?.gross_margin || 'N/A';
+
+				table += `| ${period} | ${revenue} | ${netIncome} | ${eps} | ${grossMargin} |\n`;
+			});
+
+			return table;
+		}
+
+		return "Unsupported table type";
+	} catch (error) {
+		console.error('Error generating manual table:', error);
+		return `Error generating ${type} table: ${error instanceof Error ? error.message : 'Unknown error'}`;
 	}
-
-	return "Unsupported table type";
 }
 
 /**

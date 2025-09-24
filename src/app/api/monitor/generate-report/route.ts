@@ -102,6 +102,12 @@ async function extractCompaniesFromArticles(articles: Array<{ title: string; con
 3. Financial institutions and banks
 4. Major corporations and organizations
 
+If no company names are explicitly found in the articles, think and generate a list of companies that would be most relevant to the article's content. Consider:
+- Companies in the same industry or sector being discussed
+- Companies affected by the market trends or events described
+- Major companies that typically influence or are influenced by the topics covered
+- Related supply chain or partner companies
+
 Content to analyze:
 ${allText.slice(0, 4000)}
 
@@ -237,6 +243,51 @@ async function fetchFinancialData(ticker: string) {
 		console.error('❌ Error fetching financial data:', error);
 		return null;
 	}
+}
+
+// Helper function to generate basic company analysis without financial data
+async function generateBasicCompanyAnalysis(marketReport: string, companyName: string, ticker: string | null): Promise<string> {
+	console.log(`📝 Generating basic company analysis for ${companyName}${ticker ? ` (${ticker})` : ''}`);
+
+	const enhancementPrompt = `Enhance the following market intelligence report by adding a company analysis section for ${companyName}${ticker ? ` (${ticker})` : ''}.
+
+ORIGINAL MARKET REPORT:
+${marketReport}
+
+Since financial data is not available, create an analysis based on:
+1. General knowledge about the company
+2. Recent market trends and news mentioned in the report
+3. Industry positioning and competitive landscape
+4. Strategic initiatives and business segments
+5. Market opportunities and challenges
+
+INSTRUCTIONS:
+1. Keep the entire original market report exactly as is
+2. Add a new section at the end titled "# Featured Company Analysis: ${companyName}${ticker ? ` (${ticker})` : ''}"
+3. Create a comprehensive qualitative analysis using available information
+4. Use markdown formatting throughout
+5. Make the analysis professional and insightful for investors
+
+The new section should include:
+- Company overview and business model
+- Market position and competitive advantages
+- Key business segments and revenue streams
+- Strategic initiatives and growth opportunities
+- Industry trends affecting the company
+- Risk factors and challenges
+- Investment considerations and outlook
+
+Format the entire response in clean markdown with proper headers and bullet points.`;
+
+	const enhancedReport = await generateAIText({
+		prompt: enhancementPrompt,
+		model: "GEMINI_2_5_FLASH" as any,
+		temperature: 0.3,
+		maxTokens: 16384,
+	});
+
+	console.log('✅ Basic company analysis generated');
+	return enhancedReport.text;
 }
 
 // Helper function to enhance market report with company analysis
@@ -757,76 +808,115 @@ Include a table or list with:
 		let finalReport = marketReport.text;
 		let companyAnalysis = null;
 
+		// Default fallback companies for analysis when none are extracted
+		const FALLBACK_COMPANIES = [
+			"Apple", "Microsoft", "Tesla", "Amazon", "Google",
+			"Meta", "NVIDIA", "Netflix", "JPMorgan Chase", "Berkshire Hathaway"
+		];
+
 		try {
 			// Extract companies directly from the articles instead of using market report analysis
-			const extractedCompanies = await extractCompaniesFromArticles(recentArticles);
+			let extractedCompanies = await extractCompaniesFromArticles(recentArticles);
 
-			if (extractedCompanies.length > 0) {
-				console.log(`🏢 Found ${extractedCompanies.length} companies in articles:`, extractedCompanies);
+			// ENSURE at least one company for analysis
+			if (extractedCompanies.length === 0) {
+				console.log('⚠️ No companies extracted from articles, using fallback company selection...');
 
-				// Use the first/most relevant company for detailed analysis
-				const selectedCompany = extractedCompanies[0];
-				console.log(`🎯 Selected company for analysis: ${selectedCompany}`);
+				// Try to find any company mentions in article titles
+				const titleCompanies = recentArticles
+					.map(article => {
+						// Look for common company patterns in titles
+						const match = article.title.match(/\b(Apple|Microsoft|Tesla|Amazon|Google|Meta|NVIDIA|Netflix|OpenAI|JPMorgan|Goldman Sachs|Bank of America|Wells Fargo|Citigroup|Morgan Stanley|Berkshire Hathaway|Johnson & Johnson|Visa|Mastercard|PayPal|Square|Coinbase|Binance|FTX|Robinhood|Uber|Lyft|Airbnb|DoorDash|Spotify|Twitter|TikTok|Snap|Pinterest|Reddit|Discord|Slack|Zoom|Salesforce|Adobe|Oracle|IBM|Intel|AMD|Qualcomm|Broadcom|Texas Instruments|Boeing|Lockheed Martin|Raytheon|General Dynamics|Northrop Grumman|Pfizer|Moderna|Johnson & Johnson|AstraZeneca|Merck|Abbott|CVS|Walgreens|UnitedHealth|Anthem|Humana|Cigna|Aetna|ExxonMobil|Chevron|Shell|BP|ConocoPhillips|Walmart|Target|Costco|Home Depot|Lowe's|McDonald's|Starbucks|Coca-Cola|PepsiCo|Procter & Gamble|Nike|Adidas|Disney|Warner Bros|Paramount|Universal|Sony|Nintendo|Electronic Arts|Activision|Take-Two|Roblox|Unity|Epic Games)\b/i);
+						return match ? match[1] : null;
+					})
+					.filter(Boolean);
 
-				// Create a mock analysis object for compatibility
-				companyAnalysis = {
-					companyName: selectedCompany,
-					ticker: null,
-					needsTickerSearch: true,
-					reasoning: `Selected from ${extractedCompanies.length} companies extracted from article content`
-				};
-
-				// Search for ticker
-				console.log(`🔍 Searching for ticker symbol for ${selectedCompany}...`);
-				const searchedTicker = await searchCompanyTicker(selectedCompany);
-				let ticker = searchedTicker;
-
-				if (searchedTicker) {
-					ticker = searchedTicker;
-					console.log(`✅ Ticker found via search: ${ticker}`);
-
-					// Fetch financial data
-					console.log(`📊 Fetching comprehensive financial data for ${selectedCompany} (${ticker})...`);
-					const financialData = await fetchFinancialData(ticker);
-
-					if (financialData) {
-						console.log(`💼 Enhancing report with detailed analysis for ${selectedCompany} (${ticker})`);
-
-						// Enhance the report with comprehensive company analysis
-						const enhancedReport = await enhanceReportWithCompanyAnalysis(
-							marketReport.text,
-							selectedCompany,
-							ticker,
-							financialData
-						);
-
-						finalReport = enhancedReport;
-
-						// Import and append complete data tables
-						const { generateCompleteDataSection } = await import('@/lib/ai');
-						finalReport += generateCompleteDataSection(recentArticles, financialData);
-
-						console.log(`✅ Enhanced report generated with complete data preservation (${finalReport.length} characters)`);
-					} else {
-						console.log(`⚠️ Failed to fetch financial data for ${ticker}, using original report`);
-
-						// Still append article data even without financial data
-						const { generateCompleteDataSection } = await import('@/lib/ai');
-						finalReport = marketReport.text + generateCompleteDataSection(recentArticles);
-					}
+				if (titleCompanies.length > 0) {
+					extractedCompanies = [...new Set(titleCompanies)];
+					console.log(`📰 Found companies in article titles: ${extractedCompanies.join(', ')}`);
 				} else {
-					console.log(`⚠️ Could not find ticker for ${selectedCompany}, skipping financial data analysis`);
+					// Use a random fallback company from our list
+					const randomIndex = Math.floor(Math.random() * FALLBACK_COMPANIES.length);
+					extractedCompanies = [FALLBACK_COMPANIES[randomIndex]];
+					console.log(`🎲 Selected fallback company for analysis: ${extractedCompanies[0]}`);
+				}
+			}
 
-					// Still append article data even without ticker
+			// GUARANTEED to have at least one company at this point
+			console.log(`🏢 Companies for analysis (${extractedCompanies.length}):`, extractedCompanies);
+
+			// Use the first/most relevant company for detailed analysis
+			const selectedCompany = extractedCompanies[0];
+			console.log(`🎯 Selected company for analysis: ${selectedCompany}`);
+
+			// Create analysis object for tracking
+			companyAnalysis = {
+				companyName: selectedCompany,
+				ticker: null,
+				needsTickerSearch: true,
+				reasoning: `Selected from ${extractedCompanies.length} companies ${extractedCompanies.length === 1 && FALLBACK_COMPANIES.includes(selectedCompany) ? '(fallback)' : 'extracted from article content'}`
+			};
+
+			// Search for ticker
+			console.log(`🔍 Searching for ticker symbol for ${selectedCompany}...`);
+			const searchedTicker = await searchCompanyTicker(selectedCompany);
+			let ticker = searchedTicker;
+
+			if (searchedTicker) {
+				ticker = searchedTicker;
+				console.log(`✅ Ticker found via search: ${ticker}`);
+
+				// Fetch financial data
+				console.log(`📊 Fetching comprehensive financial data for ${selectedCompany} (${ticker})...`);
+				const financialData = await fetchFinancialData(ticker);
+
+				if (financialData) {
+					console.log(`💼 Enhancing report with detailed analysis for ${selectedCompany} (${ticker})`);
+
+					// Enhance the report with comprehensive company analysis
+					const enhancedReport = await enhanceReportWithCompanyAnalysis(
+						marketReport.text,
+						selectedCompany,
+						ticker,
+						financialData
+					);
+
+					finalReport = enhancedReport;
+
+					// Import and append complete data tables
 					const { generateCompleteDataSection } = await import('@/lib/ai');
-					finalReport = marketReport.text + generateCompleteDataSection(recentArticles);
+					finalReport += generateCompleteDataSection(recentArticles, financialData);
+
+					console.log(`✅ Enhanced report generated with complete data preservation (${finalReport.length} characters)`);
+				} else {
+					console.log(`⚠️ Failed to fetch financial data for ${ticker}, creating basic company analysis...`);
+
+					// Still add basic company analysis without financial data
+					const basicAnalysis = await generateBasicCompanyAnalysis(
+						marketReport.text,
+						selectedCompany,
+						ticker
+					);
+					finalReport = basicAnalysis;
+
+					// Append article data
+					const { generateCompleteDataSection } = await import('@/lib/ai');
+					finalReport += generateCompleteDataSection(recentArticles);
 				}
 			} else {
-				console.log('⚠️ No companies found in articles, using original report');
+				console.log(`⚠️ Could not find ticker for ${selectedCompany}, creating basic company analysis...`);
 
-				// Still append article data
+				// Create basic company analysis without ticker/financial data
+				const basicAnalysis = await generateBasicCompanyAnalysis(
+					marketReport.text,
+					selectedCompany,
+					null
+				);
+				finalReport = basicAnalysis;
+
+				// Append article data
 				const { generateCompleteDataSection } = await import('@/lib/ai');
-				finalReport = marketReport.text + generateCompleteDataSection(recentArticles);
+				finalReport += generateCompleteDataSection(recentArticles);
 			}
 
 		} catch (error) {

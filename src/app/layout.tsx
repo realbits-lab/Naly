@@ -4,11 +4,6 @@ import "./globals.css";
 import { Providers } from "@/components/providers";
 import { RegisterServiceWorker } from "./register-sw";
 
-// Initialize services (including cron scheduler)
-if (typeof window === "undefined") {
-	import("@/lib/startup");
-}
-
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {

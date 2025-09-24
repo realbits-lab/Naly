@@ -198,7 +198,7 @@ export function ArticleContentPanel({ article }: ArticleContentPanelProps) {
 
 						{/* Article Content */}
 						{displayArticle.content ? (
-							<div className="prose prose-lg max-w-none">
+							<div className="prose prose-lg prose-gray dark:prose-invert max-w-none">
 								<MarkdownContent content={displayArticle.content} />
 							</div>
 						) : (
