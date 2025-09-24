@@ -153,6 +153,7 @@ jobs:
               // Find field IDs
               const statusField = project.fields.nodes.find(f => f.name === 'Status');
               const sprintField = project.fields.nodes.find(f => f.name === 'Sprint' || f.name === 'Iteration');
+              const startDateField = project.fields.nodes.find(f => f.name === 'Start date' || f.name === 'Start Date');
 
               // Set Status to 'Todo'
               if (statusField && statusField.options) {
@@ -232,6 +233,32 @@ jobs:
                     console.log("Set sprint to 'Sprint 6'");
                   }
                 }
+              }
+
+              // Set Start Date to today
+              if (startDateField) {
+                const today = new Date().toISOString().split('T')[0]; // Format: YYYY-MM-DD
+
+                await github.graphql(`
+                  mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $value: Date!) {
+                    updateProjectV2ItemFieldValue(input: {
+                      projectId: $projectId,
+                      itemId: $itemId,
+                      fieldId: $fieldId,
+                      value: { date: $value }
+                    }) {
+                      projectV2Item {
+                        id
+                      }
+                    }
+                  }
+                `, {
+                  projectId: project.id,
+                  itemId: projectItem.id,
+                  fieldId: startDateField.id,
+                  value: today
+                });
+                console.log(`Set start date to ${today}`);
               }
 
             } catch (error) {
