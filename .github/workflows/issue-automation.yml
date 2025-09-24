@@ -47,44 +47,48 @@ jobs:
           script: |
             const issue = context.issue;
             const projectOwner = context.repo.owner;
+            const repoName = context.repo.repo;
 
             try {
-              // First, list all available projects to find Naly
-              console.log(`Searching for Naly project...`);
+              let project = null;
+              let allProjects = [];
 
-              // Check user projects
-              const userProjectsResponse = await github.graphql(`
-                query($owner: String!) {
-                  user(login: $owner) {
-                    projectsV2(first: 100) {
-                      nodes {
-                        id
-                        title
-                        number
-                        url
-                        fields(first: 20) {
-                          nodes {
-                            ... on ProjectV2Field {
-                              id
-                              name
-                            }
-                            ... on ProjectV2SingleSelectField {
-                              id
-                              name
-                              options {
+              // First check repository-level projects
+              console.log(`Checking repository projects for ${projectOwner}/${repoName}...`);
+              try {
+                const repoProjectsResponse = await github.graphql(`
+                  query($owner: String!, $repo: String!) {
+                    repository(owner: $owner, name: $repo) {
+                      projectsV2(first: 100) {
+                        nodes {
+                          id
+                          title
+                          number
+                          url
+                          fields(first: 20) {
+                            nodes {
+                              ... on ProjectV2Field {
                                 id
                                 name
                               }
-                            }
-                            ... on ProjectV2IterationField {
-                              id
-                              name
-                              configuration {
-                                iterations {
+                              ... on ProjectV2SingleSelectField {
+                                id
+                                name
+                                options {
                                   id
-                                  title
-                                  startDate
-                                  duration
+                                  name
+                                }
+                              }
+                              ... on ProjectV2IterationField {
+                                id
+                                name
+                                configuration {
+                                  iterations {
+                                    id
+                                    title
+                                    startDate
+                                    duration
+                                  }
                                 }
                               }
                             }
@@ -93,24 +97,112 @@ jobs:
                       }
                     }
                   }
+                `, {
+                  owner: projectOwner,
+                  repo: repoName
+                });
+
+                if (repoProjectsResponse.repository.projectsV2.nodes.length > 0) {
+                  console.log("Repository projects:");
+                  repoProjectsResponse.repository.projectsV2.nodes.forEach(p => {
+                    console.log(`  - "${p.title}" (#${p.number}) - ${p.url}`);
+                    allProjects.push(p);
+                  });
+                  project = repoProjectsResponse.repository.projectsV2.nodes.find(
+                    p => p.title === 'Naly' || p.title.toLowerCase().includes('naly')
+                  );
                 }
-              `, {
-                owner: projectOwner
-              });
+              } catch (repoError) {
+                console.log("No repository projects or error accessing them");
+              }
 
-              console.log("Available user projects:");
-              userProjectsResponse.user.projectsV2.nodes.forEach(p => {
-                console.log(`  - "${p.title}" (#${p.number}) - ${p.url}`);
-              });
-
-              // Find the Naly project
-              let project = userProjectsResponse.user.projectsV2.nodes.find(
-                p => p.title === 'Naly' || p.title.toLowerCase().includes('naly')
-              );
-
+              // If not found, check user projects
               if (!project) {
-                console.log("Project 'Naly' not found. Please create a project named 'Naly'.");
-                console.log("You can create it at: https://github.com/realbits-lab?tab=projects");
+                console.log(`Checking user projects for ${projectOwner}...`);
+                try {
+                  const userProjectsResponse = await github.graphql(`
+                    query($owner: String!) {
+                      user(login: $owner) {
+                        projectsV2(first: 100) {
+                          nodes {
+                            id
+                            title
+                            number
+                            url
+                            fields(first: 20) {
+                              nodes {
+                                ... on ProjectV2Field {
+                                  id
+                                  name
+                                }
+                                ... on ProjectV2SingleSelectField {
+                                  id
+                                  name
+                                  options {
+                                    id
+                                    name
+                                  }
+                                }
+                                ... on ProjectV2IterationField {
+                                  id
+                                  name
+                                  configuration {
+                                    iterations {
+                                      id
+                                      title
+                                      startDate
+                                      duration
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  `, {
+                    owner: projectOwner
+                  });
+
+                  if (userProjectsResponse.user.projectsV2.nodes.length > 0) {
+                    console.log("User projects:");
+                    userProjectsResponse.user.projectsV2.nodes.forEach(p => {
+                      console.log(`  - "${p.title}" (#${p.number}) - ${p.url}`);
+                      allProjects.push(p);
+                    });
+                    project = userProjectsResponse.user.projectsV2.nodes.find(
+                      p => p.title === 'Naly' || p.title.toLowerCase().includes('naly')
+                    );
+                  }
+                } catch (userError) {
+                  console.log("No user projects or error accessing them");
+                  console.log("Error:", userError.message);
+                }
+              }
+
+              // If still not found, use the first project if there's only one
+              if (!project && allProjects.length === 1) {
+                project = allProjects[0];
+                console.log(`Using the only available project: "${project.title}"`);
+              }
+
+              // If still not found, list all projects and fail
+              if (!project) {
+                console.log("Project 'Naly' not found.");
+                if (allProjects.length > 0) {
+                  console.log("All available projects:");
+                  allProjects.forEach(p => {
+                    console.log(`  - "${p.title}" (#${p.number}) - ${p.url}`);
+                  });
+                  console.log("\nPlease either:");
+                  console.log("1. Rename one of your projects to 'Naly'");
+                  console.log("2. Create a new project named 'Naly'");
+                } else {
+                  console.log("No projects found at all. Please create a project named 'Naly' at:");
+                  console.log(`  https://github.com/${projectOwner}/${repoName}/projects/new`);
+                  console.log(`  or https://github.com/${projectOwner}?tab=projects`);
+                }
                 return;
               }
 
