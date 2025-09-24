@@ -95,6 +95,8 @@ jobs:
                               iterations {
                                 id
                                 title
+                                startDate
+                                duration
                               }
                             }
                           }
@@ -182,11 +184,22 @@ jobs:
                 }
               }
 
-              // Set Sprint/Iteration to 'Sprint 6'
+              // Set Sprint/Iteration to current sprint
               if (sprintField) {
                 if (sprintField.configuration && sprintField.configuration.iterations) {
-                  const sprint6 = sprintField.configuration.iterations.find(i => i.title === 'Sprint 6');
-                  if (sprint6) {
+                  // Find the current sprint based on today's date
+                  const today = new Date();
+                  const currentSprint = sprintField.configuration.iterations.find(iteration => {
+                    if (iteration.startDate && iteration.duration) {
+                      const startDate = new Date(iteration.startDate);
+                      const endDate = new Date(startDate);
+                      endDate.setDate(endDate.getDate() + iteration.duration);
+                      return today >= startDate && today <= endDate;
+                    }
+                    return false;
+                  });
+
+                  if (currentSprint) {
                     await github.graphql(`
                       mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $value: String!) {
                         updateProjectV2ItemFieldValue(input: {
@@ -204,13 +217,24 @@ jobs:
                       projectId: project.id,
                       itemId: projectItem.id,
                       fieldId: sprintField.id,
-                      value: sprint6.id
+                      value: currentSprint.id
                     });
-                    console.log("Set iteration to 'Sprint 6'");
+                    console.log(`Set iteration to current sprint: '${currentSprint.title}'`);
+                  } else {
+                    console.log("No current sprint found for today's date");
                   }
                 } else if (sprintField.options) {
-                  const sprint6Option = sprintField.options.find(o => o.name === 'Sprint 6');
-                  if (sprint6Option) {
+                  // For single select field, we can't determine "current" so pick the latest numbered sprint
+                  const sprintOptions = sprintField.options
+                    .filter(o => o.name.startsWith('Sprint '))
+                    .sort((a, b) => {
+                      const numA = parseInt(a.name.replace('Sprint ', ''));
+                      const numB = parseInt(b.name.replace('Sprint ', ''));
+                      return numB - numA; // Sort descending to get latest first
+                    });
+
+                  if (sprintOptions.length > 0) {
+                    const currentSprint = sprintOptions[0];
                     await github.graphql(`
                       mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $value: String!) {
                         updateProjectV2ItemFieldValue(input: {
@@ -228,11 +252,10 @@ jobs:
                       projectId: project.id,
                       itemId: projectItem.id,
                       fieldId: sprintField.id,
-                      value: sprint6Option.id
+                      value: currentSprint.id
                     });
-                    console.log("Set sprint to 'Sprint 6'");
+                    console.log(`Set sprint to latest: '${currentSprint.name}'`);
                   }
-                }
               }
 
               // Set Start Date to today
