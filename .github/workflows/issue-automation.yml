@@ -79,30 +79,79 @@ jobs:
               console.log("Could not determine current milestone");
             }
 
-      - name: Add to Project
-        uses: actions/add-to-project@v0.5.0
-        with:
-          project-url: https://github.com/users/realbits-lab/projects/17
-          github-token: ${{ secrets.ADD_TO_PROJECT_PAT || secrets.GITHUB_TOKEN }}
-
-      - name: Wait for Project Addition
-        run: sleep 5
-
-      - name: Set Project Fields
+      - name: Find and Add to Project
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.ADD_TO_PROJECT_PAT || secrets.GITHUB_TOKEN }}
           script: |
             const issue = context.issue;
             const projectOwner = 'realbits-lab';
-            const projectNumber = 17;
+            const projectName = 'Naly';
 
             try {
-              // Get the project and its fields
-              const projectResponse = await github.graphql(`
-                query($owner: String!, $projectNumber: Int!) {
+              // Get the issue's node_id
+              const issueData = await github.rest.issues.get({
+                owner: issue.owner,
+                repo: issue.repo,
+                issue_number: issue.number
+              });
+
+              const issueNodeId = issueData.data.node_id;
+              console.log(`Issue #${issue.number} node_id: ${issueNodeId}`);
+
+              // First, find the project by name
+              console.log(`Searching for project '${projectName}' owned by '${projectOwner}'`);
+
+              const projectsResponse = await github.graphql(`
+                query($owner: String!) {
                   user(login: $owner) {
-                    projectV2(number: $projectNumber) {
+                    projectsV2(first: 20) {
+                      nodes {
+                        id
+                        title
+                        number
+                      }
+                    }
+                  }
+                }
+              `, {
+                owner: projectOwner
+              });
+
+              const projects = projectsResponse.user.projectsV2.nodes;
+              const targetProject = projects.find(p => p.title === projectName);
+
+              if (!targetProject) {
+                console.log(`Project '${projectName}' not found. Available projects:`, projects.map(p => p.title));
+                return;
+              }
+
+              console.log(`Found project '${targetProject.title}' with number ${targetProject.number}`);
+
+              // Add issue to project
+              const addToProjectResponse = await github.graphql(`
+                mutation($projectId: ID!, $contentId: ID!) {
+                  addProjectV2ItemById(input: {projectId: $projectId, contentId: $contentId}) {
+                    item {
+                      id
+                    }
+                  }
+                }
+              `, {
+                projectId: targetProject.id,
+                contentId: issueNodeId
+              });
+
+              console.log("Issue added to project successfully");
+
+              // Wait a moment for the project item to be created
+              await new Promise(resolve => setTimeout(resolve, 2000));
+
+              // Now get the project fields
+              const projectResponse = await github.graphql(`
+                query($projectId: ID!) {
+                  node(id: $projectId) {
+                    ... on ProjectV2 {
                       id
                       title
                       fields(first: 20) {
@@ -137,11 +186,10 @@ jobs:
                   }
                 }
               `, {
-                owner: projectOwner,
-                projectNumber: projectNumber
+                projectId: targetProject.id
               });
 
-              const project = projectResponse.user.projectV2;
+              const project = projectResponse.node;
 
               if (!project) {
                 console.log("Project not found");
