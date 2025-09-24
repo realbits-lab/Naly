@@ -287,6 +287,7 @@ jobs:
                     });
                     console.log(`Set sprint to latest: '${currentSprint.name}'`);
                   }
+                }
               }
 
               // Set Start Date to today
