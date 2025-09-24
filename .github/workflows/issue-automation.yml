@@ -41,63 +41,52 @@ jobs:
               console.log("Milestone 'alpha-1' not found");
             }
 
-      - name: Add to Project
-        id: add-project
-        uses: actions/add-to-project@v0.5.0
-        with:
-          project-url: https://github.com/users/${{ github.repository_owner }}/projects/1
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-        continue-on-error: true
-
-      - name: Wait for Project Addition
-        if: steps.add-project.outcome == 'success'
-        run: sleep 5
-
-      - name: Set Project Fields
-        if: steps.add-project.outcome == 'success'
+      - name: Add to Project and Set Fields
         uses: actions/github-script@v7
         with:
           script: |
             const issue = context.issue;
             const projectOwner = context.repo.owner;
 
-            // Add retry logic for waiting for project item
-            let retries = 5;
-            let projectItem = null;
-            let project = null;
-
             try {
-              // Get the project
-              const projectsResponse = await github.graphql(`
-                query($owner: String!) {
-                  user(login: $owner) {
-                    projectsV2(first: 10) {
-                      nodes {
-                        id
-                        title
-                        fields(first: 20) {
-                          nodes {
-                            ... on ProjectV2Field {
-                              id
-                              name
-                            }
-                            ... on ProjectV2SingleSelectField {
-                              id
-                              name
-                              options {
+              // First, try to get projects from the user account
+              let projectsResponse;
+              let project = null;
+
+              try {
+                // Try user projects first
+                projectsResponse = await github.graphql(`
+                  query($owner: String!) {
+                    user(login: $owner) {
+                      projectsV2(first: 20) {
+                        nodes {
+                          id
+                          title
+                          number
+                          fields(first: 20) {
+                            nodes {
+                              ... on ProjectV2Field {
                                 id
                                 name
                               }
-                            }
-                            ... on ProjectV2IterationField {
-                              id
-                              name
-                              configuration {
-                                iterations {
+                              ... on ProjectV2SingleSelectField {
+                                id
+                                name
+                                options {
                                   id
-                                  title
-                                  startDate
-                                  duration
+                                  name
+                                }
+                              }
+                              ... on ProjectV2IterationField {
+                                id
+                                name
+                                configuration {
+                                  iterations {
+                                    id
+                                    title
+                                    startDate
+                                    duration
+                                  }
                                 }
                               }
                             }
@@ -106,30 +95,51 @@ jobs:
                       }
                     }
                   }
-                }
-              `, {
-                owner: projectOwner
-              });
+                `, {
+                  owner: projectOwner
+                });
 
-              // Find the Naly project
-              project = projectsResponse.user.projectsV2.nodes.find(p => p.title === 'Naly');
+                // Find the Naly project
+                project = projectsResponse.user.projectsV2.nodes.find(p => p.title === 'Naly');
 
-              if (!project) {
-                console.log("Project 'Naly' not found");
-                return;
-              }
+              } catch (userError) {
+                console.log("User projects not found, trying organization projects...");
 
-              // Retry logic to wait for the issue to be added to the project
-              while (retries > 0 && !projectItem) {
-                const itemResponse = await github.graphql(`
-                  query($owner: String!, $repo: String!, $issueNumber: Int!) {
-                    repository(owner: $owner, name: $repo) {
-                      issue(number: $issueNumber) {
-                        projectItems(first: 10) {
-                          nodes {
-                            id
-                            project {
-                              id
+                // Try organization projects
+                projectsResponse = await github.graphql(`
+                  query($owner: String!) {
+                    organization(login: $owner) {
+                      projectsV2(first: 20) {
+                        nodes {
+                          id
+                          title
+                          number
+                          fields(first: 20) {
+                            nodes {
+                              ... on ProjectV2Field {
+                                id
+                                name
+                              }
+                              ... on ProjectV2SingleSelectField {
+                                id
+                                name
+                                options {
+                                  id
+                                  name
+                                }
+                              }
+                              ... on ProjectV2IterationField {
+                                id
+                                name
+                                configuration {
+                                  iterations {
+                                    id
+                                    title
+                                    startDate
+                                    duration
+                                  }
+                                }
+                              }
                             }
                           }
                         }
@@ -137,26 +147,53 @@ jobs:
                     }
                   }
                 `, {
-                  owner: issue.owner,
-                  repo: issue.repo,
-                  issueNumber: issue.number
+                  owner: projectOwner
                 });
 
-                projectItem = itemResponse.repository.issue.projectItems.nodes.find(
-                  item => item.project.id === project.id
-                );
-
-                if (!projectItem) {
-                  console.log(`Waiting for issue to be added to project... (${retries} retries left)`);
-                  await new Promise(resolve => setTimeout(resolve, 2000));
-                  retries--;
-                }
+                // Find the Naly project
+                project = projectsResponse.organization.projectsV2.nodes.find(p => p.title === 'Naly');
               }
 
-              if (!projectItem) {
-                console.log("Issue not added to project after retries");
+              if (!project) {
+                console.log("Project 'Naly' not found. Available projects:");
+                if (projectsResponse.user) {
+                  projectsResponse.user.projectsV2.nodes.forEach(p => {
+                    console.log(`- ${p.title} (number: ${p.number})`);
+                  });
+                } else if (projectsResponse.organization) {
+                  projectsResponse.organization.projectsV2.nodes.forEach(p => {
+                    console.log(`- ${p.title} (number: ${p.number})`);
+                  });
+                }
                 return;
               }
+
+              console.log(`Found project 'Naly' with ID: ${project.id}`);
+
+              // Add the issue to the project
+              const addToProjectResponse = await github.graphql(`
+                mutation($projectId: ID!, $contentId: ID!) {
+                  addProjectV2ItemById(input: {projectId: $projectId, contentId: $contentId}) {
+                    item {
+                      id
+                    }
+                  }
+                }
+              `, {
+                projectId: project.id,
+                contentId: context.payload.issue.node_id
+              });
+
+              const projectItemId = addToProjectResponse.addProjectV2ItemById.item.id;
+              console.log(`Added issue to project with item ID: ${projectItemId}`);
+
+              // Wait a bit for the project item to be fully created
+              await new Promise(resolve => setTimeout(resolve, 2000));
+
+              // Now get the project item to update fields
+              let projectItem = { id: projectItemId };
+              let retries = 3;
+
 
               // Find field IDs and option IDs
               const statusField = project.fields.nodes.find(f => f.name === 'Status');
