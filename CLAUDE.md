@@ -103,6 +103,7 @@ Located in `src/lib/schema/` with modular organization:
 - **Unit Tests**: Jest framework
 - **E2E Tests**: Playwright with headless option
 - **Authentication**: Use `.auth/user.json` file for id and password authentication for Playwright MCP tools
+- **Test Account**: When testing with web API or UI, use `manager.ua77yxv4@test.naly.com` account with `.auth/user.json` file for ID/password authentication
 - Default test account: manager.ua77yxv4@test.naly.com with manager role
 
 ### AI Gateway
