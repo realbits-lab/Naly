@@ -41,314 +41,108 @@ jobs:
               console.log("Milestone 'alpha-1' not found");
             }
 
-      - name: Add to Project and Set Fields
+      - name: Add to Project
+        uses: actions/add-to-project@v0.5.0
+        with:
+          project-url: https://github.com/users/realbits-lab/projects/17
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Wait for Project Addition
+        run: sleep 5
+
+      - name: Set Project Fields
         uses: actions/github-script@v7
         with:
           script: |
             const issue = context.issue;
-            const projectOwner = context.repo.owner;
-            const repoName = context.repo.repo;
+            const projectOwner = 'realbits-lab';
+            const projectNumber = 17;
 
             try {
-              let project = null;
-              let allProjects = [];
-
-              // First check repository-level projects
-              console.log(`Checking repository projects for ${projectOwner}/${repoName}...`);
-              try {
-                const repoProjectsResponse = await github.graphql(`
-                  query($owner: String!, $repo: String!) {
-                    repository(owner: $owner, name: $repo) {
-                      projectsV2(first: 100) {
-                        nodes {
-                          id
-                          title
-                          number
-                          url
-                          fields(first: 20) {
-                            nodes {
-                              ... on ProjectV2Field {
-                                id
-                                name
-                              }
-                              ... on ProjectV2SingleSelectField {
-                                id
-                                name
-                                options {
-                                  id
-                                  name
-                                }
-                              }
-                              ... on ProjectV2IterationField {
-                                id
-                                name
-                                configuration {
-                                  iterations {
-                                    id
-                                    title
-                                    startDate
-                                    duration
-                                  }
-                                }
-                              }
-                            }
-                          }
-                        }
-                        totalCount
-                        pageInfo {
-                          hasNextPage
-                        }
-                      }
-                    }
-                  }
-                `, {
-                  owner: projectOwner,
-                  repo: repoName
-                });
-
-                console.log(`Repository response - Total projects: ${repoProjectsResponse.repository.projectsV2.totalCount}`);
-                console.log(`Repository response - Has more pages: ${repoProjectsResponse.repository.projectsV2.pageInfo.hasNextPage}`);
-
-                if (repoProjectsResponse.repository.projectsV2.nodes.length > 0) {
-                  console.log("Repository projects found:");
-                  repoProjectsResponse.repository.projectsV2.nodes.forEach(p => {
-                    console.log(`  - "${p.title}" (#${p.number}) - ${p.url}`);
-                    allProjects.push(p);
-                  });
-                  project = repoProjectsResponse.repository.projectsV2.nodes.find(
-                    p => p.title === 'Naly' || p.title.toLowerCase().includes('naly')
-                  );
-                } else {
-                  console.log("No repository-level projects found");
-                }
-              } catch (repoError) {
-                console.log("Error accessing repository projects:");
-                console.log(`  Error message: ${repoError.message}`);
-                console.log(`  Error details: ${JSON.stringify(repoError, null, 2)}`);
-              }
-
-              // If not found, check user projects
-              if (!project) {
-                console.log(`\nChecking user projects for ${projectOwner}...`);
-                try {
-                  const userProjectsResponse = await github.graphql(`
-                    query($owner: String!) {
-                      user(login: $owner) {
-                        projectsV2(first: 100) {
-                          nodes {
-                            id
-                            title
-                            number
-                            url
-                            fields(first: 20) {
-                              nodes {
-                                ... on ProjectV2Field {
-                                  id
-                                  name
-                                }
-                                ... on ProjectV2SingleSelectField {
-                                  id
-                                  name
-                                  options {
-                                    id
-                                    name
-                                  }
-                                }
-                                ... on ProjectV2IterationField {
-                                  id
-                                  name
-                                  configuration {
-                                    iterations {
-                                      id
-                                      title
-                                      startDate
-                                      duration
-                                    }
-                                  }
-                                }
-                              }
-                            }
-                          }
-                          totalCount
-                          pageInfo {
-                            hasNextPage
-                          }
-                        }
-                        login
-                        id
-                      }
-                    }
-                  `, {
-                    owner: projectOwner
-                  });
-
-                  console.log(`User response - User login: ${userProjectsResponse.user.login}`);
-                  console.log(`User response - User ID: ${userProjectsResponse.user.id}`);
-                  console.log(`User response - Total projects: ${userProjectsResponse.user.projectsV2.totalCount}`);
-                  console.log(`User response - Has more pages: ${userProjectsResponse.user.projectsV2.pageInfo.hasNextPage}`);
-
-                  if (userProjectsResponse.user.projectsV2.nodes.length > 0) {
-                    console.log("User projects found:");
-                    userProjectsResponse.user.projectsV2.nodes.forEach(p => {
-                      console.log(`  - "${p.title}" (#${p.number}) - ${p.url}`);
-                      allProjects.push(p);
-                    });
-                    project = userProjectsResponse.user.projectsV2.nodes.find(
-                      p => p.title === 'Naly' || p.title.toLowerCase().includes('naly')
-                    );
-                  } else {
-                    console.log("No user-level projects found");
-                  }
-                } catch (userError) {
-                  console.log("Error accessing user projects:");
-                  console.log(`  Error message: ${userError.message}`);
-                  console.log(`  Error details: ${JSON.stringify(userError, null, 2)}`);
-
-                  // Try to check if we have permission issues
-                  console.log("\nDebug: Checking basic user query...");
-                  try {
-                    const basicUserQuery = await github.graphql(`
-                      query($owner: String!) {
-                        user(login: $owner) {
-                          login
-                          id
-                          url
-                        }
-                      }
-                    `, {
-                      owner: projectOwner
-                    });
-                    console.log(`  Basic user query successful: ${basicUserQuery.user.login} (${basicUserQuery.user.url})`);
-                  } catch (basicError) {
-                    console.log(`  Basic user query failed: ${basicError.message}`);
-                  }
-                }
-              }
-
-              // If not found, try organization projects (in case user is actually an org)
-              if (!project) {
-                console.log(`\nChecking organization projects for ${projectOwner}...`);
-                try {
-                  const orgProjectsResponse = await github.graphql(`
-                    query($owner: String!) {
-                      organization(login: $owner) {
-                        projectsV2(first: 100) {
-                          nodes {
-                            id
-                            title
-                            number
-                            url
-                            fields(first: 20) {
-                              nodes {
-                                ... on ProjectV2Field {
-                                  id
-                                  name
-                                }
-                                ... on ProjectV2SingleSelectField {
-                                  id
-                                  name
-                                  options {
-                                    id
-                                    name
-                                  }
-                                }
-                                ... on ProjectV2IterationField {
-                                  id
-                                  name
-                                  configuration {
-                                    iterations {
-                                      id
-                                      title
-                                      startDate
-                                      duration
-                                    }
-                                  }
-                                }
-                              }
-                            }
-                          }
-                          totalCount
-                          pageInfo {
-                            hasNextPage
-                          }
-                        }
-                        login
-                        id
-                      }
-                    }
-                  `, {
-                    owner: projectOwner
-                  });
-
-                  console.log(`Organization response - Org login: ${orgProjectsResponse.organization.login}`);
-                  console.log(`Organization response - Total projects: ${orgProjectsResponse.organization.projectsV2.totalCount}`);
-
-                  if (orgProjectsResponse.organization.projectsV2.nodes.length > 0) {
-                    console.log("Organization projects found:");
-                    orgProjectsResponse.organization.projectsV2.nodes.forEach(p => {
-                      console.log(`  - "${p.title}" (#${p.number}) - ${p.url}`);
-                      allProjects.push(p);
-                    });
-                    project = orgProjectsResponse.organization.projectsV2.nodes.find(
-                      p => p.title === 'Naly' || p.title.toLowerCase().includes('naly')
-                    );
-                  }
-                } catch (orgError) {
-                  console.log("Not an organization or no organization projects");
-                  console.log(`  Details: ${orgError.message}`);
-                }
-              }
-
-              // If still not found, use the first project if there's only one
-              if (!project && allProjects.length === 1) {
-                project = allProjects[0];
-                console.log(`\nUsing the only available project: "${project.title}"`);
-              }
-
-              // If still not found, list all projects and fail
-              if (!project) {
-                console.log("Project 'Naly' not found.");
-                if (allProjects.length > 0) {
-                  console.log("All available projects:");
-                  allProjects.forEach(p => {
-                    console.log(`  - "${p.title}" (#${p.number}) - ${p.url}`);
-                  });
-                  console.log("\nPlease either:");
-                  console.log("1. Rename one of your projects to 'Naly'");
-                  console.log("2. Create a new project named 'Naly'");
-                } else {
-                  console.log("No projects found at all. Please create a project named 'Naly' at:");
-                  console.log(`  https://github.com/${projectOwner}/${repoName}/projects/new`);
-                  console.log(`  or https://github.com/${projectOwner}?tab=projects`);
-                }
-                return;
-              }
-
-              console.log(`Found project '${project.title}' (#${project.number}) with ID: ${project.id}`);
-
-              // Add the issue to the project
-              console.log("Adding issue to project...");
-              const addToProjectResponse = await github.graphql(`
-                mutation($projectId: ID!, $contentId: ID!) {
-                  addProjectV2ItemById(input: {projectId: $projectId, contentId: $contentId}) {
-                    item {
+              // Get the project and its fields
+              const projectResponse = await github.graphql(`
+                query($owner: String!, $number: Int!) {
+                  user(login: $owner) {
+                    projectV2(number: $number) {
                       id
+                      title
+                      fields(first: 20) {
+                        nodes {
+                          ... on ProjectV2Field {
+                            id
+                            name
+                          }
+                          ... on ProjectV2SingleSelectField {
+                            id
+                            name
+                            options {
+                              id
+                              name
+                            }
+                          }
+                          ... on ProjectV2IterationField {
+                            id
+                            name
+                            configuration {
+                              iterations {
+                                id
+                                title
+                              }
+                            }
+                          }
+                        }
+                      }
                     }
                   }
                 }
               `, {
-                projectId: project.id,
-                contentId: context.payload.issue.node_id
+                owner: projectOwner,
+                projectNumber: projectNumber
               });
 
-              const projectItem = addToProjectResponse.addProjectV2ItemById.item;
-              console.log(`Added issue to project with item ID: ${projectItem.id}`);
+              const project = projectResponse.user.projectV2;
 
-              // Wait a bit for the project item to be fully created
-              await new Promise(resolve => setTimeout(resolve, 2000));
+              if (!project) {
+                console.log("Project not found");
+                return;
+              }
 
+              console.log(`Found project '${project.title}'`);
 
-              // Find field IDs and option IDs
+              // Get the issue's project item
+              const itemResponse = await github.graphql(`
+                query($owner: String!, $repo: String!, $issueNumber: Int!) {
+                  repository(owner: $owner, name: $repo) {
+                    issue(number: $issueNumber) {
+                      projectItems(first: 10) {
+                        nodes {
+                          id
+                          project {
+                            id
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              `, {
+                owner: issue.owner,
+                repo: issue.repo,
+                issueNumber: issue.number
+              });
+
+              const projectItem = itemResponse.repository.issue.projectItems.nodes.find(
+                item => item.project.id === project.id
+              );
+
+              if (!projectItem) {
+                console.log("Issue not yet added to project");
+                return;
+              }
+
+              console.log("Found project item, setting fields...");
+
+              // Find field IDs
               const statusField = project.fields.nodes.find(f => f.name === 'Status');
               const sprintField = project.fields.nodes.find(f => f.name === 'Sprint' || f.name === 'Iteration');
 
@@ -382,7 +176,6 @@ jobs:
               // Set Sprint/Iteration to 'Sprint 6'
               if (sprintField) {
                 if (sprintField.configuration && sprintField.configuration.iterations) {
-                  // For iteration field
                   const sprint6 = sprintField.configuration.iterations.find(i => i.title === 'Sprint 6');
                   if (sprint6) {
                     await github.graphql(`
@@ -407,7 +200,6 @@ jobs:
                     console.log("Set iteration to 'Sprint 6'");
                   }
                 } else if (sprintField.options) {
-                  // For single select field
                   const sprint6Option = sprintField.options.find(o => o.name === 'Sprint 6');
                   if (sprint6Option) {
                     await github.graphql(`
@@ -435,6 +227,6 @@ jobs:
               }
 
             } catch (error) {
-              console.error("Error setting project fields:", error);
+              console.error("Error setting project fields:", error.message);
             }
         continue-on-error: true
