@@ -7,6 +7,7 @@ assignees: realbits-lab
 milestone: 'alpha-1'
 status: 'Todo'
 sprint: 'Sprint 6'
+project: 'Naly'
 
 ---
 
