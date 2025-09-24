@@ -173,10 +173,11 @@ jobs:
                 );
               }
 
-              // Strategy 3: If still no match, use the first/most recent project
+              // Strategy 3: If still no match, skip project assignment
               if (!targetProject) {
-                targetProject = projects[0];
-                console.log(`No project matching repo name '${repoName}', using first available project`);
+                console.log(`No project matching repository name '${repoName}' found. Skipping project assignment.`);
+                console.log(`Available projects: ${projects.map(p => p.title).join(', ')}`);
+                return;
               }
 
               console.log(`Selected project '${targetProject.title}' (number: ${targetProject.number}) for repository '${repoName}'`);
