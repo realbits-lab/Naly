@@ -1,0 +1,815 @@
+# Deployment Guide
+
+## Overview
+
+This guide provides comprehensive instructions for deploying Naly to various platforms. Naly is built with Next.js 16 and can be deployed to any platform that supports Node.js applications.
+
+## Prerequisites
+
+### System Requirements
+
+- **Node.js**: 18.x or higher
+- **Package Manager**: pnpm (recommended), npm, or yarn
+- **Memory**: Minimum 512MB RAM (1GB+ recommended)
+- **Disk Space**: 500MB for application and dependencies
+
+### Environment Variables
+
+Required environment variables:
+
+```bash
+# OpenAI API Configuration
+OPENAI_API_KEY=sk-...
+
+# Optional: AI Gateway Configuration (if using Vercel AI Gateway)
+AI_GATEWAY_API_KEY=...
+
+# Optional: Application Configuration
+NODE_ENV=production
+```
+
+## Local Development
+
+### 1. Clone and Setup
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/realbits-lab/Naly.git
+cd Naly
+
+# 2. Install dependencies
+pnpm install
+
+# 3. Create environment file
+cp .env.example .env.local
+
+# 4. Edit .env.local and add your API keys
+# Use your preferred editor
+nano .env.local
+```
+
+### 2. Run Development Server
+
+```bash
+# Run with pnpm
+pnpm dev
+
+# Or with environment variables inline
+dotenv --file .env.local run pnpm dev
+```
+
+The application will be available at `http://localhost:3000`.
+
+### 3. Build for Production
+
+```bash
+# Build the application
+pnpm build
+
+# Start production server
+pnpm start
+```
+
+## Deployment Platforms
+
+### Option 1: Vercel (Recommended)
+
+Vercel provides the simplest deployment experience for Next.js applications.
+
+#### Deploy with Vercel CLI
+
+```bash
+# 1. Install Vercel CLI
+pnpm add -g vercel
+
+# 2. Login to Vercel
+vercel login
+
+# 3. Deploy
+vercel
+
+# 4. Deploy to production
+vercel --prod
+```
+
+#### Deploy with GitHub Integration
+
+1. Push code to GitHub repository
+2. Visit [vercel.com](https://vercel.com)
+3. Click "Import Project"
+4. Select your GitHub repository
+5. Configure environment variables:
+   - `OPENAI_API_KEY`
+6. Click "Deploy"
+
+#### Configure Environment Variables in Vercel
+
+```bash
+# Using Vercel CLI
+vercel env add OPENAI_API_KEY
+
+# Enter your API key when prompted
+```
+
+Or via Vercel Dashboard:
+1. Go to Project Settings
+2. Navigate to Environment Variables
+3. Add `OPENAI_API_KEY` with your key
+4. Select environments (Production, Preview, Development)
+
+#### Custom Domain Setup
+
+```bash
+# Add custom domain
+vercel domains add yourdomain.com
+
+# Configure DNS
+# Add CNAME record: yourdomain.com -> cname.vercel-dns.com
+```
+
+### Option 2: Docker
+
+Deploy using Docker containers.
+
+#### Create Dockerfile
+
+Already included in the project:
+
+```dockerfile
+FROM node:18-alpine AS base
+
+# Install dependencies only when needed
+FROM base AS deps
+RUN apk add --no-cache libc6-compat
+WORKDIR /app
+
+# Install dependencies
+COPY package.json pnpm-lock.yaml* ./
+RUN corepack enable pnpm && pnpm install --frozen-lockfile
+
+# Rebuild the source code only when needed
+FROM base AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+
+# Build application
+RUN corepack enable pnpm && pnpm build
+
+# Production image, copy all the files and run next
+FROM base AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production
+
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
+COPY --from=builder /app/public ./public
+
+# Set the correct permission for prerender cache
+RUN mkdir .next
+RUN chown nextjs:nodejs .next
+
+# Automatically leverage output traces to reduce image size
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+USER nextjs
+
+EXPOSE 3000
+
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+
+CMD ["node", "server.js"]
+```
+
+#### Build and Run Docker Container
+
+```bash
+# 1. Build image
+docker build -t naly-app .
+
+# 2. Run container
+docker run -p 3000:3000 \
+  -e OPENAI_API_KEY=your_api_key \
+  naly-app
+
+# 3. Access application
+# Visit http://localhost:3000
+```
+
+#### Docker Compose
+
+Create `docker-compose.yml`:
+
+```yaml
+version: '3.8'
+
+services:
+  naly:
+    build: .
+    ports:
+      - '3000:3000'
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - NODE_ENV=production
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD', 'wget', '--spider', 'http://localhost:3000/api/health']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+```
+
+Run with Docker Compose:
+
+```bash
+# Start services
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop services
+docker-compose down
+```
+
+### Option 3: AWS
+
+Deploy to AWS using various services.
+
+#### AWS Elastic Beanstalk
+
+```bash
+# 1. Install AWS CLI and EB CLI
+pip install awsebcli
+
+# 2. Initialize Elastic Beanstalk
+eb init -p node.js-18 naly-app
+
+# 3. Create environment
+eb create naly-production
+
+# 4. Set environment variables
+eb setenv OPENAI_API_KEY=your_api_key
+
+# 5. Deploy
+eb deploy
+
+# 6. Open application
+eb open
+```
+
+#### AWS ECS (Fargate)
+
+1. **Build and push Docker image to ECR**:
+
+```bash
+# 1. Authenticate Docker to ECR
+aws ecr get-login-password --region us-east-1 | \
+  docker login --username AWS --password-stdin \
+  <account-id>.dkr.ecr.us-east-1.amazonaws.com
+
+# 2. Create ECR repository
+aws ecr create-repository --repository-name naly-app
+
+# 3. Build and tag image
+docker build -t naly-app .
+docker tag naly-app:latest \
+  <account-id>.dkr.ecr.us-east-1.amazonaws.com/naly-app:latest
+
+# 4. Push image
+docker push <account-id>.dkr.ecr.us-east-1.amazonaws.com/naly-app:latest
+```
+
+2. **Create ECS task definition** (`task-definition.json`):
+
+```json
+{
+  "family": "naly-app",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "containerDefinitions": [
+    {
+      "name": "naly-app",
+      "image": "<account-id>.dkr.ecr.us-east-1.amazonaws.com/naly-app:latest",
+      "portMappings": [
+        {
+          "containerPort": 3000,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {
+          "name": "NODE_ENV",
+          "value": "production"
+        }
+      ],
+      "secrets": [
+        {
+          "name": "OPENAI_API_KEY",
+          "valueFrom": "arn:aws:secretsmanager:region:account-id:secret:naly/openai-key"
+        }
+      ]
+    }
+  ]
+}
+```
+
+3. **Deploy to ECS**:
+
+```bash
+# Register task definition
+aws ecs register-task-definition --cli-input-json file://task-definition.json
+
+# Create or update service
+aws ecs create-service \
+  --cluster naly-cluster \
+  --service-name naly-service \
+  --task-definition naly-app \
+  --desired-count 2 \
+  --launch-type FARGATE \
+  --network-configuration "awsvpcConfiguration={subnets=[subnet-12345],securityGroups=[sg-12345],assignPublicIp=ENABLED}"
+```
+
+### Option 4: Google Cloud Platform
+
+#### Deploy to Cloud Run
+
+```bash
+# 1. Install gcloud CLI
+# Follow instructions at https://cloud.google.com/sdk/docs/install
+
+# 2. Authenticate
+gcloud auth login
+
+# 3. Set project
+gcloud config set project YOUR_PROJECT_ID
+
+# 4. Build and deploy
+gcloud run deploy naly-app \
+  --source . \
+  --platform managed \
+  --region us-central1 \
+  --allow-unauthenticated \
+  --set-env-vars OPENAI_API_KEY=your_api_key
+
+# 5. Get service URL
+gcloud run services describe naly-app \
+  --platform managed \
+  --region us-central1 \
+  --format 'value(status.url)'
+```
+
+#### Deploy to App Engine
+
+Create `app.yaml`:
+
+```yaml
+runtime: nodejs18
+
+env_variables:
+  NODE_ENV: 'production'
+
+env_variables_secure:
+  OPENAI_API_KEY: 'your_api_key'
+
+automatic_scaling:
+  min_instances: 1
+  max_instances: 10
+  target_cpu_utilization: 0.65
+```
+
+Deploy:
+
+```bash
+gcloud app deploy
+```
+
+### Option 5: Self-Hosted (VPS/Dedicated Server)
+
+Deploy to your own server using PM2.
+
+#### Setup Server
+
+```bash
+# 1. SSH into server
+ssh user@your-server.com
+
+# 2. Install Node.js
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+sudo apt-get install -y nodejs
+
+# 3. Install pnpm
+npm install -g pnpm
+
+# 4. Install PM2
+npm install -g pm2
+
+# 5. Clone repository
+git clone https://github.com/realbits-lab/Naly.git
+cd Naly
+
+# 6. Install dependencies
+pnpm install
+
+# 7. Create .env file
+cp .env.example .env
+nano .env  # Add your API keys
+
+# 8. Build application
+pnpm build
+```
+
+#### Configure PM2
+
+Create `ecosystem.config.js`:
+
+```javascript
+module.exports = {
+  apps: [
+    {
+      name: 'naly-app',
+      script: 'node_modules/next/dist/bin/next',
+      args: 'start',
+      cwd: '/path/to/Naly',
+      instances: 'max',
+      exec_mode: 'cluster',
+      env: {
+        NODE_ENV: 'production',
+        PORT: 3000,
+      },
+      error_file: './logs/pm2-error.log',
+      out_file: './logs/pm2-out.log',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
+    },
+  ],
+};
+```
+
+#### Start with PM2
+
+```bash
+# Start application
+pm2 start ecosystem.config.js
+
+# Save PM2 configuration
+pm2 save
+
+# Setup PM2 to start on boot
+pm2 startup
+
+# Monitor application
+pm2 monit
+
+# View logs
+pm2 logs naly-app
+```
+
+#### Configure Nginx Reverse Proxy
+
+```nginx
+server {
+    listen 80;
+    server_name yourdomain.com;
+
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+Enable site and reload Nginx:
+
+```bash
+sudo ln -s /etc/nginx/sites-available/naly /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+#### SSL with Let's Encrypt
+
+```bash
+# Install Certbot
+sudo apt-get install certbot python3-certbot-nginx
+
+# Obtain certificate
+sudo certbot --nginx -d yourdomain.com
+
+# Auto-renewal is configured automatically
+# Test renewal
+sudo certbot renew --dry-run
+```
+
+## Environment Configuration
+
+### Production Environment Variables
+
+```bash
+# Required
+OPENAI_API_KEY=sk-...
+
+# Optional - Application
+NODE_ENV=production
+PORT=3000
+HOSTNAME=0.0.0.0
+
+# Optional - AI Gateway (if using Vercel AI Gateway)
+AI_GATEWAY_API_KEY=...
+
+# Optional - Monitoring
+SENTRY_DSN=...
+LOGTAIL_SOURCE_TOKEN=...
+
+# Optional - Analytics
+NEXT_PUBLIC_GA_ID=...
+NEXT_PUBLIC_POSTHOG_KEY=...
+
+# Optional - Database (for future features)
+DATABASE_URL=postgresql://...
+REDIS_URL=redis://...
+```
+
+### Managing Secrets
+
+#### Using Environment Variables
+
+```bash
+# .env.production
+OPENAI_API_KEY=sk-...
+```
+
+#### Using Secret Managers
+
+**AWS Secrets Manager**:
+```bash
+aws secretsmanager create-secret \
+  --name naly/openai-key \
+  --secret-string "sk-..."
+```
+
+**Google Secret Manager**:
+```bash
+echo -n "sk-..." | \
+  gcloud secrets create openai-key --data-file=-
+```
+
+**HashiCorp Vault**:
+```bash
+vault kv put secret/naly openai_key=sk-...
+```
+
+## Performance Optimization
+
+### 1. Enable Next.js Caching
+
+Update `next.config.ts`:
+
+```typescript
+const nextConfig = {
+  experimental: {
+    staleTimes: {
+      dynamic: 30,
+      static: 180,
+    },
+  },
+  output: 'standalone', // For Docker
+};
+
+export default nextConfig;
+```
+
+### 2. Configure CDN
+
+Use CDN for static assets:
+
+```typescript
+const nextConfig = {
+  assetPrefix: process.env.CDN_URL || '',
+  images: {
+    loader: 'cloudinary', // or 'imgix', 'cloudflare'
+    path: process.env.CDN_URL,
+  },
+};
+```
+
+### 3. Enable Compression
+
+For self-hosted deployments, enable compression in Nginx:
+
+```nginx
+gzip on;
+gzip_vary on;
+gzip_min_length 1024;
+gzip_types text/plain text/css text/xml text/javascript application/javascript application/json;
+```
+
+## Monitoring and Logging
+
+### 1. Application Monitoring
+
+**Sentry Integration**:
+
+```bash
+pnpm add @sentry/nextjs
+```
+
+```typescript
+// sentry.client.config.ts
+import * as Sentry from '@sentry/nextjs';
+
+Sentry.init({
+  dsn: process.env.SENTRY_DSN,
+  environment: process.env.NODE_ENV,
+  tracesSampleRate: 1.0,
+});
+```
+
+### 2. Logging
+
+**Winston Logger**:
+
+```typescript
+import winston from 'winston';
+
+const logger = winston.createLogger({
+  level: 'info',
+  format: winston.format.json(),
+  transports: [
+    new winston.transports.File({ filename: 'error.log', level: 'error' }),
+    new winston.transports.File({ filename: 'combined.log' }),
+  ],
+});
+
+if (process.env.NODE_ENV !== 'production') {
+  logger.add(new winston.transports.Console({
+    format: winston.format.simple(),
+  }));
+}
+```
+
+### 3. Health Checks
+
+Create `app/api/health/route.ts`:
+
+```typescript
+export async function GET() {
+  const health = {
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV,
+  };
+
+  return Response.json(health);
+}
+```
+
+## Scaling Strategies
+
+### Horizontal Scaling
+
+1. **Load Balancer**: Distribute requests across multiple instances
+2. **Auto-scaling**: Scale based on CPU/memory/request metrics
+3. **Session Management**: Use stateless sessions or Redis
+
+### Vertical Scaling
+
+1. **Increase Resources**: More CPU/memory per instance
+2. **Optimize Code**: Profile and optimize bottlenecks
+3. **Cache Aggressively**: Reduce redundant computations
+
+### Recommended Architecture for Scale
+
+```
+           ┌─────────────┐
+           │Load Balancer│
+           └──────┬──────┘
+                  │
+        ┌─────────┼─────────┐
+        │         │         │
+    ┌───▼──┐  ┌──▼───┐  ┌──▼───┐
+    │App 1 │  │App 2 │  │App N │
+    └───┬──┘  └──┬───┘  └──┬───┘
+        │         │         │
+        └─────────┼─────────┘
+                  │
+           ┌──────▼──────┐
+           │Redis Cache  │
+           └─────────────┘
+```
+
+## Backup and Disaster Recovery
+
+### 1. Database Backups
+
+```bash
+# Automated daily backups
+0 2 * * * pg_dump naly_db | gzip > /backups/naly_$(date +\%Y\%m\%d).sql.gz
+```
+
+### 2. Code Backups
+
+- Keep code in version control (Git)
+- Tag releases: `git tag v1.0.0`
+- Store in multiple locations
+
+### 3. Configuration Backups
+
+- Back up environment variables
+- Store in secure location (1Password, Vault)
+
+## Troubleshooting
+
+### Common Issues
+
+#### 1. Build Failures
+
+```bash
+# Clear cache and rebuild
+rm -rf .next node_modules
+pnpm install
+pnpm build
+```
+
+#### 2. Port Already in Use
+
+```bash
+# Find and kill process on port 3000
+lsof -i :3000 -sTCP:LISTEN | grep -E "^node" | awk '{print $2}' | xargs kill -9
+```
+
+#### 3. Out of Memory
+
+```bash
+# Increase Node.js memory limit
+NODE_OPTIONS="--max-old-space-size=4096" pnpm build
+```
+
+#### 4. API Rate Limits
+
+- Implement request queuing
+- Add delays between requests
+- Cache responses where possible
+
+## Security Checklist
+
+- [ ] Environment variables not committed to Git
+- [ ] HTTPS enabled (SSL certificate)
+- [ ] CORS properly configured
+- [ ] Rate limiting implemented
+- [ ] Input validation on all endpoints
+- [ ] Authentication for production use
+- [ ] Regular security updates
+- [ ] Secrets stored in secret manager
+- [ ] Monitoring and alerting configured
+- [ ] Backup strategy in place
+
+## Post-Deployment
+
+### 1. Verify Deployment
+
+```bash
+# Check health endpoint
+curl https://yourdomain.com/api/health
+
+# Test generation
+curl -X POST https://yourdomain.com/api/generate \
+  -H "Content-Type: application/json" \
+  -d '{"topic": "stock", "region": "US"}'
+```
+
+### 2. Monitor Performance
+
+- Check response times
+- Monitor error rates
+- Track resource usage
+
+### 3. Set Up Alerts
+
+Configure alerts for:
+- High error rates
+- Slow response times
+- High resource usage
+- API quota limits
+
+## Additional Resources
+
+- [Next.js Deployment Documentation](https://nextjs.org/docs/deployment)
+- [Vercel Deployment Guide](https://vercel.com/docs)
+- [Docker Best Practices](https://docs.docker.com/develop/dev-best-practices/)
+- [PM2 Documentation](https://pm2.keymetrics.io/docs/usage/quick-start/)
+- [Architecture Documentation](./architecture.mdx)
+- [API Documentation](./api-documentation.mdx)
