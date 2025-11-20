@@ -1,2 +1,0 @@
-# Naly
-Wallpaper Platform
