@@ -7,17 +7,24 @@ import { ReporterInput } from '@/lib/agents/types';
 export default function Home() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
   const [topic, setTopic] = useState<ReporterInput['topic']>('stock');
   const [region, setRegion] = useState<ReporterInput['region']>('US');
 
   const handleGenerate = async () => {
     setLoading(true);
+    setError(null);
+    setResult(null);
     try {
-      const data = await generateContent({ topic, region });
-      setResult(data);
+      const response = await generateContent({ topic, region });
+      if (response.success && response.data) {
+        setResult(response.data);
+      } else {
+        setError(response.error || 'Failed to generate content');
+      }
     } catch (error) {
       console.error(error);
-      alert('Failed to generate content');
+      setError('An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -67,6 +74,20 @@ export default function Home() {
             {loading ? 'Generating Content...' : 'Start Workflow'}
           </button>
         </div>
+
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0 w-6 h-6 bg-red-100 rounded-full flex items-center justify-center">
+                <span className="text-red-600 font-bold text-sm">!</span>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-red-800 font-medium mb-1">Error</h3>
+                <p className="text-red-700 text-sm">{error}</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {result && (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
