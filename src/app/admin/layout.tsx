@@ -1,12 +1,23 @@
+'use client';
+
 import Link from 'next/link';
 import { LayoutDashboard, Settings, History, LogOut } from 'lucide-react';
-import { signOut } from '@/auth';
+import { signOut } from '@/lib/auth-client';
+import { useRouter } from 'next/navigation';
 
 export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const router = useRouter();
+
+  const handleSignOut = async () => {
+    await signOut();
+    router.push('/admin/login');
+    router.refresh();
+  };
+
   return (
     <div className="flex h-screen bg-gray-100">
       {/* Sidebar */}
@@ -40,17 +51,13 @@ export default function AdminLayout({
           </div>
         </nav>
         <div className="absolute bottom-0 w-64 border-t p-4">
-          <form
-            action={async () => {
-              'use server';
-              await signOut();
-            }}
+          <button
+            onClick={handleSignOut}
+            className="flex w-full items-center gap-3 rounded-lg px-4 py-2 text-red-600 hover:bg-red-50"
           >
-            <button className="flex w-full items-center gap-3 rounded-lg px-4 py-2 text-red-600 hover:bg-red-50">
-              <LogOut size={20} />
-              Sign Out
-            </button>
-          </form>
+            <LogOut size={20} />
+            Sign Out
+          </button>
         </div>
       </aside>
 

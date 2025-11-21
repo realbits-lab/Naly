@@ -33,6 +33,9 @@ export interface ContentCard {
   predictedEngagement: number;
   trends: string[];
   sources: string[];
+  likeCount?: number;
+  replyCount?: number;
+  userLiked?: boolean;
 }
 
 // 4. Feed state
