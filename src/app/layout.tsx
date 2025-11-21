@@ -15,6 +15,17 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: 'Naly - AI-Curated News Feed',
   description: 'AI-powered predictive content service with intelligent news curation',
+  manifest: '/manifest.json',
+  themeColor: '#000000',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Naly',
+  },
+  icons: {
+    icon: '/icons/icon-192x192.svg',
+    apple: '/icons/icon-192x192.svg',
+  },
 };
 
 export const viewport: Viewport = {
