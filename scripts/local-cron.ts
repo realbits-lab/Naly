@@ -51,6 +51,15 @@ async function runReporter(): Promise<void> {
 async function runCronJob(): Promise<void> {
   // Run reporter (no database reset)
   await runReporter();
+
+  // Check predictions
+  console.log('[CRON] Checking predictions...');
+  try {
+    const { checkAllDuePredictions } = await import('../src/lib/prediction-checker');
+    await checkAllDuePredictions();
+  } catch (error) {
+    console.error('[CRON] Error checking predictions:', error);
+  }
 }
 
 async function main(): Promise<void> {

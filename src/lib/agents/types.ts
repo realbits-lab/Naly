@@ -69,3 +69,28 @@ export interface MarketerOutput {
   };
   strategy: string;
 }
+
+// Prediction Verification Types
+export type PredictionVerificationStatus = 'pending' | 'checking' | 'verified' | 'failed';
+
+export interface ActualMetrics {
+  retention: number;
+  views: number;
+  clicks: number;
+}
+
+export interface PredictionAccuracy {
+  retentionAccuracy: number; // Percentage accuracy
+  viewsAccuracy: number;
+  clicksAccuracy: number;
+  overallAccuracy: number;
+}
+
+export interface PredictionResults {
+  status: PredictionVerificationStatus;
+  checkedAt?: Date;
+  actualMetrics?: ActualMetrics;
+  accuracy?: PredictionAccuracy;
+  error?: string;
+  source?: string; // Where the actual data came from (e.g., 'web_search', 'api', 'manual')
+}

@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Activity, Calendar, Clock, FileText, TrendingUp, AlertCircle, CheckCircle2, XCircle } from 'lucide-react';
+import { Activity, Calendar, Clock, FileText, TrendingUp, AlertCircle, CheckCircle2, XCircle, Target } from 'lucide-react';
 import { AgentRole } from '@/lib/agents/types';
 
 interface RunCardProps {
@@ -12,6 +12,7 @@ interface RunCardProps {
     output: any;
     editorReview: any;
     marketerOutput: any;
+    predictionResults?: any;
   };
 }
 
@@ -73,9 +74,17 @@ export function RunCard({ run }: RunCardProps) {
 
         {/* Body */}
         <div className="space-y-3">
-          <h4 className="text-sm font-medium text-gray-800 line-clamp-2 h-10">
-            {title}
-          </h4>
+          <div className="flex items-start gap-2">
+            <h4 className="text-sm font-medium text-gray-800 line-clamp-2 h-10 flex-1">
+              {title}
+            </h4>
+            {run.predictionResults?.status === 'verified' && (
+              <div className="flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs font-medium shrink-0">
+                <Target size={10} />
+                Verified
+              </div>
+            )}
+          </div>
 
           {/* Metrics Grid */}
           <div className="grid grid-cols-2 gap-2 pt-2">

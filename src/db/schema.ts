@@ -27,4 +27,6 @@ export const agentRuns = pgTable('agent_runs', {
   editorReview: jsonb('editor_review'),
   designerOutput: jsonb('designer_output'),
   marketerOutput: jsonb('marketer_output'),
+  predictionCheckTime: timestamp('prediction_check_time'), // When to verify predictions
+  predictionResults: jsonb('prediction_results'), // Actual metrics and accuracy
 });

@@ -87,16 +87,23 @@ export async function triggerAgent(type: 'REPORTER' | 'MARKETER', params: any) {
         ))
         .orderBy(desc(agentRuns.startTime))
         .limit(1);
-        
+
       if (lastReportRun.length > 0 && lastReportRun[0].editorReview && lastReportRun[0].designerOutput) {
          const review = lastReportRun[0].editorReview as EditorOutput;
          const assets = lastReportRun[0].designerOutput as any; // Cast to DesignerOutput
-         
+
          output = await runMarketer({
              content: review,
              assets: assets
          });
          marketerOutput = output;
+
+         // Update the reporter run with marketer output and prediction check time
+         const predictionCheckTimeForReport = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours from now
+         await db.update(agentRuns).set({
+           marketerOutput: marketerOutput,
+           predictionCheckTime: predictionCheckTimeForReport,
+         }).where(eq(agentRuns.id, lastReportRun[0].id));
       } else {
           throw new Error('No recent complete report (with Editor & Designer output) found to market');
       }
@@ -109,7 +116,7 @@ export async function triggerAgent(type: 'REPORTER' | 'MARKETER', params: any) {
       output: type === 'REPORTER' ? output : null, // Marketer output is stored in marketerOutput column
       editorReview: editorReview,
       designerOutput: designerOutput,
-      marketerOutput: marketerOutput,
+      marketerOutput: type === 'MARKETER' ? marketerOutput : null, // MARKETER run stores its own output
     }).where(eq(agentRuns.id, run.id));
 
   } catch (error: any) {
