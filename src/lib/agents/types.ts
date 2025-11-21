@@ -32,7 +32,9 @@ export interface EditorOutput {
   title: string;
   content: string;
   changes: string[];
-  status: 'approved' | 'revised';
+  score: number;
+  feedback: string;
+  status: 'approved' | 'revised' | 'rejected';
 }
 
 // Designer Types
