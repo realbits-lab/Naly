@@ -787,6 +787,6 @@ The agent system in Naly is designed to be modular, extensible, and maintainable
 - Test thoroughly
 
 For more information, see:
-- [Architecture Documentation](./architecture.mdx)
-- [API Documentation](./api-documentation.mdx)
-- [Deployment Guide](./deployment.mdx)
+- [Architecture Documentation](./architecture.md)
+- [API Documentation](./api-documentation.md)
+- [Deployment Guide](./deployment.md)

@@ -4,7 +4,7 @@ Welcome to the Naly documentation! This directory contains comprehensive guides 
 
 ## 📚 Documentation Index
 
-### 1. [Architecture Documentation](./architecture.mdx)
+### 1. [Architecture Documentation](./architecture.md)
 **Start here to understand the system design**
 
 - System architecture overview
@@ -17,7 +17,7 @@ Welcome to the Naly documentation! This directory contains comprehensive guides 
 
 **Best for**: Architects, senior developers, technical leads
 
-### 2. [Agent Implementation Guide](./agent-implementation-guide.mdx)
+### 2. [Agent Implementation Guide](./agent-implementation-guide.md)
 **Deep dive into building and customizing AI agents**
 
 - Agent architecture patterns
@@ -34,7 +34,7 @@ Welcome to the Naly documentation! This directory contains comprehensive guides 
 
 **Best for**: Developers implementing or extending agents
 
-### 3. [API Documentation](./api-documentation.mdx)
+### 3. [API Documentation](./api-documentation.md)
 **Complete API reference**
 
 - Server Actions API
@@ -49,7 +49,7 @@ Welcome to the Naly documentation! This directory contains comprehensive guides 
 
 **Best for**: Frontend developers, API consumers, integrators
 
-### 4. [Deployment Guide](./deployment.mdx)
+### 4. [Deployment Guide](./deployment.md)
 **Production deployment instructions**
 
 - Platform-specific deployment guides:
@@ -71,15 +71,15 @@ Welcome to the Naly documentation! This directory contains comprehensive guides 
 
 ### For New Developers
 
-1. **Understand the System**: Read [Architecture Documentation](./architecture.mdx)
+1. **Understand the System**: Read [Architecture Documentation](./architecture.md)
 2. **Set Up Locally**: Follow the installation guide in the main [README](../README.md)
-3. **Explore Agents**: Review [Agent Implementation Guide](./agent-implementation-guide.mdx)
-4. **Try the API**: Check [API Documentation](./api-documentation.mdx)
+3. **Explore Agents**: Review [Agent Implementation Guide](./agent-implementation-guide.md)
+4. **Try the API**: Check [API Documentation](./api-documentation.md)
 
 ### For Production Deployment
 
-1. **Review Architecture**: Understand scaling needs from [Architecture Documentation](./architecture.mdx)
-2. **Choose Platform**: Select deployment platform from [Deployment Guide](./deployment.mdx)
+1. **Review Architecture**: Understand scaling needs from [Architecture Documentation](./architecture.md)
+2. **Choose Platform**: Select deployment platform from [Deployment Guide](./deployment.md)
 3. **Configure Environment**: Set up environment variables
 4. **Deploy**: Follow platform-specific instructions
 5. **Monitor**: Set up monitoring and alerts
@@ -87,55 +87,55 @@ Welcome to the Naly documentation! This directory contains comprehensive guides 
 ### For Contributors
 
 1. **Read Contribution Guidelines**: See [CONTRIBUTING.md](../CONTRIBUTING.md) (if available)
-2. **Understand Agents**: Study [Agent Implementation Guide](./agent-implementation-guide.mdx)
+2. **Understand Agents**: Study [Agent Implementation Guide](./agent-implementation-guide.md)
 3. **Follow Best Practices**: Implement features following established patterns
 4. **Test Thoroughly**: Use test script in `test-scripts/test-workflow.ts`
 
 ## 🎯 Use Cases by Role
 
 ### Software Architect
-- [Architecture Documentation](./architecture.mdx) - System design
-- [Deployment Guide](./deployment.mdx) - Scaling strategies
+- [Architecture Documentation](./architecture.md) - System design
+- [Deployment Guide](./deployment.md) - Scaling strategies
 
 ### Backend Developer
-- [Agent Implementation Guide](./agent-implementation-guide.mdx) - Agent development
-- [API Documentation](./api-documentation.mdx) - Server actions
+- [Agent Implementation Guide](./agent-implementation-guide.md) - Agent development
+- [API Documentation](./api-documentation.md) - Server actions
 
 ### Frontend Developer
-- [API Documentation](./api-documentation.mdx) - Client integration
-- [Architecture Documentation](./architecture.mdx) - Data flow understanding
+- [API Documentation](./api-documentation.md) - Client integration
+- [Architecture Documentation](./architecture.md) - Data flow understanding
 
 ### DevOps Engineer
-- [Deployment Guide](./deployment.mdx) - Infrastructure setup
-- [Architecture Documentation](./architecture.mdx) - Performance optimization
+- [Deployment Guide](./deployment.md) - Infrastructure setup
+- [Architecture Documentation](./architecture.md) - Performance optimization
 
 ### Product Manager
-- [Architecture Documentation](./architecture.mdx) - Feature capabilities
-- [API Documentation](./api-documentation.mdx) - Integration possibilities
+- [Architecture Documentation](./architecture.md) - Feature capabilities
+- [API Documentation](./api-documentation.md) - Integration possibilities
 
 ## 🔍 Finding Information
 
 ### By Topic
 
 **Understanding the System**:
-- How it works → [Architecture](./architecture.mdx) → "System Architecture"
+- How it works → [Architecture](./architecture.md) → "System Architecture"
 - What it does → Main [README](../README.md) → "Overview"
-- Why these choices → [Architecture](./architecture.mdx) → "Technology Stack"
+- Why these choices → [Architecture](./architecture.md) → "Technology Stack"
 
 **Building Features**:
-- Adding new agents → [Agent Guide](./agent-implementation-guide.mdx) → "Creating a New Agent"
-- Customizing agents → [Agent Guide](./agent-implementation-guide.mdx) → "Customization Options"
-- API integration → [API Docs](./api-documentation.mdx) → "Server Actions"
+- Adding new agents → [Agent Guide](./agent-implementation-guide.md) → "Creating a New Agent"
+- Customizing agents → [Agent Guide](./agent-implementation-guide.md) → "Customization Options"
+- API integration → [API Docs](./api-documentation.md) → "Server Actions"
 
 **Deploying**:
-- Vercel deployment → [Deployment](./deployment.mdx) → "Option 1: Vercel"
-- Docker deployment → [Deployment](./deployment.mdx) → "Option 2: Docker"
-- Self-hosted → [Deployment](./deployment.mdx) → "Option 5: Self-Hosted"
+- Vercel deployment → [Deployment](./deployment.md) → "Option 1: Vercel"
+- Docker deployment → [Deployment](./deployment.md) → "Option 2: Docker"
+- Self-hosted → [Deployment](./deployment.md) → "Option 5: Self-Hosted"
 
 **Troubleshooting**:
-- Common errors → [Deployment](./deployment.mdx) → "Troubleshooting"
-- API issues → [API Docs](./api-documentation.mdx) → "Error Codes"
-- Performance → [Architecture](./architecture.mdx) → "Performance Metrics"
+- Common errors → [Deployment](./deployment.md) → "Troubleshooting"
+- API issues → [API Docs](./api-documentation.md) → "Error Codes"
+- Performance → [Architecture](./architecture.md) → "Performance Metrics"
 
 ## 📖 Document Structure
 
@@ -241,18 +241,18 @@ Recommendations
 
 ### Beginner Path
 1. Read main [README](../README.md)
-2. Skim [Architecture](./architecture.mdx) overview
+2. Skim [Architecture](./architecture.md) overview
 3. Try local installation
-4. Explore [API Documentation](./api-documentation.mdx)
+4. Explore [API Documentation](./api-documentation.md)
 
 ### Intermediate Path
-1. Study [Agent Implementation Guide](./agent-implementation-guide.mdx)
+1. Study [Agent Implementation Guide](./agent-implementation-guide.md)
 2. Review code in `src/lib/agents/`
 3. Modify existing agents
 4. Run test workflow
 
 ### Advanced Path
-1. Deep dive into [Architecture](./architecture.mdx)
+1. Deep dive into [Architecture](./architecture.md)
 2. Implement new agents
 3. Optimize performance
 4. Deploy to production
@@ -262,30 +262,30 @@ Recommendations
 ### General Questions
 
 **Q: Where do I start?**
-A: Read the main [README](../README.md), then [Architecture Documentation](./architecture.mdx)
+A: Read the main [README](../README.md), then [Architecture Documentation](./architecture.md)
 
 **Q: How do I add a new feature?**
-A: See [Agent Implementation Guide](./agent-implementation-guide.mdx) → "Creating a New Agent"
+A: See [Agent Implementation Guide](./agent-implementation-guide.md) → "Creating a New Agent"
 
 **Q: How do I deploy to production?**
-A: Follow [Deployment Guide](./deployment.mdx) for your chosen platform
+A: Follow [Deployment Guide](./deployment.md) for your chosen platform
 
 **Q: Where are the API docs?**
-A: See [API Documentation](./api-documentation.mdx)
+A: See [API Documentation](./api-documentation.md)
 
 ### Technical Questions
 
 **Q: What AI model is used?**
-A: OpenAI GPT-4o. See [Architecture](./architecture.mdx) → "AI Model Configuration"
+A: OpenAI GPT-4o. See [Architecture](./architecture.md) → "AI Model Configuration"
 
 **Q: Can I use a different model?**
-A: Yes. See [Agent Guide](./agent-implementation-guide.mdx) → "Customization Options"
+A: Yes. See [Agent Guide](./agent-implementation-guide.md) → "Customization Options"
 
 **Q: How do I handle errors?**
-A: See [API Documentation](./api-documentation.mdx) → "Error Handling"
+A: See [API Documentation](./api-documentation.md) → "Error Handling"
 
 **Q: What's the performance?**
-A: See [Architecture](./architecture.mdx) → "Performance Metrics"
+A: See [Architecture](./architecture.md) → "Performance Metrics"
 
 ## 🆘 Getting Help
 

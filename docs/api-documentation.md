@@ -787,7 +787,7 @@ const result = await client.generateContent({ topic: 'stock', region: 'US' });
 
 ## Additional Resources
 
-- [Architecture Documentation](./architecture.mdx)
-- [Agent Implementation Guide](./agent-implementation-guide.mdx)
-- [Deployment Guide](./deployment.mdx)
+- [Architecture Documentation](./architecture.md)
+- [Agent Implementation Guide](./agent-implementation-guide.md)
+- [Deployment Guide](./deployment.md)
 - [Examples Repository](https://github.com/realbits-lab/naly-examples)

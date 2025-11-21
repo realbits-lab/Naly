@@ -81,7 +81,7 @@ The issue specifically requested:
 
 Comprehensive documentation has been created in the `docs/` directory:
 
-1. **Architecture Documentation** (`docs/architecture.mdx`)
+1. **Architecture Documentation** (`docs/architecture.md`)
    - System design and component architecture
    - Data flow diagrams
    - Technology stack explanation
@@ -90,7 +90,7 @@ Comprehensive documentation has been created in the `docs/` directory:
    - Security considerations
    - Future enhancements
 
-2. **Agent Implementation Guide** (`docs/agent-implementation-guide.mdx`)
+2. **Agent Implementation Guide** (`docs/agent-implementation-guide.md`)
    - Detailed agent implementation patterns
    - Customization options for each agent
    - Creating new agents
@@ -98,7 +98,7 @@ Comprehensive documentation has been created in the `docs/` directory:
    - Advanced patterns
    - Testing strategies
 
-3. **API Documentation** (`docs/api-documentation.mdx`)
+3. **API Documentation** (`docs/api-documentation.md`)
    - Complete API reference
    - Request/response formats
    - Error handling
@@ -107,7 +107,7 @@ Comprehensive documentation has been created in the `docs/` directory:
    - Rate limiting
    - Future authentication plans
 
-4. **Deployment Guide** (`docs/deployment.mdx`)
+4. **Deployment Guide** (`docs/deployment.md`)
    - Multi-platform deployment instructions
    - Environment configuration
    - Performance optimization
@@ -116,7 +116,7 @@ Comprehensive documentation has been created in the `docs/` directory:
    - Security checklist
    - Troubleshooting guide
 
-5. **Documentation Index** (`docs/README.mdx`)
+5. **Documentation Index** (`docs/README.md`)
    - Comprehensive guide to all documentation
    - Quick start paths
    - Role-based navigation
@@ -160,12 +160,12 @@ src/
 │       ├── designer.ts  # Designer agent
 │       └── marketer.ts  # Marketer agent
 docs/
-├── README.mdx                          # Documentation index
-├── architecture.mdx                    # System architecture
-├── agent-implementation-guide.mdx      # Agent development guide
-├── api-documentation.mdx               # API reference
-├── deployment.mdx                      # Deployment instructions
-└── issue-39-implementation-summary.mdx # This file
+├── README.md                          # Documentation index
+├── architecture.md                    # System architecture
+├── agent-implementation-guide.md      # Agent development guide
+├── api-documentation.md               # API reference
+├── deployment.md                      # Deployment instructions
+└── issue-39-implementation-summary.md # This file
 test-scripts/
 └── test-workflow.ts     # Automated workflow test
 ```
@@ -228,7 +228,7 @@ The application can be deployed to multiple platforms:
 ✅ **Google Cloud Platform**
 ✅ **Self-hosted** (VPS with PM2)
 
-See `docs/deployment.mdx` for detailed instructions.
+See `docs/deployment.md` for detailed instructions.
 
 ## Performance Characteristics
 
@@ -282,7 +282,7 @@ The documentation includes roadmap for:
 9. **Webhook Integration**: External system notifications
 10. **Rate Limiting**: Production-grade throttling
 
-See `docs/architecture.mdx` for detailed future enhancement plans.
+See `docs/architecture.md` for detailed future enhancement plans.
 
 ## Security Considerations
 
@@ -299,7 +299,7 @@ See `docs/architecture.mdx` for detailed future enhancement plans.
 - API key rotation
 - Audit logging
 
-See `docs/deployment.mdx` → "Security Checklist"
+See `docs/deployment.md` → "Security Checklist"
 
 ## Compliance with Best Practices
 
@@ -388,11 +388,11 @@ For users and developers:
 
 1. **Try It**: Follow README for local setup
 2. **Test It**: Run `test-scripts/test-workflow.ts`
-3. **Deploy It**: Follow `docs/deployment.mdx`
-4. **Extend It**: Use `docs/agent-implementation-guide.mdx`
+3. **Deploy It**: Follow `docs/deployment.md`
+4. **Extend It**: Use `docs/agent-implementation-guide.md`
 
 For production deployment:
-1. Review `docs/deployment.mdx`
+1. Review `docs/deployment.md`
 2. Configure environment variables
 3. Set up monitoring and logging
 4. Implement rate limiting
@@ -401,11 +401,11 @@ For production deployment:
 ## References
 
 - **Main README**: `/README.md`
-- **Architecture**: `/docs/architecture.mdx`
-- **Agent Guide**: `/docs/agent-implementation-guide.mdx`
-- **API Docs**: `/docs/api-documentation.mdx`
-- **Deployment**: `/docs/deployment.mdx`
-- **Doc Index**: `/docs/README.mdx`
+- **Architecture**: `/docs/architecture.md`
+- **Agent Guide**: `/docs/agent-implementation-guide.md`
+- **API Docs**: `/docs/api-documentation.md`
+- **Deployment**: `/docs/deployment.md`
+- **Doc Index**: `/docs/README.md`
 - **GitHub Issue**: https://github.com/realbits-lab/Naly/issues/39
 
 ---

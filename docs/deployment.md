@@ -811,5 +811,5 @@ Configure alerts for:
 - [Vercel Deployment Guide](https://vercel.com/docs)
 - [Docker Best Practices](https://docs.docker.com/develop/dev-best-practices/)
 - [PM2 Documentation](https://pm2.keymetrics.io/docs/usage/quick-start/)
-- [Architecture Documentation](./architecture.mdx)
-- [API Documentation](./api-documentation.mdx)
+- [Architecture Documentation](./architecture.md)
+- [API Documentation](./api-documentation.md)
