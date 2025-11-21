@@ -253,49 +253,113 @@ export default function ArticleDetailPage(): React.ReactElement {
   );
 }
 
-// Helper function to convert URLs in text to reference numbers like [1], [2]
-function renderContentWithReferences(content: string, sources: string[]): React.ReactNode[] {
-  const urlRegex = /(https?:\/\/[^\s)]+)/g;
-  const parts = content.split(urlRegex);
+// Helper function to convert markdown formatting to React elements
+function parseMarkdownText(text: string, keyPrefix: string): React.ReactNode[] {
+  const result: React.ReactNode[] = [];
+  // Match **bold**, *italic*, or ***bold italic***
+  const markdownRegex = /(\*\*\*(.+?)\*\*\*|\*\*(.+?)\*\*|\*(.+?)\*)/g;
 
-  return parts.map((part, index) => {
-    // Check if this part is a URL
-    if (part.match(/^https?:\/\//)) {
-      // Find the index of this URL in sources array
-      const sourceIndex = findMatchingSourceIndex(part, sources);
+  let lastIndex = 0;
+  let match;
+  let keyIndex = 0;
+
+  while ((match = markdownRegex.exec(text)) !== null) {
+    // Add text before match
+    if (match.index > lastIndex) {
+      result.push(text.slice(lastIndex, match.index));
+    }
+
+    if (match[2]) {
+      // ***bold italic***
+      result.push(<strong key={`${keyPrefix}-${keyIndex++}`}><em>{match[2]}</em></strong>);
+    } else if (match[3]) {
+      // **bold**
+      result.push(<strong key={`${keyPrefix}-${keyIndex++}`}>{match[3]}</strong>);
+    } else if (match[4]) {
+      // *italic*
+      result.push(<em key={`${keyPrefix}-${keyIndex++}`}>{match[4]}</em>);
+    }
+
+    lastIndex = match.index + match[0].length;
+  }
+
+  // Add remaining text
+  if (lastIndex < text.length) {
+    result.push(text.slice(lastIndex));
+  }
+
+  return result.length > 0 ? result : [text];
+}
+
+// Helper function to render content with markdown links and URL references
+function renderContentWithReferences(content: string, sources: string[]): React.ReactNode[] {
+  // First, remove existing [number] patterns that precede URLs (e.g., "[6] https://..." -> "https://...")
+  const cleanedContent = content.replace(/\[(\d+)\]\s*(https?:\/\/)/g, '$2');
+
+  // Pattern to match both markdown links [text](url) and raw URLs
+  const combinedRegex = /(\[([^\]]+)\]\((https?:\/\/[^)]+)\))|(https?:\/\/[^\s)]+)/g;
+
+  const result: React.ReactNode[] = [];
+  let lastIndex = 0;
+  let match;
+  let keyIndex = 0;
+
+  while ((match = combinedRegex.exec(cleanedContent)) !== null) {
+    // Add text before this match (with markdown formatting)
+    if (match.index > lastIndex) {
+      const textBefore = cleanedContent.slice(lastIndex, match.index);
+      result.push(...parseMarkdownText(textBefore, `md-${keyIndex++}`));
+    }
+
+    if (match[1]) {
+      // Markdown link: [text](url)
+      const linkText = match[2];
+      const url = match[3];
+      const sourceIndex = findMatchingSourceIndex(url, sources);
       const refNumber = sourceIndex >= 0 ? sourceIndex + 1 : null;
 
-      if (refNumber) {
-        return (
-          <a
-            key={index}
-            href={`#source-${refNumber}`}
-            className="text-blue-600 hover:underline font-medium"
-            onClick={(e) => {
-              e.preventDefault();
-              const sourcesSection = document.getElementById('sources-section');
-              sourcesSection?.scrollIntoView({ behavior: 'smooth' });
-            }}
-          >
-            [{refNumber}]
-          </a>
-        );
-      }
-      // If URL not in sources, still show as clickable link with short format
-      return (
+      result.push(
         <a
-          key={index}
-          href={part}
+          key={`link-${keyIndex++}`}
+          href={url}
           target="_blank"
           rel="noopener noreferrer"
           className="text-blue-600 hover:underline"
         >
-          [link]
+          {linkText}
+          {refNumber && <sup className="text-xs ml-0.5">[{refNumber}]</sup>}
+        </a>
+      );
+    } else if (match[4]) {
+      // Raw URL
+      const url = match[4];
+      const sourceIndex = findMatchingSourceIndex(url, sources);
+      const refNumber = sourceIndex >= 0 ? sourceIndex + 1 : null;
+      const targetUrl = refNumber ? sources[sourceIndex] : url;
+
+      result.push(
+        <a
+          key={`url-${keyIndex++}`}
+          href={targetUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-600 hover:underline font-medium text-sm align-super"
+        >
+          [{refNumber || 'link'}]
         </a>
       );
     }
-    return part;
-  });
+
+    lastIndex = match.index + match[0].length;
+  }
+
+  // Add remaining text after last match (with markdown formatting)
+  if (lastIndex < cleanedContent.length) {
+    const remainingText = cleanedContent.slice(lastIndex);
+    result.push(...parseMarkdownText(remainingText, `md-end-${keyIndex}`));
+  }
+
+  return result;
 }
 
 // Helper function to find matching source index with fuzzy matching

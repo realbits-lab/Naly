@@ -63,10 +63,13 @@ Focus on providing accurate, timely, and insightful analysis.`;
     },
     prompt: `Research and write a comprehensive report about the latest ${input.topic} news${input.region ? ` in ${input.region}` : ''}.
 
+IMPORTANT: When citing sources in your content, use markdown link format: [source name](url)
+For example: "According to [Reuters](https://reuters.com/article/...), the market showed..."
+
 After gathering the news, provide your response in the following JSON format:
 {
   "title": "Your compelling article title",
-  "content": "Your detailed article content (at least 500 words)",
+  "content": "Your detailed article content (at least 500 words) with markdown links for citations",
   "trends": ["trend1", "trend2", "trend3"],
   "sources": ["url1", "url2", "url3"]
 }`,
