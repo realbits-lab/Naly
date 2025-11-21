@@ -1,44 +1,55 @@
 'use server';
 
-import { runReporter } from '@/lib/agents/reporter';
-import { runEditor } from '@/lib/agents/editor';
-import { runDesigner } from '@/lib/agents/designer';
-import { runMarketer } from '@/lib/agents/marketer';
-import { ReporterInput } from '@/lib/agents/types';
+import { signIn } from '@/auth';
+import { db } from '@/db';
+import { agentConfigs } from '@/db/schema';
+import { triggerAgent } from '@/lib/scheduler';
+import { eq } from 'drizzle-orm';
+import { revalidatePath } from 'next/cache';
 
-export async function generateContent(input: ReporterInput) {
+export async function authenticate(prevState: string | undefined, formData: FormData) {
   try {
-    // Validate OpenAI API key
-    if (!process.env.OPENAI_API_KEY) {
-      throw new Error('OPENAI_API_KEY is not configured. Please add it to your .env file.');
-    }
-
-    // 1. Reporter
-    const reporterOutput = await runReporter(input);
-
-    // 2. Editor
-    const editorOutput = await runEditor({ originalContent: reporterOutput });
-
-    // 3. Designer
-    const designerOutput = await runDesigner({ content: editorOutput });
-
-    // 4. Marketer
-    const marketerOutput = await runMarketer({ content: editorOutput, assets: designerOutput });
-
-    return {
-      success: true,
-      data: {
-        reporter: reporterOutput,
-        editor: editorOutput,
-        designer: designerOutput,
-        marketer: marketerOutput,
-      },
-    };
+    await signIn('credentials', Object.fromEntries(formData));
   } catch (error) {
-    console.error('Error generating content:', error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'An unexpected error occurred',
-    };
+    if ((error as Error).message.includes('CredentialsSignin')) {
+      return 'CredentialSignin';
+    }
+    throw error;
   }
+}
+
+export async function updateAgentConfig(type: 'REPORTER' | 'MARKETER', schedule: string, status: 'ACTIVE' | 'PAUSED', params: any) {
+  // Check if exists
+  const existing = await db.select().from(agentConfigs).where(eq(agentConfigs.type, type));
+  
+  if (existing.length > 0) {
+    await db.update(agentConfigs).set({
+      schedule,
+      status,
+      params,
+      updatedAt: new Date(),
+    }).where(eq(agentConfigs.type, type));
+  } else {
+    await db.insert(agentConfigs).values({
+      type,
+      schedule,
+      status,
+      params,
+    });
+  }
+  
+  revalidatePath('/admin/agents');
+  revalidatePath('/admin/dashboard');
+}
+
+export async function runAgentManually(type: 'REPORTER' | 'MARKETER') {
+  // Get params from config
+  const config = await db.select().from(agentConfigs).where(eq(agentConfigs.type, type));
+  if (config.length === 0) {
+    throw new Error('Agent not configured');
+  }
+  
+  await triggerAgent(type, config[0].params);
+  revalidatePath('/admin/dashboard');
+  revalidatePath('/admin/history');
 }

@@ -1,196 +1,124 @@
 'use client';
 
-import { useState } from 'react';
-import { generateContent } from './actions';
-import { ReporterInput } from '@/lib/agents/types';
+import { useEffect } from 'react';
+import {
+  ContentCard,
+  SkeletonFeed,
+  AdCardPlaceholder,
+  ScrollToTopFAB,
+  CollapsibleHeader,
+} from '@/components/feed';
+import { useFeed, useInfiniteScroll, usePullToRefresh } from '@/hooks/use-feed';
+import { generateFeedItemsWithAds, FEED_LIMITS } from '@/lib/feed/types';
 
-export default function Home() {
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<any>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [topic, setTopic] = useState<ReporterInput['topic']>('stock');
-  const [region, setRegion] = useState<ReporterInput['region']>('US');
+export default function FeedPage(): React.ReactElement {
+  const { state, loadMore, refresh, loadNewer } = useFeed();
+  const { isRefreshing, pullDistance } = usePullToRefresh(refresh);
 
-  const handleGenerate = async () => {
-    setLoading(true);
-    setError(null);
-    setResult(null);
-    try {
-      const response = await generateContent({ topic, region });
-      if (response.success && response.data) {
-        setResult(response.data);
-      } else {
-        setError(response.error || 'Failed to generate content');
-      }
-    } catch (error) {
-      console.error(error);
-      setError('An unexpected error occurred. Please try again.');
-    } finally {
-      setLoading(false);
+  // 1. Initial load
+  useEffect(() => {
+    if (state.cards.length === 0 && !state.isLoading) {
+      loadMore();
     }
-  };
+  }, []);
+
+  // 2. Infinite scroll hook
+  useInfiniteScroll(loadMore, {
+    threshold: 0.8,
+    enabled: state.hasMore && !state.isLoading,
+  });
+
+  // 3. Generate feed items with ads interspersed
+  const feedItems = generateFeedItemsWithAds(state.cards);
 
   return (
-    <main className="min-h-screen p-8 bg-gray-50">
-      <div className="max-w-4xl mx-auto space-y-8">
-        <div className="text-center space-y-4">
-          <h1 className="text-4xl font-bold text-gray-900">Naly: Predictive Content Service</h1>
-          <p className="text-gray-600">AI-powered content generation workflow</p>
-        </div>
+    <div className="min-h-screen bg-gray-50">
+      {/* 4. Collapsible Header */}
+      <CollapsibleHeader title="NALY" />
 
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-6">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">Topic</label>
-              <select
-                value={topic}
-                onChange={(e) => setTopic(e.target.value as any)}
-                className="w-full p-2 border rounded-md"
-              >
-                <option value="stock">Stock</option>
-                <option value="coin">Coin</option>
-                <option value="sports">Sports</option>
-                <option value="politics">Politics</option>
-              </select>
-            </div>
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">Region</label>
-              <select
-                value={region}
-                onChange={(e) => setRegion(e.target.value as any)}
-                className="w-full p-2 border rounded-md"
-              >
-                <option value="US">US</option>
-                <option value="KR">KR</option>
-              </select>
-            </div>
+      {/* 5. Pull-to-refresh indicator */}
+      {pullDistance > 0 && (
+        <div
+          className="fixed top-14 left-0 right-0 flex justify-center z-30 transition-transform"
+          style={{ transform: `translateY(${Math.min(pullDistance, 60)}px)` }}
+        >
+          <div className={`w-8 h-8 rounded-full bg-white shadow-md flex items-center justify-center ${isRefreshing ? 'animate-spin' : ''}`}>
+            <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
           </div>
+        </div>
+      )}
 
+      {/* 6. Main content area */}
+      <main className="max-w-lg mx-auto px-4 pt-16 pb-8">
+        {/* Load newer button (when recycled items exist) */}
+        {state.hasRecycledItems && (
           <button
-            onClick={handleGenerate}
-            disabled={loading}
-            className="w-full py-3 px-4 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            onClick={loadNewer}
+            className="w-full mb-4 py-3 bg-blue-50 text-blue-600 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors"
           >
-            {loading ? 'Generating Content...' : 'Start Workflow'}
+            Load newer posts
           </button>
-        </div>
+        )}
 
-        {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="flex items-start gap-3">
-              <div className="flex-shrink-0 w-6 h-6 bg-red-100 rounded-full flex items-center justify-center">
-                <span className="text-red-600 font-bold text-sm">!</span>
+        {/* 7. Feed content */}
+        {state.cards.length === 0 && state.isLoading ? (
+          <SkeletonFeed count={5} />
+        ) : (
+          <div className="space-y-4">
+            {feedItems.map((item, index) => {
+              if (item.type === 'ad') {
+                return <AdCardPlaceholder key={`ad-${index}`} />;
+              }
+              if (item.data) {
+                return <ContentCard key={item.data.id} card={item.data} />;
+              }
+              return null;
+            })}
+
+            {/* 8. Loading more indicator */}
+            {state.isLoading && state.cards.length > 0 && (
+              <div className="py-8 flex flex-col items-center gap-2">
+                <div className="w-6 h-6 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
+                <span className="text-sm text-gray-400">Loading more...</span>
               </div>
-              <div className="flex-1">
-                <h3 className="text-red-800 font-medium mb-1">Error</h3>
-                <p className="text-red-700 text-sm">{error}</p>
+            )}
+
+            {/* 9. End of feed message */}
+            {!state.hasMore && state.cards.length >= FEED_LIMITS.MAX_FEED_ITEMS && (
+              <div className="py-8 text-center">
+                <p className="text-gray-500 font-medium">You're all caught up!</p>
+                <p className="text-sm text-gray-400 mt-1">
+                  {state.cards.length} articles loaded
+                </p>
+                <button
+                  onClick={loadMore}
+                  className="mt-4 px-6 py-2 bg-gray-100 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
+                >
+                  Load more
+                </button>
               </div>
-            </div>
+            )}
           </div>
         )}
 
-        {result && (
-          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            {/* Reporter Section */}
-            <section className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold">1</div>
-                <h2 className="text-xl font-semibold">AI Reporter</h2>
-              </div>
-              <div className="prose max-w-none">
-                <h3 className="text-lg font-medium">{result.reporter.title}</h3>
-                <div className="flex gap-2 my-2">
-                  {result.reporter.trends.map((trend: string, i: number) => (
-                    <span key={i} className="px-2 py-1 bg-gray-100 text-xs rounded-full">{trend}</span>
-                  ))}
-                </div>
-                <p className="text-gray-600 text-sm line-clamp-3">{result.reporter.content}</p>
-              </div>
-            </section>
-
-            {/* Editor Section */}
-            <section className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center text-purple-600 font-bold">2</div>
-                <h2 className="text-xl font-semibold">AI Editor</h2>
-              </div>
-              <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${result.editor.status === 'approved' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
-                    {result.editor.status.toUpperCase()}
-                  </span>
-                </div>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="font-medium mb-2">Changes Made:</h3>
-                  <ul className="list-disc list-inside text-sm text-gray-600">
-                    {result.editor.changes.map((change: string, i: number) => (
-                      <li key={i}>{change}</li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            </section>
-
-            {/* Designer Section */}
-            <section className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 bg-pink-100 rounded-full flex items-center justify-center text-pink-600 font-bold">3</div>
-                <h2 className="text-xl font-semibold">AI Designer</h2>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                {result.designer.assets.map((asset: any, i: number) => (
-                  <div key={i} className="border rounded-lg overflow-hidden">
-                    <img src={asset.url} alt={asset.alt} className="w-full h-32 object-cover" />
-                    <div className="p-2 bg-gray-50 text-xs text-gray-500">
-                      <span className="font-bold uppercase mr-2">{asset.type}</span>
-                      {asset.alt}
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <p className="mt-4 text-sm text-gray-600 italic">Layout: {result.designer.layoutSuggestion}</p>
-            </section>
-
-            {/* Marketer Section */}
-            <section className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center text-green-600 font-bold">4</div>
-                <h2 className="text-xl font-semibold">AI Marketer</h2>
-              </div>
-              <div className="grid grid-cols-3 gap-4 mb-6">
-                <div className="bg-gray-50 p-4 rounded-lg text-center">
-                  <div className="text-2xl font-bold text-gray-900">{result.marketer.predictedMetrics.retention}%</div>
-                  <div className="text-xs text-gray-500 uppercase">Retention</div>
-                </div>
-                <div className="bg-gray-50 p-4 rounded-lg text-center">
-                  <div className="text-2xl font-bold text-gray-900">{result.marketer.predictedMetrics.views}</div>
-                  <div className="text-xs text-gray-500 uppercase">Views</div>
-                </div>
-                <div className="bg-gray-50 p-4 rounded-lg text-center">
-                  <div className="text-2xl font-bold text-gray-900">{result.marketer.predictedMetrics.clicks}</div>
-                  <div className="text-xs text-gray-500 uppercase">Clicks</div>
-                </div>
-              </div>
-              <div className="space-y-4">
-                <div>
-                  <h3 className="font-medium mb-2">Ad Placements:</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {result.marketer.adPlacements.map((ad: any, i: number) => (
-                      <span key={i} className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm border border-blue-100">
-                        {ad.position} ({ad.type})
-                      </span>
-                    ))}
-                  </div>
-                </div>
-                <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-100">
-                  <h3 className="font-medium text-yellow-800 mb-1">Ultrathink Strategy:</h3>
-                  <p className="text-sm text-yellow-700">{result.marketer.strategy}</p>
-                </div>
-              </div>
-            </section>
+        {/* 10. Error state */}
+        {state.error && (
+          <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-600 text-sm">{state.error}</p>
+            <button
+              onClick={() => loadMore()}
+              className="mt-2 text-red-700 text-sm font-medium underline"
+            >
+              Try again
+            </button>
           </div>
         )}
-      </div>
-    </main>
+      </main>
+
+      {/* 11. Scroll to top FAB */}
+      <ScrollToTopFAB />
+    </div>
   );
 }
