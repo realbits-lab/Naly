@@ -16,7 +16,7 @@ export function ContentCard({ card }: ContentCardProps): React.ReactElement {
   const categoryConfig = CATEGORY_CONFIG[card.category];
 
   return (
-    <Link href={`/article/${card.id}`}>
+    <Link href={`/article/${card.id}`} className="block">
       <article className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden active:scale-[0.98] transition-transform cursor-pointer">
         {/* 1. Thumbnail Image (optional) */}
         {card.thumbnailUrl && (

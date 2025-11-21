@@ -66,7 +66,7 @@ export default function FeedPage(): React.ReactElement {
         {state.cards.length === 0 && state.isLoading ? (
           <SkeletonFeed count={5} />
         ) : (
-          <div className="space-y-4">
+          <div className="flex flex-col gap-8">
             {feedItems.map((item, index) => {
               if (item.type === 'ad') {
                 return <AdCardPlaceholder key={`ad-${index}`} />;

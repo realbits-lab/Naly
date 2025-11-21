@@ -4,6 +4,7 @@ import { desc, eq } from 'drizzle-orm';
 import { Play, Pause, Activity } from 'lucide-react';
 import { runAgentManually } from '@/app/actions';
 import Link from 'next/link';
+import { RunCard } from '@/components/RunCard';
 
 export default async function DashboardPage() {
   const configs = await db.select().from(agentConfigs);
@@ -72,59 +73,25 @@ export default async function DashboardPage() {
       </div>
 
       {/* Recent Activity */}
-      <div className="rounded-xl bg-white shadow-sm border border-gray-100 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100">
+      <div>
+        <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-gray-800">Recent Activity</h3>
+          <Link href="/admin/history" className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+            View All
+          </Link>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-gray-600">
-            <thead className="bg-gray-50 text-xs uppercase text-gray-500">
-              <tr>
-                <th className="px-6 py-3">Agent</th>
-                <th className="px-6 py-3">Status</th>
-                <th className="px-6 py-3">Started At</th>
-                <th className="px-6 py-3">Editor Score</th>
-                <th className="px-6 py-3">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {recentRuns.map((run) => (
-                <tr key={run.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 font-medium text-gray-900">{run.agentType}</td>
-                  <td className="px-6 py-4">
-                    <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
-                      run.status === 'COMPLETED' ? 'bg-green-50 text-green-700' :
-                      run.status === 'FAILED' ? 'bg-red-50 text-red-700' :
-                      'bg-yellow-50 text-yellow-700'
-                    }`}>
-                      {run.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">{run.startTime ? new Date(run.startTime).toLocaleString() : '-'}</td>
-                  <td className="px-6 py-4">
-                    {(run.editorReview as any)?.score ? (
-                      <span className={`font-bold ${(run.editorReview as any).score >= 80 ? 'text-green-600' : 'text-orange-500'}`}>
-                        {(run.editorReview as any).score}/100
-                      </span>
-                    ) : '-'}
-                  </td>
-                  <td className="px-6 py-4">
-                    <Link href={`/admin/history/${run.id}`} className="text-indigo-600 hover:text-indigo-900">
-                      View
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-              {recentRuns.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-gray-400">
-                    No recent runs found.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {recentRuns.map((run) => (
+            <RunCard key={run.id} run={run} />
+          ))}
         </div>
+        
+        {recentRuns.length === 0 && (
+          <div className="text-center py-12 bg-white rounded-xl border border-gray-100">
+            <p className="text-gray-500">No recent runs found.</p>
+          </div>
+        )}
       </div>
     </div>
   );
