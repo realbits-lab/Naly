@@ -1,5 +1,5 @@
 import { generateText, stepCountIs } from 'ai';
-import { openai } from '@ai-sdk/openai';
+import { google } from '@ai-sdk/google';
 import { z } from 'zod';
 import { ReporterInput, ReporterOutput } from './types';
 import { fetchNewsTool } from '../tools/fetch-news';
@@ -36,7 +36,7 @@ Focus on providing accurate, timely, and insightful analysis.`;
 
   // 2. Execute multi-step workflow with AI SDK v6 patterns
   const { text, steps } = await generateText({
-    model: openai('gpt-4o'),
+    model: google('gemini-2.0-flash'),
     system: systemPrompt,
     tools: {
       fetchNews: fetchNewsTool,

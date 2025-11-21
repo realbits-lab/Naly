@@ -24,7 +24,7 @@ export function useFeed(options: UseFeedOptions = {}): UseFeedReturn {
 
   const [state, setState] = useState<FeedState>({
     cards: initialCards,
-    currentPage: 1,
+    currentPage: 0, // Start at 0 so first loadMore fetches page 1
     hasMore: true,
     hasRecycledItems: false,
     oldestVisibleId: null,
@@ -56,7 +56,11 @@ export function useFeed(options: UseFeedOptions = {}): UseFeedReturn {
       const data = await fetchFeed(nextPage);
 
       setState((prev) => {
-        let newCards = [...prev.cards, ...data.items];
+        // Deduplicate by ID
+        const existingIds = new Set(prev.cards.map(c => c.id));
+        const newItems = data.items.filter(item => !existingIds.has(item.id));
+
+        let newCards = [...prev.cards, ...newItems];
         let hasRecycledItems = prev.hasRecycledItems;
 
         // 3. Apply bounded scroll limit (like Twitter/X)

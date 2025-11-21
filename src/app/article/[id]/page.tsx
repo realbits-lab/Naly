@@ -9,11 +9,17 @@ import {
   CATEGORY_CONFIG,
 } from '@/lib/feed/types';
 
+interface SourceInfo {
+  url: string;
+  title: string;
+}
+
 export default function ArticleDetailPage(): React.ReactElement {
   const params = useParams();
   const router = useRouter();
   const [article, setArticle] = useState<ContentCardType | null>(null);
   const [relatedArticles, setRelatedArticles] = useState<ContentCardType[]>([]);
+  const [sourceTitles, setSourceTitles] = useState<SourceInfo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -28,8 +34,14 @@ export default function ArticleDetailPage(): React.ReactElement {
         if (!response.ok) throw new Error('Article not found');
 
         const data = await response.json();
-        setArticle(data.article);
-        setRelatedArticles(data.related || []);
+        // API returns article directly, not wrapped in {article: ...}
+        setArticle(data);
+        setRelatedArticles([]);
+
+        // Fetch titles for sources
+        if (data.sources && data.sources.length > 0) {
+          fetchSourceTitles(data.sources);
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load article');
       } finally {
@@ -39,6 +51,25 @@ export default function ArticleDetailPage(): React.ReactElement {
 
     fetchArticle();
   }, [articleId]);
+
+  // 2. Fetch source titles
+  const fetchSourceTitles = async (sources: string[]): Promise<void> => {
+    const titles = await Promise.all(
+      sources.map(async (url) => {
+        try {
+          const response = await fetch(`/api/fetch-title?url=${encodeURIComponent(url)}`);
+          if (response.ok) {
+            const data = await response.json();
+            return { url, title: data.title || extractDomainTitle(url) };
+          }
+        } catch {
+          // Ignore fetch errors
+        }
+        return { url, title: extractDomainTitle(url) };
+      })
+    );
+    setSourceTitles(titles);
+  };
 
   // 2. Handle share
   const handleShare = async (): Promise<void> => {
@@ -134,9 +165,9 @@ export default function ArticleDetailPage(): React.ReactElement {
 
           {/* 9. Content body */}
           <article className="prose prose-gray max-w-none">
-            <p className="text-gray-700 leading-relaxed whitespace-pre-line">
-              {article.content}
-            </p>
+            <div className="text-gray-700 leading-relaxed whitespace-pre-line">
+              {renderContentWithReferences(article.content, article.sources)}
+            </div>
           </article>
 
           {/* 10. Trend tags */}
@@ -158,20 +189,26 @@ export default function ArticleDetailPage(): React.ReactElement {
 
           {/* 11. Sources */}
           {article.sources.length > 0 && (
-            <div className="space-y-2">
+            <div id="sources-section" className="space-y-3">
               <h3 className="text-sm font-medium text-gray-500">Sources</h3>
-              <div className="flex flex-wrap gap-2">
-                {article.sources.map((source, i) => (
-                  <a
-                    key={i}
-                    href={source}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 text-sm hover:underline"
-                  >
-                    [{i + 1}]
-                  </a>
-                ))}
+              <div className="space-y-2">
+                {article.sources.map((source, i) => {
+                  const sourceInfo = sourceTitles[i];
+                  const title = sourceInfo?.title || extractDomainTitle(source);
+                  return (
+                    <div key={i} className="flex items-start gap-2">
+                      <span className="text-gray-400 text-sm flex-shrink-0">[{i + 1}]</span>
+                      <a
+                        href={source}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 text-sm hover:underline line-clamp-1"
+                      >
+                        {title}
+                      </a>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -214,6 +251,110 @@ export default function ArticleDetailPage(): React.ReactElement {
       </main>
     </div>
   );
+}
+
+// Helper function to convert URLs in text to reference numbers like [1], [2]
+function renderContentWithReferences(content: string, sources: string[]): React.ReactNode[] {
+  const urlRegex = /(https?:\/\/[^\s)]+)/g;
+  const parts = content.split(urlRegex);
+
+  return parts.map((part, index) => {
+    // Check if this part is a URL
+    if (part.match(/^https?:\/\//)) {
+      // Find the index of this URL in sources array
+      const sourceIndex = findMatchingSourceIndex(part, sources);
+      const refNumber = sourceIndex >= 0 ? sourceIndex + 1 : null;
+
+      if (refNumber) {
+        return (
+          <a
+            key={index}
+            href={`#source-${refNumber}`}
+            className="text-blue-600 hover:underline font-medium"
+            onClick={(e) => {
+              e.preventDefault();
+              const sourcesSection = document.getElementById('sources-section');
+              sourcesSection?.scrollIntoView({ behavior: 'smooth' });
+            }}
+          >
+            [{refNumber}]
+          </a>
+        );
+      }
+      // If URL not in sources, still show as clickable link with short format
+      return (
+        <a
+          key={index}
+          href={part}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-600 hover:underline"
+        >
+          [link]
+        </a>
+      );
+    }
+    return part;
+  });
+}
+
+// Helper function to find matching source index with fuzzy matching
+function findMatchingSourceIndex(url: string, sources: string[]): number {
+  // 1. Try exact match first
+  const exactIndex = sources.findIndex(source => source === url);
+  if (exactIndex >= 0) return exactIndex;
+
+  // 2. Try matching by extracting the unique article ID from Google News URLs
+  // Google News URLs have format: /rss/articles/CBMi...
+  const articleIdMatch = url.match(/\/articles\/([A-Za-z0-9_-]+)/);
+  if (articleIdMatch) {
+    const articleId = articleIdMatch[1].substring(0, 30); // Use first 30 chars as identifier
+    const matchIndex = sources.findIndex(source => {
+      const sourceIdMatch = source.match(/\/articles\/([A-Za-z0-9_-]+)/);
+      if (sourceIdMatch) {
+        return sourceIdMatch[1].substring(0, 30) === articleId;
+      }
+      return false;
+    });
+    if (matchIndex >= 0) return matchIndex;
+  }
+
+  // 3. Try base URL match (without query params)
+  const urlBase = url.split('?')[0];
+  const baseIndex = sources.findIndex(source => source.split('?')[0] === urlBase);
+  if (baseIndex >= 0) return baseIndex;
+
+  // 4. Try partial match - check if URL contains significant part of source
+  for (let i = 0; i < sources.length; i++) {
+    const source = sources[i];
+    // Extract path portion and compare
+    try {
+      const urlPath = new URL(url).pathname;
+      const sourcePath = new URL(source).pathname;
+      if (urlPath.length > 20 && sourcePath.length > 20) {
+        // Compare first 50 chars of path
+        if (urlPath.substring(0, 50) === sourcePath.substring(0, 50)) {
+          return i;
+        }
+      }
+    } catch {
+      // URL parsing failed, skip
+    }
+  }
+
+  return -1;
+}
+
+// Helper function to extract domain name from URL for display
+function extractDomainTitle(url: string): string {
+  try {
+    const urlObj = new URL(url);
+    const hostname = urlObj.hostname.replace('www.', '');
+    // Capitalize first letter
+    return hostname.charAt(0).toUpperCase() + hostname.slice(1);
+  } catch {
+    return 'Source';
+  }
 }
 
 // Header component with back and share buttons

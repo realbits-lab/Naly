@@ -1,5 +1,5 @@
 import { generateObject } from 'ai';
-import { openai } from '@ai-sdk/openai';
+import { google } from '@ai-sdk/google';
 import { z } from 'zod';
 import { MarketerInput, MarketerOutput } from './types';
 
@@ -18,7 +18,7 @@ export async function runMarketer(input: MarketerInput): Promise<MarketerOutput>
   `;
 
   const { object } = await generateObject({
-    model: openai('gpt-4o'),
+    model: google('gemini-2.0-flash'),
     schema: z.object({
       adPlacements: z.array(z.object({
         position: z.string(),

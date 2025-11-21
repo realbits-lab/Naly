@@ -1,5 +1,5 @@
 import { generateObject } from 'ai';
-import { openai } from '@ai-sdk/openai';
+import { google } from '@ai-sdk/google';
 import { z } from 'zod';
 import { EditorInput, EditorOutput } from './types';
 
@@ -18,7 +18,7 @@ export async function runEditor(input: EditorInput): Promise<EditorOutput> {
   `;
 
   const { object } = await generateObject({
-    model: openai('gpt-4o'),
+    model: google('gemini-2.0-flash'),
     schema: z.object({
       title: z.string(),
       content: z.string(), // In a real scenario, this might be the edited content
