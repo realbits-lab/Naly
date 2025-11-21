@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -8,6 +8,7 @@ import {
   formatRelativeTime,
   CATEGORY_CONFIG,
 } from '@/lib/feed/types';
+import { useArticle } from '@/hooks/use-article';
 
 interface SourceInfo {
   url: string;
@@ -17,40 +18,20 @@ interface SourceInfo {
 export default function ArticleDetailPage(): React.ReactElement {
   const params = useParams();
   const router = useRouter();
-  const [article, setArticle] = useState<ContentCardType | null>(null);
-  const [relatedArticles, setRelatedArticles] = useState<ContentCardType[]>([]);
-  const [sourceTitles, setSourceTitles] = useState<SourceInfo[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
   const articleId = params.id as string;
 
-  // 1. Fetch article data
+  // Use SWR hook for article data with automatic caching
+  const { article, isLoading, isError } = useArticle(articleId);
+
+  const [relatedArticles, setRelatedArticles] = useState<ContentCardType[]>([]);
+  const [sourceTitles, setSourceTitles] = useState<SourceInfo[]>([]);
+
+  // Fetch source titles when article is loaded
   useEffect(() => {
-    const fetchArticle = async (): Promise<void> => {
-      try {
-        setIsLoading(true);
-        const response = await fetch(`/api/article/${articleId}`);
-        if (!response.ok) throw new Error('Article not found');
-
-        const data = await response.json();
-        // API returns article directly, not wrapped in {article: ...}
-        setArticle(data);
-        setRelatedArticles([]);
-
-        // Fetch titles for sources
-        if (data.sources && data.sources.length > 0) {
-          fetchSourceTitles(data.sources);
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load article');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchArticle();
-  }, [articleId]);
+    if (article?.sources && article.sources.length > 0) {
+      fetchSourceTitles(article.sources);
+    }
+  }, [article]);
 
   // 2. Fetch source titles
   const fetchSourceTitles = async (sources: string[]): Promise<void> => {
@@ -108,13 +89,15 @@ export default function ArticleDetailPage(): React.ReactElement {
   }
 
   // 4. Error state
-  if (error || !article) {
+  if (isError || (!isLoading && !article)) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header onBack={() => router.back()} />
         <main className="max-w-lg mx-auto px-4 pt-16 pb-8">
           <div className="text-center py-12">
-            <p className="text-gray-500">{error || 'Article not found'}</p>
+            <p className="text-gray-500">
+              {isError ? 'Failed to load article' : 'Article not found'}
+            </p>
             <button
               onClick={() => router.back()}
               className="mt-4 text-blue-600 font-medium"

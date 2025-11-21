@@ -3,12 +3,37 @@ import { ContentCard, FeedResponse, FEED_LIMITS } from '@/lib/feed/types';
 import { db } from '@/db';
 import { agentRuns } from '@/db/schema';
 import { desc, eq, and, count } from 'drizzle-orm';
+import { getCache, setCache, CACHE_TTL } from '@/lib/cache';
+import { handleETagCache, createCachedResponse } from '@/lib/etag';
 
 export async function GET(request: NextRequest): Promise<NextResponse<FeedResponse>> {
   const searchParams = request.nextUrl.searchParams;
   const page = parseInt(searchParams.get('page') || '1', 10);
   const limit = parseInt(searchParams.get('limit') || String(FEED_LIMITS.ITEMS_PER_PAGE), 10);
   const offset = (page - 1) * limit;
+
+  // Create cache key based on pagination parameters
+  const cacheKey = `feed:page:${page}:limit:${limit}`;
+
+  // Try to get from Redis cache first
+  const cachedResponse = await getCache<FeedResponse>(cacheKey, {
+    prefix: 'api',
+    ttl: CACHE_TTL.SHORT, // 5 minutes cache
+  });
+
+  if (cachedResponse) {
+    // Check ETag for 304 Not Modified
+    const notModified = handleETagCache(request, cachedResponse);
+    if (notModified) {
+      return notModified;
+    }
+
+    // Return cached response with ETag
+    return createCachedResponse(cachedResponse, {
+      maxAge: 300, // 5 minutes
+      swr: 600, // 10 minutes stale-while-revalidate
+    });
+  }
 
   // 1. Fetch total count of completed reporter runs
   const [totalResult] = await db
@@ -18,7 +43,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<FeedRespon
       eq(agentRuns.agentType, 'REPORTER'),
       eq(agentRuns.status, 'COMPLETED')
     ));
-  
+
   const totalItems = totalResult.count;
 
   // 2. Fetch paginated runs
@@ -41,10 +66,10 @@ export async function GET(request: NextRequest): Promise<NextResponse<FeedRespon
 
     // Prefer editor's title/content, fallback to reporter's
     const title = editorReview?.title || output?.title || 'Untitled Report';
-    const summary = editorReview?.content 
-      ? (editorReview.content.substring(0, 200) + '...') 
+    const summary = editorReview?.content
+      ? (editorReview.content.substring(0, 200) + '...')
       : (output?.content?.substring(0, 200) + '...' || 'No content available.');
-    
+
     // Map topic to category (simple mapping for now)
     // ReporterInput has topic: 'stock', 'coin', 'sports', 'politics'
     // We don't strictly store the input params in agentRuns, but we can infer or default.
@@ -60,7 +85,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<FeedRespon
     // If the data isn't there, I can't invent it.
     // I'll check if I can modify Reporter to include topic in output.
     // For now, I'll cast to 'stock' to satisfy type.
-    const category: ContentCard['category'] = 'stock'; 
+    const category: ContentCard['category'] = 'stock';
 
     return {
       id: String(run.id),
@@ -84,5 +109,15 @@ export async function GET(request: NextRequest): Promise<NextResponse<FeedRespon
     hasMore: offset + limit < totalItems,
   };
 
-  return NextResponse.json(response);
+  // Cache the response in Redis
+  await setCache(cacheKey, response, {
+    prefix: 'api',
+    ttl: CACHE_TTL.SHORT, // 5 minutes
+  });
+
+  // Return response with ETag and cache headers
+  return createCachedResponse(response, {
+    maxAge: 300, // 5 minutes
+    swr: 600, // 10 minutes stale-while-revalidate
+  });
 }

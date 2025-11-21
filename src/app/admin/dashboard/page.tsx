@@ -1,3 +1,4 @@
+import { unstable_cache } from 'next/cache';
 import { db } from '@/db';
 import { agentConfigs, agentRuns } from '@/db/schema';
 import { desc, eq } from 'drizzle-orm';
@@ -6,9 +7,29 @@ import { runAgentManually } from '@/app/actions';
 import Link from 'next/link';
 import { RunCard } from '@/components/RunCard';
 
+// Cache agent configs query for 5 minutes
+const getCachedConfigs = unstable_cache(
+  async () => db.select().from(agentConfigs),
+  ['agent-configs'],
+  {
+    revalidate: 300, // 5 minutes
+    tags: ['agent-configs'],
+  }
+);
+
+// Cache recent runs query for 1 minute
+const getCachedRecentRuns = unstable_cache(
+  async () => db.select().from(agentRuns).orderBy(desc(agentRuns.startTime)).limit(10),
+  ['recent-runs'],
+  {
+    revalidate: 60, // 1 minute
+    tags: ['agent-runs'],
+  }
+);
+
 export default async function DashboardPage() {
-  const configs = await db.select().from(agentConfigs);
-  const recentRuns = await db.select().from(agentRuns).orderBy(desc(agentRuns.startTime)).limit(10);
+  const configs = await getCachedConfigs();
+  const recentRuns = await getCachedRecentRuns();
 
   const reporterConfig = configs.find(c => c.type === 'REPORTER');
   const marketerConfig = configs.find(c => c.type === 'MARKETER');
