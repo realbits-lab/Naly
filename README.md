@@ -48,9 +48,17 @@ npm install
 cp .env.example .env
 ```
 
-Edit `.env` and add your OpenAI API key:
+Edit `.env` and add your required environment variables:
 ```
-OPENAI_API_KEY=your_openai_api_key_here
+GOOGLE_GENERATIVE_AI_API_KEY=your_google_api_key_here
+DATABASE_URL=your_database_url_here
+CRON_SECRET=your_random_secret_here
+NEXTAUTH_URL=http://localhost:3000
+```
+
+Generate a secure CRON_SECRET:
+```bash
+openssl rand -base64 32
 ```
 
 ### Running the Development Server
@@ -95,11 +103,76 @@ The application uses the Vercel AI SDK with OpenAI's GPT-4o model to power each 
 
 - **Framework**: Next.js 16 (App Router)
 - **Language**: TypeScript
-- **AI SDK**: Vercel AI SDK with OpenAI
+- **AI SDK**: Vercel AI SDK with Google Gemini
+- **Database**: PostgreSQL with Drizzle ORM
 - **Styling**: Tailwind CSS
 - **UI Components**: Custom components with Lucide icons
 - **Validation**: Zod schemas
 - **Package Manager**: pnpm
+- **Deployment**: Vercel with Cron Jobs
+
+## Automated Scheduling
+
+Naly uses Vercel Cron Jobs to automatically trigger AI agents on a schedule.
+
+### Configuration
+
+Cron jobs are configured in `vercel.json`:
+```json
+{
+  "crons": [
+    {
+      "path": "/api/cron/tick",
+      "schedule": "0 * * * *"
+    }
+  ]
+}
+```
+
+The schedule `0 * * * *` runs every hour. All schedules use UTC timezone.
+
+### Environment Variables
+
+Set the following in your Vercel dashboard and local `.env`:
+
+- `CRON_SECRET`: A random string (16+ characters) to secure the cron endpoint
+- `NEXTAUTH_URL`: Your application's base URL
+
+### Vercel Dashboard
+
+1. Deploy your application to Vercel
+2. Add `CRON_SECRET` in Settings → Environment Variables
+3. View cron execution logs in the "Cron Jobs" tab
+4. Monitor automated agent runs in the admin dashboard
+
+### Local Testing
+
+Test the cron endpoint locally:
+
+```bash
+curl http://localhost:3000/api/cron/tick \
+  -H "Authorization: Bearer your-cron-secret"
+```
+
+Or use the "Test Cron Endpoint" button in the admin dashboard.
+
+### Admin Dashboard
+
+The admin dashboard displays:
+- Cron job status and schedule
+- Last execution time and status
+- Number of jobs triggered
+- Execution duration
+- Manual test button
+
+### Limitations
+
+- **Free Tier**: 2 cron jobs max, each can run max once per day
+- **Production Only**: Cron jobs only run on production deployments
+- **UTC Timezone**: All schedules use UTC (no timezone configuration)
+- **No Retries**: Vercel does not automatically retry failed cron jobs
+
+For more information, see [Vercel Cron Jobs Documentation](https://vercel.com/docs/cron-jobs).
 
 ## License
 
