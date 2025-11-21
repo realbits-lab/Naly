@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { db } from '@/db';
-import { replies } from '@/db/schema';
+import { replies, user } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 
 export async function POST(request: NextRequest) {
@@ -65,14 +65,31 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Get replies with user information
     const contentReplies = await db
-      .select()
+      .select({
+        reply: replies,
+        user: {
+          id: user.id,
+          name: user.name,
+          username: user.username,
+          isAnonymous: user.isAnonymous,
+        },
+      })
       .from(replies)
-      .where(eq(replies.contentId, contentId));
+      .leftJoin(user, eq(replies.userId, user.id))
+      .where(eq(replies.contentId, contentId))
+      .orderBy(replies.createdAt);
+
+    // Format the response
+    const formattedReplies = contentReplies.map((item) => ({
+      ...item.reply,
+      user: item.user,
+    }));
 
     return NextResponse.json({
-      replies: contentReplies,
-      count: contentReplies.length,
+      replies: formattedReplies,
+      count: formattedReplies.length,
     });
   } catch (error) {
     console.error('Error getting replies:', error);
