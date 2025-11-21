@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { streamText, stepCountIs } from 'ai';
-import { openai } from '@ai-sdk/openai';
+import { google } from '@ai-sdk/google';
 import { z } from 'zod';
 import { fetchNewsTool } from '@/lib/tools/fetch-news';
 
@@ -36,7 +36,7 @@ After gathering and analyzing the news, write a comprehensive report with:
 
     // 3. Execute streaming multi-step workflow
     const result = streamText({
-      model: openai('gpt-4o'),
+      model: google('gemini-2.0-flash-exp'),
       system: systemPrompt,
       tools: {
         fetchNews: fetchNewsTool,
