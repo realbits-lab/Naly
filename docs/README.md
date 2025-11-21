@@ -1,0 +1,305 @@
+# Naly Documentation
+
+Welcome to the Naly documentation! This directory contains comprehensive guides for understanding, developing, and deploying the Naly predictive content service.
+
+## 📚 Documentation Index
+
+### 1. [Architecture Documentation](./architecture.md)
+**Start here to understand the system design**
+
+- System architecture overview
+- Component descriptions
+- Data flow and pipelines
+- Technology stack
+- Scalability considerations
+- Performance metrics
+- Future enhancements
+
+**Best for**: Architects, senior developers, technical leads
+
+### 2. [Agent Implementation Guide](./agent-implementation-guide.md)
+**Deep dive into building and customizing AI agents**
+
+- Agent architecture patterns
+- Type system and contracts
+- Detailed implementation for each agent:
+  - Reporter Agent
+  - Editor Agent
+  - Designer Agent
+  - Marketer Agent
+- Creating new agents
+- Best practices and patterns
+- Advanced techniques
+- Testing strategies
+
+**Best for**: Developers implementing or extending agents
+
+### 3. [API Documentation](./api-documentation.md)
+**Complete API reference**
+
+- Server Actions API
+- Individual agent APIs
+- Request/response formats
+- Error handling
+- Rate limiting
+- Authentication (future)
+- Streaming API
+- Type definitions
+- SDK examples
+
+**Best for**: Frontend developers, API consumers, integrators
+
+### 4. [Deployment Guide](./deployment.md)
+**Production deployment instructions**
+
+- Platform-specific deployment guides:
+  - Vercel (recommended)
+  - Docker
+  - AWS (ECS, Elastic Beanstalk)
+  - Google Cloud Platform
+  - Self-hosted (VPS)
+- Environment configuration
+- Performance optimization
+- Monitoring and logging
+- Scaling strategies
+- Security checklist
+- Troubleshooting
+
+**Best for**: DevOps engineers, system administrators
+
+## 🚀 Quick Start
+
+### For New Developers
+
+1. **Understand the System**: Read [Architecture Documentation](./architecture.md)
+2. **Set Up Locally**: Follow the installation guide in the main [README](../README.md)
+3. **Explore Agents**: Review [Agent Implementation Guide](./agent-implementation-guide.md)
+4. **Try the API**: Check [API Documentation](./api-documentation.md)
+
+### For Production Deployment
+
+1. **Review Architecture**: Understand scaling needs from [Architecture Documentation](./architecture.md)
+2. **Choose Platform**: Select deployment platform from [Deployment Guide](./deployment.md)
+3. **Configure Environment**: Set up environment variables
+4. **Deploy**: Follow platform-specific instructions
+5. **Monitor**: Set up monitoring and alerts
+
+### For Contributors
+
+1. **Read Contribution Guidelines**: See [CONTRIBUTING.md](../CONTRIBUTING.md) (if available)
+2. **Understand Agents**: Study [Agent Implementation Guide](./agent-implementation-guide.md)
+3. **Follow Best Practices**: Implement features following established patterns
+4. **Test Thoroughly**: Use test script in `test-scripts/test-workflow.ts`
+
+## 🎯 Use Cases by Role
+
+### Software Architect
+- [Architecture Documentation](./architecture.md) - System design
+- [Deployment Guide](./deployment.md) - Scaling strategies
+
+### Backend Developer
+- [Agent Implementation Guide](./agent-implementation-guide.md) - Agent development
+- [API Documentation](./api-documentation.md) - Server actions
+
+### Frontend Developer
+- [API Documentation](./api-documentation.md) - Client integration
+- [Architecture Documentation](./architecture.md) - Data flow understanding
+
+### DevOps Engineer
+- [Deployment Guide](./deployment.md) - Infrastructure setup
+- [Architecture Documentation](./architecture.md) - Performance optimization
+
+### Product Manager
+- [Architecture Documentation](./architecture.md) - Feature capabilities
+- [API Documentation](./api-documentation.md) - Integration possibilities
+
+## 🔍 Finding Information
+
+### By Topic
+
+**Understanding the System**:
+- How it works → [Architecture](./architecture.md) → "System Architecture"
+- What it does → Main [README](../README.md) → "Overview"
+- Why these choices → [Architecture](./architecture.md) → "Technology Stack"
+
+**Building Features**:
+- Adding new agents → [Agent Guide](./agent-implementation-guide.md) → "Creating a New Agent"
+- Customizing agents → [Agent Guide](./agent-implementation-guide.md) → "Customization Options"
+- API integration → [API Docs](./api-documentation.md) → "Server Actions"
+
+**Deploying**:
+- Vercel deployment → [Deployment](./deployment.md) → "Option 1: Vercel"
+- Docker deployment → [Deployment](./deployment.md) → "Option 2: Docker"
+- Self-hosted → [Deployment](./deployment.md) → "Option 5: Self-Hosted"
+
+**Troubleshooting**:
+- Common errors → [Deployment](./deployment.md) → "Troubleshooting"
+- API issues → [API Docs](./api-documentation.md) → "Error Codes"
+- Performance → [Architecture](./architecture.md) → "Performance Metrics"
+
+## 📖 Document Structure
+
+Each documentation file follows a consistent structure:
+
+1. **Overview**: High-level introduction
+2. **Detailed Sections**: In-depth coverage of topics
+3. **Examples**: Code samples and use cases
+4. **Best Practices**: Recommended approaches
+5. **Advanced Topics**: For experienced users
+6. **Additional Resources**: Related documentation
+
+## 🤝 Contributing to Documentation
+
+Documentation contributions are welcome! When contributing:
+
+### Content Guidelines
+
+1. **Clear and Concise**: Use simple language
+2. **Code Examples**: Include working code samples
+3. **Visual Aids**: Add diagrams where helpful
+4. **Keep Updated**: Ensure accuracy with latest code
+5. **Cross-Reference**: Link to related documents
+
+### Formatting Standards
+
+- Use MDX format (Markdown with JSX support)
+- Include code syntax highlighting
+- Add table of contents for long documents
+- Use consistent heading levels
+- Format code blocks with language identifiers
+
+### Document Types
+
+**Tutorials**: Step-by-step guides for specific tasks
+```mdx
+# How to Add a New Agent
+
+## Prerequisites
+- List requirements
+
+## Step 1: Define Types
+```typescript
+// code example
+```
+
+## Step 2: Implement Agent
+...
+```
+
+**Reference**: Comprehensive API or feature documentation
+```mdx
+# API Reference
+
+## Function Name
+**Description**: What it does
+**Parameters**: Input details
+**Returns**: Output details
+**Example**: Code sample
+```
+
+**Guides**: Conceptual explanations
+```mdx
+# Architecture Guide
+
+## Overview
+High-level explanation
+
+## Core Concepts
+Detailed explanation with diagrams
+
+## Best Practices
+Recommendations
+```
+
+## 🔗 External Resources
+
+### Official Documentation
+- [Next.js Documentation](https://nextjs.org/docs)
+- [Vercel AI SDK](https://sdk.vercel.ai/docs)
+- [OpenAI API](https://platform.openai.com/docs)
+- [TypeScript](https://www.typescriptlang.org/docs)
+
+### Community
+- [GitHub Repository](https://github.com/realbits-lab/Naly)
+- [Issue Tracker](https://github.com/realbits-lab/Naly/issues)
+- [Discussions](https://github.com/realbits-lab/Naly/discussions)
+
+### Related Projects
+- [Vercel AI Examples](https://github.com/vercel/ai/tree/main/examples)
+- [Next.js Examples](https://github.com/vercel/next.js/tree/canary/examples)
+
+## 📝 Documentation Status
+
+| Document | Status | Last Updated | Version |
+|----------|--------|--------------|---------|
+| Architecture | ✅ Complete | 2025-11-20 | 1.0 |
+| Agent Guide | ✅ Complete | 2025-11-20 | 1.0 |
+| API Docs | ✅ Complete | 2025-11-20 | 1.0 |
+| Deployment | ✅ Complete | 2025-11-20 | 1.0 |
+
+## 🎓 Learning Path
+
+### Beginner Path
+1. Read main [README](../README.md)
+2. Skim [Architecture](./architecture.md) overview
+3. Try local installation
+4. Explore [API Documentation](./api-documentation.md)
+
+### Intermediate Path
+1. Study [Agent Implementation Guide](./agent-implementation-guide.md)
+2. Review code in `src/lib/agents/`
+3. Modify existing agents
+4. Run test workflow
+
+### Advanced Path
+1. Deep dive into [Architecture](./architecture.md)
+2. Implement new agents
+3. Optimize performance
+4. Deploy to production
+
+## ❓ FAQ
+
+### General Questions
+
+**Q: Where do I start?**
+A: Read the main [README](../README.md), then [Architecture Documentation](./architecture.md)
+
+**Q: How do I add a new feature?**
+A: See [Agent Implementation Guide](./agent-implementation-guide.md) → "Creating a New Agent"
+
+**Q: How do I deploy to production?**
+A: Follow [Deployment Guide](./deployment.md) for your chosen platform
+
+**Q: Where are the API docs?**
+A: See [API Documentation](./api-documentation.md)
+
+### Technical Questions
+
+**Q: What AI model is used?**
+A: OpenAI GPT-4o. See [Architecture](./architecture.md) → "AI Model Configuration"
+
+**Q: Can I use a different model?**
+A: Yes. See [Agent Guide](./agent-implementation-guide.md) → "Customization Options"
+
+**Q: How do I handle errors?**
+A: See [API Documentation](./api-documentation.md) → "Error Handling"
+
+**Q: What's the performance?**
+A: See [Architecture](./architecture.md) → "Performance Metrics"
+
+## 🆘 Getting Help
+
+1. **Check Documentation**: Search these docs first
+2. **Search Issues**: Look for similar problems on GitHub
+3. **Ask Community**: Post in GitHub Discussions
+4. **Report Bugs**: Create a GitHub issue
+
+## 📄 License
+
+This documentation is part of the Naly project and is licensed under the GNU Affero General Public License v3.0 (AGPL-3.0).
+
+---
+
+**Last Updated**: 2025-11-20
+**Documentation Version**: 1.0.0
+**Project Version**: 0.1.0
