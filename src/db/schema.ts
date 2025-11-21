@@ -25,4 +25,6 @@ export const agentRuns = pgTable('agent_runs', {
   output: jsonb('output'),
   logs: jsonb('logs'), // Array of log entries
   editorReview: jsonb('editor_review'),
+  designerOutput: jsonb('designer_output'),
+  marketerOutput: jsonb('marketer_output'),
 });
