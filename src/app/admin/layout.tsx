@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { LayoutDashboard, Settings, History, LogOut } from 'lucide-react';
+import { LayoutDashboard, Settings, History, LogOut, BarChart3 } from 'lucide-react';
 import { signOut } from '@/lib/auth-client';
 import { useRouter } from 'next/navigation';
 
@@ -47,6 +47,13 @@ export default function AdminLayout({
             >
               <History size={20} />
               Run History
+            </Link>
+            <Link
+              href="/admin/analytics"
+              className="flex items-center gap-3 rounded-lg px-4 py-2 text-gray-700 hover:bg-gray-100"
+            >
+              <BarChart3 size={20} />
+              Analytics
             </Link>
           </div>
         </nav>
