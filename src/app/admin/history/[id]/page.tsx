@@ -3,6 +3,8 @@ import { agentRuns } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 
+export const dynamic = 'force-dynamic';
+
 export default async function RunDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const runId = parseInt(id);
