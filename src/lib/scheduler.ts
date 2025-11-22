@@ -7,6 +7,7 @@ import { runMarketer } from './agents/marketer';
 import { runEditor } from './agents/editor';
 import { runDesigner } from './agents/designer';
 import { ReporterInput, MarketerInput, ReporterOutput, MarketerOutput, EditorOutput } from './agents/types';
+import { getRandomReporter, addReporterMemory } from './services/reporter-selector';
 
 export async function checkAndTriggerJobs() {
   const configs = await db.select().from(agentConfigs).where(eq(agentConfigs.status, 'ACTIVE'));
@@ -50,74 +51,124 @@ export async function checkAndTriggerJobs() {
 }
 
 export async function triggerAgent(type: 'REPORTER' | 'MARKETER', params: any) {
-  // 1. Create Run Record
-  const [run] = await db.insert(agentRuns).values({
-    agentType: type,
-    status: 'RUNNING',
-    startTime: new Date(),
-  }).returning();
-
   try {
     let output: any;
     let editorReview: EditorOutput | null = null;
     let designerOutput: any | null = null;
     let marketerOutput: any | null = null;
-    
+    let reporterId: number | null = null;
+
     // 2. Run Agent
     if (type === 'REPORTER') {
-      // A. Run Reporter
-      output = await runReporter(params as ReporterInput);
-      
-      // B. Run Editor
-      editorReview = await runEditor({ originalContent: output as ReporterOutput });
+      // A. Get or select a random reporter
+      const reporter = await getRandomReporter(params.topic);
+      reporterId = reporter.id;
 
-      // C. Run Designer (if Editor approved or revised, but let's run it anyway for the flow)
-      // Ideally we only design if approved, but for this demo we chain all.
-      if (editorReview) {
-          designerOutput = await runDesigner({ content: editorReview });
+      // 1. Create Run Record with reporter
+      const [run] = await db.insert(agentRuns).values({
+        agentType: type,
+        reporterId: reporter.id,
+        status: 'RUNNING',
+        startTime: new Date(),
+      }).returning();
+
+      try {
+        // B. Run Reporter with personality
+        const reporterInput: ReporterInput = {
+          ...params,
+          reporter: {
+            id: reporter.id,
+            name: reporter.name,
+            personality: reporter.personality,
+            memory: reporter.memory as any[],
+          },
+        };
+        output = await runReporter(reporterInput);
+      
+        // C. Run Editor
+        editorReview = await runEditor({ originalContent: output as ReporterOutput });
+
+        // D. Run Designer (if Editor approved or revised, but let's run it anyway for the flow)
+        // Ideally we only design if approved, but for this demo we chain all.
+        if (editorReview) {
+            designerOutput = await runDesigner({ content: editorReview });
+        }
+
+        // 3. Update Run with Output
+        await db.update(agentRuns).set({
+          status: 'COMPLETED',
+          endTime: new Date(),
+          output: output,
+          editorReview: editorReview,
+          designerOutput: designerOutput,
+        }).where(eq(agentRuns.id, run.id));
+
+        // E. Update reporter's memory
+        await addReporterMemory(
+          reporter.id,
+          'article_created',
+          `Created article: "${output.title}" about ${params.topic}`,
+          run.id
+        );
+
+      } catch (error: any) {
+        console.error(`Error running REPORTER agent:`, error);
+        await db.update(agentRuns).set({
+          status: 'FAILED',
+          endTime: new Date(),
+          logs: [{ message: error.message, timestamp: new Date().toISOString() }],
+        }).where(eq(agentRuns.id, run.id));
       }
 
     } else if (type === 'MARKETER') {
-      // Marketer needs content + assets.
-      // Find the latest Reporter output to market.
-      const lastReportRun = await db.select().from(agentRuns)
-        .where(and(
-          eq(agentRuns.agentType, 'REPORTER'),
-          eq(agentRuns.status, 'COMPLETED')
-        ))
-        .orderBy(desc(agentRuns.startTime))
-        .limit(1);
-        
-      if (lastReportRun.length > 0 && lastReportRun[0].editorReview && lastReportRun[0].designerOutput) {
-         const review = lastReportRun[0].editorReview as EditorOutput;
-         const assets = lastReportRun[0].designerOutput as any; // Cast to DesignerOutput
-         
-         output = await runMarketer({
-             content: review,
-             assets: assets
-         });
-         marketerOutput = output;
-      } else {
-          throw new Error('No recent complete report (with Editor & Designer output) found to market');
+      // 1. Create Run Record (no reporter for marketer)
+      const [run] = await db.insert(agentRuns).values({
+        agentType: type,
+        status: 'RUNNING',
+        startTime: new Date(),
+      }).returning();
+
+      try {
+        // Marketer needs content + assets.
+        // Find the latest Reporter output to market.
+        const lastReportRun = await db.select().from(agentRuns)
+          .where(and(
+            eq(agentRuns.agentType, 'REPORTER'),
+            eq(agentRuns.status, 'COMPLETED')
+          ))
+          .orderBy(desc(agentRuns.startTime))
+          .limit(1);
+
+        if (lastReportRun.length > 0 && lastReportRun[0].editorReview && lastReportRun[0].designerOutput) {
+           const review = lastReportRun[0].editorReview as EditorOutput;
+           const assets = lastReportRun[0].designerOutput as any; // Cast to DesignerOutput
+
+           output = await runMarketer({
+               content: review,
+               assets: assets
+           });
+           marketerOutput = output;
+        } else {
+            throw new Error('No recent complete report (with Editor & Designer output) found to market');
+        }
+
+        // 3. Update Run with Output
+        await db.update(agentRuns).set({
+          status: 'COMPLETED',
+          endTime: new Date(),
+          marketerOutput: marketerOutput,
+        }).where(eq(agentRuns.id, run.id));
+
+      } catch (error: any) {
+        console.error(`Error running MARKETER agent:`, error);
+        await db.update(agentRuns).set({
+          status: 'FAILED',
+          endTime: new Date(),
+          logs: [{ message: error.message, timestamp: new Date().toISOString() }],
+        }).where(eq(agentRuns.id, run.id));
       }
     }
-
-    // 3. Update Run with Output
-    await db.update(agentRuns).set({
-      status: 'COMPLETED',
-      endTime: new Date(),
-      output: type === 'REPORTER' ? output : null, // Marketer output is stored in marketerOutput column
-      editorReview: editorReview,
-      designerOutput: designerOutput,
-      marketerOutput: marketerOutput,
-    }).where(eq(agentRuns.id, run.id));
-
   } catch (error: any) {
-    console.error(`Error running agent ${type}:`, error);
-    await db.update(agentRuns).set({
-      status: 'FAILED',
-      endTime: new Date(),
-      logs: [{ message: error.message, timestamp: new Date().toISOString() }],
-    }).where(eq(agentRuns.id, run.id));
+    console.error(`Error in triggerAgent ${type}:`, error);
   }
 }

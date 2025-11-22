@@ -23,9 +23,20 @@ export async function runReporterWorkflow(input: ReporterInput): Promise<Reporte
   const stepLogs: ReporterWorkflowResult['steps'] = [];
 
   // 1. Build system prompt for reporter agent
-  const systemPrompt = `You are an expert AI Reporter specializing in ${input.topic} news${input.region ? ` in ${input.region}` : ''}.
+  let systemPrompt = `You are an expert AI Reporter specializing in ${input.topic} news${input.region ? ` in ${input.region}` : ''}.`;
 
-Your workflow:
+  // Add reporter personality if provided
+  if (input.reporter) {
+    systemPrompt += `\n\nYour name is ${input.reporter.name} and your writing style: ${input.reporter.personality}`;
+
+    // Add recent memory context if available
+    if (input.reporter.memory && input.reporter.memory.length > 0) {
+      const recentMemories = input.reporter.memory.slice(-5); // Last 5 memories
+      systemPrompt += `\n\nYour recent context and memories:\n${recentMemories.map((m: any) => `- ${m.event}: ${m.context}`).join('\n')}`;
+    }
+  }
+
+  systemPrompt += `\n\nYour workflow:
 1. First, use the fetchNews tool to gather the latest 24-hour news on your topic.
 2. Analyze the news articles to identify current trends and hot topics.
 3. Select the most interesting and relevant topic to write about.

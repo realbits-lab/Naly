@@ -13,6 +13,12 @@ export interface AgentState {
 export const ReporterInputSchema = z.object({
   topic: z.enum(['stock', 'coin', 'sports', 'politics']),
   region: z.enum(['US', 'KR']).optional(),
+  reporter: z.object({
+    id: z.number(),
+    name: z.string(),
+    personality: z.string(),
+    memory: z.array(z.any()).optional(),
+  }).optional(),
 });
 export type ReporterInput = z.infer<typeof ReporterInputSchema>;
 

@@ -16,9 +16,21 @@ export const agentConfigs = pgTable('agent_configs', {
   updatedAt: timestamp('updated_at').defaultNow(),
 });
 
+export const aiReporters = pgTable('ai_reporters', {
+  id: serial('id').primaryKey(),
+  name: text('name').notNull(),
+  personality: text('personality').notNull(), // Description of reporter's style and personality
+  memory: jsonb('memory').notNull().default([]), // Array of past experiences and context
+  avatar: text('avatar'), // Optional avatar URL or emoji
+  specialty: text('specialty'), // e.g., 'stock', 'coin', 'sports', 'politics'
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+});
+
 export const agentRuns = pgTable('agent_runs', {
   id: serial('id').primaryKey(),
   agentType: text('agent_type').notNull(),
+  reporterId: integer('reporter_id').references(() => aiReporters.id), // AI reporter who created this
   status: text('status').notNull(), // 'QUEUED' | 'RUNNING' | 'COMPLETED' | 'FAILED'
   startTime: timestamp('start_time').defaultNow(),
   endTime: timestamp('end_time'),
@@ -27,4 +39,13 @@ export const agentRuns = pgTable('agent_runs', {
   editorReview: jsonb('editor_review'),
   designerOutput: jsonb('designer_output'),
   marketerOutput: jsonb('marketer_output'),
+});
+
+export const replies = pgTable('replies', {
+  id: serial('id').primaryKey(),
+  articleId: integer('article_id').notNull().references(() => agentRuns.id),
+  reporterId: integer('reporter_id').notNull().references(() => aiReporters.id),
+  content: text('content').notNull(),
+  parentReplyId: integer('parent_reply_id').references(() => replies.id), // For nested replies
+  createdAt: timestamp('created_at').defaultNow(),
 });
