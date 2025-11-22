@@ -1,4 +1,5 @@
 import { checkAndTriggerJobs } from '@/lib/scheduler';
+import { checkAllDuePredictions } from '@/lib/prediction-checker';
 import { NextResponse } from 'next/server';
 import { db } from '@/db';
 import { cronExecutions } from '@/db/schema';
@@ -26,7 +27,13 @@ export async function GET(request: Request) {
 
   try {
     console.log('[CRON] Starting scheduled job check at', new Date().toISOString());
+
+    // Check and trigger scheduled agent jobs
     const result = await checkAndTriggerJobs();
+
+    // Check and verify predictions that are due
+    await checkAllDuePredictions();
+
     const duration = Date.now() - startTime;
 
     console.log('[CRON] Completed in', duration, 'ms');

@@ -1,5 +1,5 @@
 {
-  "id": "23f90a39-7bab-4785-88f9-b23939608468",
+  "id": "ae69a635-7d85-4caf-a391-6ad237534991",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -48,23 +48,7 @@
           "default": "now()"
         }
       },
-      "indexes": {
-        "agent_configs_status_idx": {
-          "name": "agent_configs_status_idx",
-          "columns": [
-            {
-              "expression": "status",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
+      "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
@@ -144,82 +128,21 @@
           "type": "jsonb",
           "primaryKey": false,
           "notNull": false
+        },
+        "prediction_check_time": {
+          "name": "prediction_check_time",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "prediction_results": {
+          "name": "prediction_results",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
         }
       },
-      "indexes": {
-        "agent_runs_agent_type_idx": {
-          "name": "agent_runs_agent_type_idx",
-          "columns": [
-            {
-              "expression": "agent_type",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "agent_runs_status_idx": {
-          "name": "agent_runs_status_idx",
-          "columns": [
-            {
-              "expression": "status",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "agent_runs_start_time_idx": {
-          "name": "agent_runs_start_time_idx",
-          "columns": [
-            {
-              "expression": "start_time",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "agent_runs_type_status_time_idx": {
-          "name": "agent_runs_type_status_time_idx",
-          "columns": [
-            {
-              "expression": "agent_type",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "status",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "start_time",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
+      "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},

@@ -16,6 +16,8 @@ export default async function RunDetailsPage({ params }: { params: Promise<{ id:
   const data = run[0];
   const output = data.output as any;
   const review = data.editorReview as any;
+  const marketerOutput = data.marketerOutput as any;
+  const predictionResults = data.predictionResults as any;
 
   return (
     <div className="space-y-8">
@@ -121,6 +123,156 @@ export default async function RunDetailsPage({ params }: { params: Promise<{ id:
           </div>
         </div>
       </div>
+
+      {/* Prediction Results Section */}
+      {marketerOutput?.predictedMetrics && (
+        <div className="rounded-xl bg-white p-6 shadow-sm border border-gray-100">
+          <h2 className="text-lg font-semibold text-gray-800 mb-4">Prediction Tracking</h2>
+
+          <div className="space-y-6">
+            {/* Check Time */}
+            {data.predictionCheckTime && (
+              <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg">
+                <span className="font-medium text-gray-700">Prediction Check Time</span>
+                <span className="font-semibold text-blue-700">
+                  {new Date(data.predictionCheckTime).toLocaleString()}
+                </span>
+              </div>
+            )}
+
+            {/* Verification Status */}
+            {predictionResults && (
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <span className="font-medium text-gray-700">Verification Status</span>
+                <span className={`font-bold uppercase px-3 py-1 rounded-full text-sm ${
+                  predictionResults.status === 'verified' ? 'bg-green-100 text-green-700' :
+                  predictionResults.status === 'checking' ? 'bg-yellow-100 text-yellow-700' :
+                  predictionResults.status === 'failed' ? 'bg-red-100 text-red-700' :
+                  'bg-gray-100 text-gray-700'
+                }`}>
+                  {predictionResults.status}
+                </span>
+              </div>
+            )}
+
+            {/* Predictions vs Actual Metrics */}
+            <div className="grid gap-4 md:grid-cols-3">
+              {/* Retention */}
+              <div className="p-4 bg-purple-50 rounded-lg">
+                <h3 className="font-medium text-gray-900 mb-2">Retention Rate</h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">Predicted:</span>
+                    <span className="font-semibold text-purple-700">
+                      {marketerOutput.predictedMetrics.retention.toFixed(1)}%
+                    </span>
+                  </div>
+                  {predictionResults?.actualMetrics && (
+                    <>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-600">Actual:</span>
+                        <span className="font-semibold text-purple-900">
+                          {predictionResults.actualMetrics.retention.toFixed(1)}%
+                        </span>
+                      </div>
+                      <div className="flex justify-between pt-2 border-t border-purple-200">
+                        <span className="text-sm font-medium text-gray-600">Accuracy:</span>
+                        <span className="font-bold text-purple-800">
+                          {predictionResults.accuracy?.retentionAccuracy.toFixed(1)}%
+                        </span>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Views */}
+              <div className="p-4 bg-blue-50 rounded-lg">
+                <h3 className="font-medium text-gray-900 mb-2">Views</h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">Predicted:</span>
+                    <span className="font-semibold text-blue-700">
+                      {marketerOutput.predictedMetrics.views.toLocaleString()}
+                    </span>
+                  </div>
+                  {predictionResults?.actualMetrics && (
+                    <>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-600">Actual:</span>
+                        <span className="font-semibold text-blue-900">
+                          {predictionResults.actualMetrics.views.toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="flex justify-between pt-2 border-t border-blue-200">
+                        <span className="text-sm font-medium text-gray-600">Accuracy:</span>
+                        <span className="font-bold text-blue-800">
+                          {predictionResults.accuracy?.viewsAccuracy.toFixed(1)}%
+                        </span>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Clicks */}
+              <div className="p-4 bg-green-50 rounded-lg">
+                <h3 className="font-medium text-gray-900 mb-2">Ad Clicks</h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">Predicted:</span>
+                    <span className="font-semibold text-green-700">
+                      {marketerOutput.predictedMetrics.clicks.toLocaleString()}
+                    </span>
+                  </div>
+                  {predictionResults?.actualMetrics && (
+                    <>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-600">Actual:</span>
+                        <span className="font-semibold text-green-900">
+                          {predictionResults.actualMetrics.clicks.toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="flex justify-between pt-2 border-t border-green-200">
+                        <span className="text-sm font-medium text-gray-600">Accuracy:</span>
+                        <span className="font-bold text-green-800">
+                          {predictionResults.accuracy?.clicksAccuracy.toFixed(1)}%
+                        </span>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Overall Accuracy */}
+            {predictionResults?.accuracy && (
+              <div className="flex items-center justify-between p-4 bg-gradient-to-r from-purple-100 to-blue-100 rounded-lg border-2 border-purple-200">
+                <span className="font-bold text-gray-900 text-lg">Overall Prediction Accuracy</span>
+                <span className="font-bold text-2xl text-purple-700">
+                  {predictionResults.accuracy.overallAccuracy.toFixed(1)}%
+                </span>
+              </div>
+            )}
+
+            {/* Error Message */}
+            {predictionResults?.error && (
+              <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm text-red-700">
+                  <span className="font-semibold">Error:</span> {predictionResults.error}
+                </p>
+              </div>
+            )}
+
+            {/* Data Source */}
+            {predictionResults?.source && (
+              <div className="text-sm text-gray-500 text-center">
+                Data verified using: <span className="font-medium">{predictionResults.source}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
