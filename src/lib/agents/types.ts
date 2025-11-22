@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export type AgentRole = 'reporter' | 'editor' | 'designer' | 'marketer';
+export type AgentRole = 'reporter' | 'editor' | 'designer' | 'marketer' | 'predictor';
 
 export interface AgentState {
   role: AgentRole;
@@ -68,4 +68,20 @@ export interface MarketerOutput {
     clicks: number;
   };
   strategy: string;
+}
+
+// Predictor Types
+export const PredictorInputSchema = z.object({
+  domain: z.enum(['stock', 'crypto', 'sports', 'politics']),
+  target: z.string().describe('Specific target (e.g., "AAPL", "Bitcoin", "Lakers vs Warriors")'),
+  horizon: z.string().default('1 month').describe('Prediction timeframe'),
+  region: z.enum(['US', 'KR', 'EU']).optional().describe('Geographic region for context'),
+});
+export type PredictorInput = z.infer<typeof PredictorInputSchema>;
+
+export interface PredictorOutput {
+  prediction: any; // Typed based on domain-specific schema
+  researchTrace: string;
+  toolsUsed: string[];
+  confidence: 'High' | 'Medium' | 'Low';
 }
