@@ -1,9 +1,49 @@
 /**
- * Redis cache utilities using Vercel KV
+ * Redis cache utilities using ioredis
  * Provides server-side caching with TTL support
  */
 
-import { kv } from '@vercel/kv';
+import Redis from 'ioredis';
+
+// Initialize Redis client singleton
+let redis: Redis | null = null;
+
+function getRedisClient(): Redis | null {
+  // Return null if no Redis URL is configured (graceful degradation)
+  if (!process.env.REDIS_URL) {
+    console.warn('REDIS_URL not configured - caching will be disabled');
+    return null;
+  }
+
+  // Create singleton instance
+  if (!redis) {
+    try {
+      redis = new Redis(process.env.REDIS_URL, {
+        maxRetriesPerRequest: 3,
+        retryStrategy: (times: number) => {
+          // Exponential backoff: 50ms, 100ms, 200ms, etc.
+          const delay = Math.min(times * 50, 2000);
+          return delay;
+        },
+        // Disable offline queue to fail fast when Redis is unavailable
+        enableOfflineQueue: false,
+      });
+
+      redis.on('error', (error) => {
+        console.error('Redis connection error:', error);
+      });
+
+      redis.on('connect', () => {
+        console.log('Redis connected successfully');
+      });
+    } catch (error) {
+      console.error('Failed to initialize Redis client:', error);
+      return null;
+    }
+  }
+
+  return redis;
+}
 
 export interface CacheOptions {
   /** Time to live in seconds */
@@ -40,10 +80,16 @@ export async function getCache<T>(
   key: string,
   options?: CacheOptions
 ): Promise<T | null> {
+  const client = getRedisClient();
+  if (!client) return null;
+
   try {
     const cacheKey = getCacheKey(key, options?.prefix);
-    const data = await kv.get<T>(cacheKey);
-    return data;
+    const data = await client.get(cacheKey);
+
+    if (!data) return null;
+
+    return JSON.parse(data) as T;
   } catch (error) {
     console.error('Cache get error:', error);
     return null;
@@ -58,13 +104,15 @@ export async function setCache<T>(
   value: T,
   options?: CacheOptions
 ): Promise<void> {
+  const client = getRedisClient();
+  if (!client) return;
+
   try {
     const cacheKey = getCacheKey(key, options?.prefix);
     const ttl = options?.ttl ?? CACHE_TTL.MEDIUM;
+    const serialized = JSON.stringify(value);
 
-    await kv.set(cacheKey, value, {
-      ex: ttl, // Expiration in seconds
-    });
+    await client.setex(cacheKey, ttl, serialized);
   } catch (error) {
     console.error('Cache set error:', error);
   }
@@ -77,9 +125,12 @@ export async function deleteCache(
   key: string,
   options?: CacheOptions
 ): Promise<void> {
+  const client = getRedisClient();
+  if (!client) return;
+
   try {
     const cacheKey = getCacheKey(key, options?.prefix);
-    await kv.del(cacheKey);
+    await client.del(cacheKey);
   } catch (error) {
     console.error('Cache delete error:', error);
   }
@@ -89,10 +140,28 @@ export async function deleteCache(
  * Delete multiple keys matching a pattern
  */
 export async function deleteCachePattern(pattern: string): Promise<void> {
+  const client = getRedisClient();
+  if (!client) return;
+
   try {
-    const keys = await kv.keys(pattern);
+    // Use SCAN instead of KEYS for better performance
+    const keys: string[] = [];
+    let cursor = '0';
+
+    do {
+      const [nextCursor, foundKeys] = await client.scan(
+        cursor,
+        'MATCH',
+        pattern,
+        'COUNT',
+        100
+      );
+      cursor = nextCursor;
+      keys.push(...foundKeys);
+    } while (cursor !== '0');
+
     if (keys.length > 0) {
-      await kv.del(...keys);
+      await client.del(...keys);
     }
   } catch (error) {
     console.error('Cache pattern delete error:', error);
@@ -131,13 +200,26 @@ export async function invalidateCache(pattern: string): Promise<void> {
 }
 
 /**
- * Check if Redis/KV is available
+ * Check if Redis is available
  */
 export async function isCacheAvailable(): Promise<boolean> {
+  const client = getRedisClient();
+  if (!client) return false;
+
   try {
-    await kv.ping();
+    await client.ping();
     return true;
   } catch {
     return false;
+  }
+}
+
+/**
+ * Close Redis connection (useful for cleanup in tests or shutdown)
+ */
+export async function closeRedis(): Promise<void> {
+  if (redis) {
+    await redis.quit();
+    redis = null;
   }
 }
