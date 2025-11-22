@@ -3,6 +3,7 @@ import { google } from '@ai-sdk/google';
 import { z } from 'zod';
 import { ReporterInput, ReporterOutput } from './types';
 import { fetchNewsTool } from '../tools/fetch-news';
+import { getRecentReports, formatPreviousReportsForPrompt } from '../utils/duplicate-checker';
 
 export interface ReporterWorkflowResult {
   output: ReporterOutput;
@@ -22,7 +23,11 @@ export async function runReporter(input: ReporterInput): Promise<ReporterOutput>
 export async function runReporterWorkflow(input: ReporterInput): Promise<ReporterWorkflowResult> {
   const stepLogs: ReporterWorkflowResult['steps'] = [];
 
-  // 1. Build system prompt for reporter agent
+  // 1. Fetch recent reports to avoid duplicates
+  const previousReports = await getRecentReports(input.topic, 24, 10);
+  const previousReportsInfo = formatPreviousReportsForPrompt(previousReports);
+
+  // 2. Build system prompt for reporter agent
   const systemPrompt = `You are an expert AI Reporter specializing in ${input.topic} news${input.region ? ` in ${input.region}` : ''}.
 
 Your workflow:
@@ -30,6 +35,11 @@ Your workflow:
 2. Analyze the news articles to identify current trends and hot topics.
 3. Select the most interesting and relevant topic to write about.
 4. Write a comprehensive, well-researched report based on the real news data.
+
+IMPORTANT - AVOID DUPLICATES:
+${previousReportsInfo}
+
+You MUST select a topic that is different from the recent reports listed above. Choose a fresh angle, different news story, or emerging trend that hasn't been covered yet. If the news you fetch has already been reported on, select a different aspect or a new development.
 
 Always cite your sources with the actual URLs from the news articles.
 Focus on providing accurate, timely, and insightful analysis.`;
@@ -106,6 +116,15 @@ After gathering the news, provide your response in the following JSON format:
       trends: [],
       sources: [],
     };
+  }
+
+  // 7. Final duplicate check (log warning if duplicate detected)
+  const { checkTitleSimilarity } = await import('../utils/duplicate-checker');
+  const duplicateCheck = checkTitleSimilarity(output.title, previousReports);
+  if (duplicateCheck.isDuplicate && duplicateCheck.matchingReport) {
+    console.warn(`[DUPLICATE WARNING] New report "${output.title}" is similar to existing report "${duplicateCheck.matchingReport.title}" (ID: ${duplicateCheck.matchingReport.id})`);
+    // Note: We're logging the warning but still returning the output.
+    // You could modify this behavior to throw an error or return a different status.
   }
 
   return {
