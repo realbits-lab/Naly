@@ -1,8 +1,8 @@
 import { unstable_cache } from 'next/cache';
 import { db } from '@/db';
 import { agentConfigs, agentRuns, cronExecutions } from '@/db/schema';
-import { desc, eq } from 'drizzle-orm';
-import { Play, Pause, Activity, Clock, TestTube } from 'lucide-react';
+import { desc, eq, sql } from 'drizzle-orm';
+import { Play, Pause, Activity, Clock, TestTube, DollarSign, Zap, TrendingUp, BarChart } from 'lucide-react';
 import { runAgentManually, testCronEndpoint } from '@/app/actions';
 import Link from 'next/link';
 import { RunCard } from '@/components/RunCard';
@@ -62,6 +62,16 @@ export default async function DashboardPage() {
     }).format(date);
   };
 
+  // Calculate token usage statistics
+  const completedRuns = await db.select().from(agentRuns).where(eq(agentRuns.status, 'COMPLETED'));
+
+  const totalTokens = completedRuns.reduce((sum, run) => sum + (run.totalTokens || 0), 0);
+  const totalCost = completedRuns.reduce((sum, run) => sum + parseFloat(run.estimatedCost || '0'), 0);
+  const totalRevenue = completedRuns.reduce((sum, run) => sum + parseFloat(run.adRevenue || '0'), 0);
+  const avgROI = completedRuns.length > 0
+    ? completedRuns.reduce((sum, run) => sum + parseFloat(run.roi || '0'), 0) / completedRuns.length
+    : 0;
+
   return (
     <div className="space-y-8">
       <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
@@ -109,6 +119,45 @@ export default async function DashboardPage() {
           >
             Docs →
           </a>
+        </div>
+      </div>
+
+      {/* Token Usage & ROI Statistics */}
+      <div className="grid gap-4 md:grid-cols-4">
+        <div className="rounded-lg bg-gradient-to-br from-blue-50 to-blue-100 p-4 border border-blue-200">
+          <div className="flex items-center gap-2 text-blue-700 mb-2">
+            <Zap size={18} />
+            <span className="text-xs font-semibold uppercase">Total Tokens</span>
+          </div>
+          <p className="text-2xl font-bold text-blue-900">{totalTokens.toLocaleString()}</p>
+          <p className="text-xs text-blue-600 mt-1">{completedRuns.length} completed runs</p>
+        </div>
+
+        <div className="rounded-lg bg-gradient-to-br from-red-50 to-red-100 p-4 border border-red-200">
+          <div className="flex items-center gap-2 text-red-700 mb-2">
+            <DollarSign size={18} />
+            <span className="text-xs font-semibold uppercase">Total Cost</span>
+          </div>
+          <p className="text-2xl font-bold text-red-900">${totalCost.toFixed(4)}</p>
+          <p className="text-xs text-red-600 mt-1">Token expenses</p>
+        </div>
+
+        <div className="rounded-lg bg-gradient-to-br from-green-50 to-green-100 p-4 border border-green-200">
+          <div className="flex items-center gap-2 text-green-700 mb-2">
+            <TrendingUp size={18} />
+            <span className="text-xs font-semibold uppercase">Est. Revenue</span>
+          </div>
+          <p className="text-2xl font-bold text-green-900">${totalRevenue.toFixed(2)}</p>
+          <p className="text-xs text-green-600 mt-1">From predicted ads</p>
+        </div>
+
+        <div className="rounded-lg bg-gradient-to-br from-purple-50 to-purple-100 p-4 border border-purple-200">
+          <div className="flex items-center gap-2 text-purple-700 mb-2">
+            <BarChart size={18} />
+            <span className="text-xs font-semibold uppercase">Avg ROI</span>
+          </div>
+          <p className="text-2xl font-bold text-purple-900">{avgROI.toFixed(1)}%</p>
+          <p className="text-xs text-purple-600 mt-1">Return on investment</p>
         </div>
       </div>
 

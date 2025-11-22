@@ -1,4 +1,4 @@
-import { pgTable, serial, text, timestamp, jsonb, integer, uuid, boolean, primaryKey, index } from 'drizzle-orm/pg-core';
+import { pgTable, serial, text, timestamp, jsonb, integer, uuid, boolean, primaryKey, index, numeric } from 'drizzle-orm/pg-core';
 
 // Better-auth required tables
 export const user = pgTable('user', {
@@ -84,6 +84,16 @@ export const agentRuns = pgTable('agent_runs', {
   marketerOutput: jsonb('marketer_output'),
   predictionCheckTime: timestamp('prediction_check_time'), // When to verify predictions
   predictionResults: jsonb('prediction_results'), // Actual metrics and accuracy
+  // Token usage tracking
+  reporterTokens: integer('reporter_tokens').default(0),
+  editorTokens: integer('editor_tokens').default(0),
+  designerTokens: integer('designer_tokens').default(0),
+  marketerTokens: integer('marketer_tokens').default(0),
+  totalTokens: integer('total_tokens').default(0),
+  // Cost and ROI tracking
+  estimatedCost: numeric('estimated_cost', { precision: 10, scale: 6 }).default('0'),
+  adRevenue: numeric('ad_revenue', { precision: 10, scale: 2 }).default('0'),
+  roi: numeric('roi', { precision: 10, scale: 2 }).default('0'),
 }, (table) => ({
   // Index for filtering by agent type
   agentTypeIdx: index('agent_runs_agent_type_idx').on(table.agentType),

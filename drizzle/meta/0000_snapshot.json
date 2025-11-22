@@ -1,5 +1,5 @@
 {
-  "id": "ae69a635-7d85-4caf-a391-6ad237534991",
+  "id": "923c661f-e715-49a8-95c4-cbaef08b1b70",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -129,17 +129,61 @@
           "primaryKey": false,
           "notNull": false
         },
-        "prediction_check_time": {
-          "name": "prediction_check_time",
-          "type": "timestamp",
+        "reporter_tokens": {
+          "name": "reporter_tokens",
+          "type": "integer",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "default": 0
         },
-        "prediction_results": {
-          "name": "prediction_results",
-          "type": "jsonb",
+        "editor_tokens": {
+          "name": "editor_tokens",
+          "type": "integer",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "default": 0
+        },
+        "designer_tokens": {
+          "name": "designer_tokens",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 0
+        },
+        "marketer_tokens": {
+          "name": "marketer_tokens",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 0
+        },
+        "total_tokens": {
+          "name": "total_tokens",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 0
+        },
+        "estimated_cost": {
+          "name": "estimated_cost",
+          "type": "numeric(10, 6)",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'0'"
+        },
+        "ad_revenue": {
+          "name": "ad_revenue",
+          "type": "numeric(10, 2)",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'0'"
+        },
+        "roi": {
+          "name": "roi",
+          "type": "numeric(10, 2)",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'0'"
         }
       },
       "indexes": {},

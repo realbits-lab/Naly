@@ -5,6 +5,11 @@ import { DesignerInput, DesignerOutput } from './types';
 import { generateAndStoreImage } from '../services/image-generator';
 import { generateStructuredWithAIServer, getTextGenerationProvider } from '../services/text-generator';
 
+export interface DesignerResult {
+  output: DesignerOutput;
+  tokensUsed: number;
+}
+
 // Schema for thumbnail generation
 const thumbnailSchema = {
   type: 'object',
@@ -33,7 +38,7 @@ const thumbnailZodSchema = z.object({
 
 type ThumbnailResult = z.infer<typeof thumbnailZodSchema>;
 
-export async function runDesigner(input: DesignerInput): Promise<DesignerOutput> {
+export async function runDesigner(input: DesignerInput): Promise<DesignerResult> {
   const textProvider = getTextGenerationProvider();
 
   console.log('='.repeat(60));
@@ -70,6 +75,7 @@ export async function runDesigner(input: DesignerInput): Promise<DesignerOutput>
 
   const startTime = Date.now();
   let object: ThumbnailResult;
+  let tokensUsed = 0;
 
   // 2. Route to appropriate text generation provider
   if (textProvider === 'ai-server') {
@@ -91,9 +97,12 @@ export async function runDesigner(input: DesignerInput): Promise<DesignerOutput>
         prompt: prompt,
       });
       object = geminiResult.object;
+      tokensUsed = geminiResult.usage.totalTokens || 0;
     } else {
       console.log('[DESIGNER] AI Server response valid:', result.isValid);
       object = result.output;
+      // AI Server doesn't return token usage, estimate based on output
+      tokensUsed = 0;
     }
   } else {
     console.log('[DESIGNER] Generating thumbnail description with Gemini...');
@@ -103,6 +112,7 @@ export async function runDesigner(input: DesignerInput): Promise<DesignerOutput>
       prompt: prompt,
     });
     object = geminiResult.object;
+    tokensUsed = geminiResult.usage.totalTokens || 0;
   }
 
   console.log(`[DESIGNER] Thumbnail description generated (${Date.now() - startTime}ms)`);
@@ -141,7 +151,10 @@ No text or watermarks.`;
   console.log('='.repeat(60));
 
   return {
-    assets,
-    layoutSuggestion: object.layoutSuggestion,
+    output: {
+      assets,
+      layoutSuggestion: object.layoutSuggestion,
+    },
+    tokensUsed,
   };
 }
