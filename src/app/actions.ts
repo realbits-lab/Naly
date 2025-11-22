@@ -1,22 +1,10 @@
 'use server';
 
-import { signIn } from '@/auth';
 import { db } from '@/db';
 import { agentConfigs } from '@/db/schema';
 import { triggerAgent } from '@/lib/scheduler';
 import { eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
-
-export async function authenticate(prevState: string | undefined, formData: FormData) {
-  try {
-    await signIn('credentials', Object.fromEntries(formData));
-  } catch (error) {
-    if ((error as Error).message.includes('CredentialsSignin')) {
-      return 'CredentialSignin';
-    }
-    throw error;
-  }
-}
 
 export async function updateAgentConfig(type: 'REPORTER' | 'MARKETER', schedule: string, status: 'ACTIVE' | 'PAUSED', params: any) {
   // Check if exists

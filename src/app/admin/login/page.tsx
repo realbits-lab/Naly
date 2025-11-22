@@ -1,10 +1,42 @@
 'use client';
 
-import { useActionState } from 'react';
-import { authenticate } from '@/app/actions';
+import { useState } from 'react';
+import { signIn } from '@/lib/auth-client';
+import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
-  const [errorMessage, formAction, isPending] = useActionState(authenticate, undefined);
+  const [isPending, setIsPending] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | undefined>();
+  const router = useRouter();
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsPending(true);
+    setErrorMessage(undefined);
+
+    const formData = new FormData(e.currentTarget);
+    const username = formData.get('username') as string;
+    const password = formData.get('password') as string;
+
+    try {
+      const result = await signIn.email({
+        email: username, // better-auth uses email field
+        password,
+        callbackURL: '/admin/dashboard',
+      });
+
+      if (result.error) {
+        setErrorMessage('Invalid credentials');
+      } else {
+        router.push('/admin/dashboard');
+        router.refresh();
+      }
+    } catch (error) {
+      setErrorMessage('An error occurred. Please try again.');
+    } finally {
+      setIsPending(false);
+    }
+  };
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-100">
@@ -14,7 +46,7 @@ export default function LoginPage() {
             Sign in to Admin Dashboard
           </h2>
         </div>
-        <form className="mt-8 space-y-6" action={formAction}>
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="-space-y-px rounded-md shadow-sm">
             <div>
               <label htmlFor="username" className="sr-only">

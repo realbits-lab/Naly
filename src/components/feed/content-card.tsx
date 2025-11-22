@@ -7,17 +7,19 @@ import {
   formatViewCount,
   CATEGORY_CONFIG,
 } from '@/lib/feed/types';
+import { ContentInteractions } from '@/components/interactions';
 
 interface ContentCardProps {
   card: ContentCardType;
+  showInteractions?: boolean;
 }
 
-export function ContentCard({ card }: ContentCardProps): React.ReactElement {
+export function ContentCard({ card, showInteractions = true }: ContentCardProps): React.ReactElement {
   const categoryConfig = CATEGORY_CONFIG[card.category];
 
   return (
-    <Link href={`/article/${card.id}`} className="block">
-      <article className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden active:scale-[0.98] transition-transform cursor-pointer">
+    <article className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      <Link href={`/article/${card.id}`} className="block active:scale-[0.98] transition-transform cursor-pointer">
         {/* 1. Thumbnail Image (optional) */}
         {card.thumbnailUrl && (
           <div className="relative w-full h-[140px] bg-gray-100">
@@ -64,8 +66,20 @@ export function ContentCard({ card }: ContentCardProps): React.ReactElement {
             </span>
           </div>
         </div>
-      </article>
-    </Link>
+      </Link>
+
+      {/* Interactions (Like & Reply) - Outside the Link */}
+      {showInteractions && (
+        <div className="px-4 pb-4 border-t border-gray-100 pt-3">
+          <ContentInteractions
+            contentId={card.id}
+            initialLikeCount={card.likeCount}
+            initialReplyCount={card.replyCount}
+            initialLiked={card.userLiked}
+          />
+        </div>
+      )}
+    </article>
   );
 }
 
