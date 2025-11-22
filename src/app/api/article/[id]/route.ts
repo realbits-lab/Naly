@@ -49,6 +49,8 @@ export async function GET(
     predictedEngagement: marketerOutput?.predictedMetrics?.retention || 0,
     trends: output?.trends || [],
     sources: output?.sources || [],
+    dataTables: output?.dataTables || [],
+    charts: output?.charts || [],
   };
 
   return NextResponse.json(article);

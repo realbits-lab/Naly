@@ -16,11 +16,30 @@ export const ReporterInputSchema = z.object({
 });
 export type ReporterInput = z.infer<typeof ReporterInputSchema>;
 
+export interface DataTable {
+  title: string;
+  headers: string[];
+  rows: (string | number)[][];
+}
+
+export interface ChartData {
+  title: string;
+  type: 'line' | 'bar' | 'pie' | 'area';
+  data: {
+    name: string;
+    [key: string]: string | number;
+  }[];
+  xKey?: string;
+  yKeys?: string[];
+}
+
 export interface ReporterOutput {
   title: string;
   content: string;
   trends: string[];
   sources: string[];
+  dataTables?: DataTable[];
+  charts?: ChartData[];
 }
 
 // Editor Types

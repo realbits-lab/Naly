@@ -8,6 +8,8 @@ import {
   formatRelativeTime,
   CATEGORY_CONFIG,
 } from '@/lib/feed/types';
+import { DataTable } from '@/components/data-viz/DataTable';
+import { DataChart } from '@/components/data-viz/DataChart';
 
 interface SourceInfo {
   url: string;
@@ -166,7 +168,7 @@ export default function ArticleDetailPage(): React.ReactElement {
           {/* 9. Content body */}
           <article className="prose prose-gray max-w-none">
             <div className="text-gray-700 leading-relaxed whitespace-pre-line">
-              {renderContentWithReferences(article.content, article.sources)}
+              {renderContentWithReferences(article.content, article.sources, article.dataTables, article.charts)}
             </div>
           </article>
 
@@ -291,13 +293,18 @@ function parseMarkdownText(text: string, keyPrefix: string): React.ReactNode[] {
   return result.length > 0 ? result : [text];
 }
 
-// Helper function to render content with markdown links and URL references
-function renderContentWithReferences(content: string, sources: string[]): React.ReactNode[] {
+// Helper function to render content with markdown links, URL references, tables, and charts
+function renderContentWithReferences(
+  content: string,
+  sources: string[],
+  dataTables?: ContentCardType['dataTables'],
+  charts?: ContentCardType['charts']
+): React.ReactNode[] {
   // First, remove existing [number] patterns that precede URLs (e.g., "[6] https://..." -> "https://...")
   const cleanedContent = content.replace(/\[(\d+)\]\s*(https?:\/\/)/g, '$2');
 
-  // Pattern to match both markdown links [text](url) and raw URLs
-  const combinedRegex = /(\[([^\]]+)\]\((https?:\/\/[^)]+)\))|(https?:\/\/[^\s)]+)/g;
+  // Pattern to match markdown links, raw URLs, table placeholders, and chart placeholders
+  const combinedRegex = /(\{\{TABLE:(\d+)\}\})|(\{\{CHART:(\d+)\}\})|(\[([^\]]+)\]\((https?:\/\/[^)]+)\))|(https?:\/\/[^\s)]+)/g;
 
   const result: React.ReactNode[] = [];
   let lastIndex = 0;
@@ -312,9 +319,29 @@ function renderContentWithReferences(content: string, sources: string[]): React.
     }
 
     if (match[1]) {
+      // Table placeholder: {{TABLE:n}}
+      const tableIndex = parseInt(match[2], 10);
+      if (dataTables && dataTables[tableIndex]) {
+        result.push(
+          <div key={`table-${keyIndex++}`}>
+            <DataTable data={dataTables[tableIndex]} />
+          </div>
+        );
+      }
+    } else if (match[3]) {
+      // Chart placeholder: {{CHART:n}}
+      const chartIndex = parseInt(match[4], 10);
+      if (charts && charts[chartIndex]) {
+        result.push(
+          <div key={`chart-${keyIndex++}`}>
+            <DataChart data={charts[chartIndex]} />
+          </div>
+        );
+      }
+    } else if (match[5]) {
       // Markdown link: [text](url)
-      const linkText = match[2];
-      const url = match[3];
+      const linkText = match[6];
+      const url = match[7];
       const sourceIndex = findMatchingSourceIndex(url, sources);
       const refNumber = sourceIndex >= 0 ? sourceIndex + 1 : null;
 
@@ -330,9 +357,9 @@ function renderContentWithReferences(content: string, sources: string[]): React.
           {refNumber && <sup className="text-xs ml-0.5">[{refNumber}]</sup>}
         </a>
       );
-    } else if (match[4]) {
+    } else if (match[8]) {
       // Raw URL
-      const url = match[4];
+      const url = match[8];
       const sourceIndex = findMatchingSourceIndex(url, sources);
       const refNumber = sourceIndex >= 0 ? sourceIndex + 1 : null;
       const targetUrl = refNumber ? sources[sourceIndex] : url;

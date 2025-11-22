@@ -66,12 +66,39 @@ Focus on providing accurate, timely, and insightful analysis.`;
 IMPORTANT: When citing sources in your content, use markdown link format: [source name](url)
 For example: "According to [Reuters](https://reuters.com/article/...), the market showed..."
 
+IMPORTANT: Include at least one or two data visualizations in your report:
+- Extract or calculate relevant numerical data from the news (e.g., price changes, percentages, comparisons, statistics)
+- Create at least one data table with this information
+- Create at least one chart configuration (line, bar, area, or pie chart) to visualize trends or comparisons
+
 After gathering the news, provide your response in the following JSON format:
 {
   "title": "Your compelling article title",
-  "content": "Your detailed article content (at least 500 words) with markdown links for citations",
+  "content": "Your detailed article content (at least 500 words) with markdown links for citations. Use {{TABLE:0}}, {{TABLE:1}}, etc. to reference where tables should appear, and {{CHART:0}}, {{CHART:1}}, etc. for charts.",
   "trends": ["trend1", "trend2", "trend3"],
-  "sources": ["url1", "url2", "url3"]
+  "sources": ["url1", "url2", "url3"],
+  "dataTables": [
+    {
+      "title": "Table title",
+      "headers": ["Column1", "Column2", "Column3"],
+      "rows": [
+        ["Data1", "Data2", "Data3"],
+        ["Data4", "Data5", "Data6"]
+      ]
+    }
+  ],
+  "charts": [
+    {
+      "title": "Chart title",
+      "type": "line" | "bar" | "area" | "pie",
+      "data": [
+        {"name": "Label1", "value": 100, "value2": 200},
+        {"name": "Label2", "value": 150, "value2": 250}
+      ],
+      "xKey": "name",
+      "yKeys": ["value", "value2"]
+    }
+  ]
 }`,
   });
 
@@ -88,6 +115,8 @@ After gathering the news, provide your response in the following JSON format:
         content: parsed.content || text,
         trends: parsed.trends || [],
         sources: parsed.sources || [],
+        dataTables: parsed.dataTables || [],
+        charts: parsed.charts || [],
       };
     } else {
       // Fallback if no JSON found
@@ -96,6 +125,8 @@ After gathering the news, provide your response in the following JSON format:
         content: text,
         trends: [],
         sources: [],
+        dataTables: [],
+        charts: [],
       };
     }
   } catch {
@@ -105,6 +136,8 @@ After gathering the news, provide your response in the following JSON format:
       content: text,
       trends: [],
       sources: [],
+      dataTables: [],
+      charts: [],
     };
   }
 
