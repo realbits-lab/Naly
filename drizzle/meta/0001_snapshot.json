@@ -1,6 +1,6 @@
 {
-  "id": "60e7c81b-b387-4d50-8637-df681ca4e418",
-  "prevId": "0083a49c-7937-4a86-8bb9-6ddab3206a23",
+  "id": "2a8e63bb-0d8f-45f1-b258-1eff01b465ef",
+  "prevId": "60e7c81b-b387-4d50-8637-df681ca4e418",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -236,6 +236,18 @@
         },
         "marketer_output": {
           "name": "marketer_output",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "prediction_check_time": {
+          "name": "prediction_check_time",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "prediction_results": {
+          "name": "prediction_results",
           "type": "jsonb",
           "primaryKey": false,
           "notNull": false
