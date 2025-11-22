@@ -21,6 +21,23 @@ export const AD_CONFIG = {
 // 3. Content card types
 export type TopicCategory = 'stock' | 'coin' | 'sports' | 'politics';
 
+export interface DataTable {
+  title: string;
+  headers: string[];
+  rows: (string | number)[][];
+}
+
+export interface ChartData {
+  title: string;
+  type: 'line' | 'bar' | 'pie' | 'area';
+  data: {
+    name: string;
+    [key: string]: string | number;
+  }[];
+  xKey?: string;
+  yKeys?: string[];
+}
+
 export interface ContentCard {
   id: string;
   title: string;
@@ -36,6 +53,8 @@ export interface ContentCard {
   likeCount?: number;
   replyCount?: number;
   userLiked?: boolean;
+  dataTables?: DataTable[];
+  charts?: ChartData[];
 }
 
 // 4. Feed state

@@ -99,6 +99,8 @@ export async function GET(request: NextRequest): Promise<NextResponse<FeedRespon
       predictedEngagement: marketerOutput?.predictedMetrics?.retention || 0,
       trends: output?.trends || [],
       sources: output?.sources || [],
+      dataTables: output?.dataTables || [],
+      charts: output?.charts || [],
     };
   });
 
