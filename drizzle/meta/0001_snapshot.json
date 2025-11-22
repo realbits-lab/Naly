@@ -1,6 +1,6 @@
 {
-  "id": "0083a49c-7937-4a86-8bb9-6ddab3206a23",
-  "prevId": "324bc0ba-42ef-417e-b7df-2e661a62a064",
+  "id": "60e7c81b-b387-4d50-8637-df681ca4e418",
+  "prevId": "0083a49c-7937-4a86-8bb9-6ddab3206a23",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -143,7 +143,23 @@
           "default": "now()"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "agent_configs_status_idx": {
+          "name": "agent_configs_status_idx",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
@@ -225,7 +241,80 @@
           "notNull": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "agent_runs_agent_type_idx": {
+          "name": "agent_runs_agent_type_idx",
+          "columns": [
+            {
+              "expression": "agent_type",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "agent_runs_status_idx": {
+          "name": "agent_runs_status_idx",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "agent_runs_start_time_idx": {
+          "name": "agent_runs_start_time_idx",
+          "columns": [
+            {
+              "expression": "start_time",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "agent_runs_type_status_time_idx": {
+          "name": "agent_runs_type_status_time_idx",
+          "columns": [
+            {
+              "expression": "agent_type",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "start_time",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
