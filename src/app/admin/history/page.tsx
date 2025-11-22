@@ -1,12 +1,21 @@
+import { unstable_cache } from 'next/cache';
 import { db } from '@/db';
 import { agentRuns } from '@/db/schema';
 import { desc } from 'drizzle-orm';
 import { RunCard } from '@/components/RunCard';
 
-export const dynamic = 'force-dynamic';
+// Cache history runs query for 1 minute
+const getCachedHistoryRuns = unstable_cache(
+  async () => db.select().from(agentRuns).orderBy(desc(agentRuns.startTime)).limit(50),
+  ['history-runs'],
+  {
+    revalidate: 60, // 1 minute
+    tags: ['agent-runs', 'history'],
+  }
+);
 
 export default async function HistoryPage() {
-  const runs = await db.select().from(agentRuns).orderBy(desc(agentRuns.startTime)).limit(50);
+  const runs = await getCachedHistoryRuns();
 
   return (
     <div className="space-y-6">

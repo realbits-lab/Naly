@@ -1,12 +1,14 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect } from 'react';
+import useSWR from 'swr';
 import {
   ContentCard,
   FeedState,
   FeedResponse,
   FEED_LIMITS,
 } from '@/lib/feed/types';
+import { getLocalCache, setLocalCache, LOCAL_CACHE_TTL } from '@/lib/local-storage-cache';
 
 interface UseFeedOptions {
   initialCards?: ContentCard[];
@@ -36,13 +38,44 @@ export function useFeed(options: UseFeedOptions = {}): UseFeedReturn {
 
   const recycledCardsRef = useRef<ContentCard[]>([]);
 
-  // 1. Fetch feed data from API
-  const fetchFeed = async (page: number): Promise<FeedResponse> => {
-    const response = await fetch(`/api/feed?page=${page}&limit=${FEED_LIMITS.ITEMS_PER_PAGE}`);
+  // 1. SWR fetcher with local storage caching
+  const fetcher = async (url: string): Promise<FeedResponse> => {
+    // Try local storage cache first
+    const cacheKey = url.replace('/api/', '');
+    const cached = getLocalCache<FeedResponse>(cacheKey, {
+      prefix: 'feed',
+      ttl: LOCAL_CACHE_TTL.SHORT,
+    });
+
+    if (cached) {
+      return cached;
+    }
+
+    // Fetch from API with ETag support
+    const response = await fetch(url, {
+      headers: {
+        'If-None-Match': '', // Will be populated by browser cache
+      },
+    });
+
     if (!response.ok) {
       throw new Error('Failed to fetch feed');
     }
-    return response.json();
+
+    const data = await response.json();
+
+    // Cache in local storage
+    setLocalCache(cacheKey, data, {
+      prefix: 'feed',
+      ttl: LOCAL_CACHE_TTL.SHORT,
+    });
+
+    return data;
+  };
+
+  // 2. Fetch feed data from API
+  const fetchFeed = async (page: number): Promise<FeedResponse> => {
+    return fetcher(`/api/feed?page=${page}&limit=${FEED_LIMITS.ITEMS_PER_PAGE}`);
   };
 
   // 2. Load more cards (scroll down)
