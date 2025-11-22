@@ -8,6 +8,7 @@ import {
   formatRelativeTime,
   CATEGORY_CONFIG,
 } from '@/lib/feed/types';
+import { AdCard } from '@/components/feed/ad-card';
 
 interface SourceInfo {
   url: string;
@@ -170,6 +171,11 @@ export default function ArticleDetailPage(): React.ReactElement {
             </div>
           </article>
 
+          {/* Ad placement after content */}
+          <div className="my-6">
+            <AdCard />
+          </div>
+
           {/* 10. Trend tags */}
           {article.trends.length > 0 && (
             <div className="space-y-2">
@@ -212,6 +218,11 @@ export default function ArticleDetailPage(): React.ReactElement {
               </div>
             </div>
           )}
+
+          {/* Ad placement after sources */}
+          <div className="my-6">
+            <AdCard />
+          </div>
 
           <hr className="border-gray-200" />
 
