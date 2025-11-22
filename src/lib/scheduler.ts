@@ -10,6 +10,7 @@ import { ReporterInput, MarketerInput, ReporterOutput, MarketerOutput, EditorOut
 
 export async function checkAndTriggerJobs() {
   const configs = await db.select().from(agentConfigs).where(eq(agentConfigs.status, 'ACTIVE'));
+  let jobsTriggered = 0;
 
   for (const config of configs) {
     try {
@@ -18,7 +19,7 @@ export async function checkAndTriggerJobs() {
       const prev = interval.prev().toDate();
       const next = interval.next().toDate(); // This actually advances the iterator, so we need to be careful.
       // Better approach: Get the last run for this agent.
-      
+
       const lastRun = await db.select().from(agentRuns)
         .where(eq(agentRuns.agentType, config.type))
         .orderBy(desc(agentRuns.startTime))
@@ -32,7 +33,7 @@ export async function checkAndTriggerJobs() {
         // If the scheduled previous run time is after the last actual run time, it means we missed a schedule or it's time.
         // Or simply: if (now - lastRunTime) >= interval
         // Let's stick to: if next scheduled time from lastRunTime is in the past? No.
-        
+
         // Simple logic: parse expression relative to lastRunTime. If the next occurrence is in the past (before now), run it.
         const nextScheduled = cronParser.parse(config.schedule, { currentDate: lastRunTime }).next().toDate();
         if (nextScheduled <= new Date()) {
@@ -42,11 +43,14 @@ export async function checkAndTriggerJobs() {
 
       if (shouldRun) {
         await triggerAgent(config.type as 'REPORTER' | 'MARKETER', config.params);
+        jobsTriggered++;
       }
     } catch (e) {
       console.error(`Error checking schedule for ${config.type}:`, e);
     }
   }
+
+  return { jobsTriggered };
 }
 
 export async function triggerAgent(type: 'REPORTER' | 'MARKETER', params: any) {

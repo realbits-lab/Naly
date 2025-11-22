@@ -28,3 +28,13 @@ export const agentRuns = pgTable('agent_runs', {
   designerOutput: jsonb('designer_output'),
   marketerOutput: jsonb('marketer_output'),
 });
+
+export const cronExecutions = pgTable('cron_executions', {
+  id: serial('id').primaryKey(),
+  startTime: timestamp('start_time').notNull(),
+  endTime: timestamp('end_time'),
+  status: text('status').notNull(), // 'RUNNING' | 'SUCCESS' | 'FAILED'
+  jobsTriggered: integer('jobs_triggered').default(0),
+  errorMessage: text('error_message'),
+  duration: integer('duration'), // in milliseconds
+});
