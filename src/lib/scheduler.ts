@@ -7,6 +7,7 @@ import { runMarketer, calculateROI } from './agents/marketer';
 import { runEditor } from './agents/editor';
 import { runDesigner } from './agents/designer';
 import { ReporterInput, MarketerInput, ReporterOutput, MarketerOutput, EditorOutput } from './agents/types';
+import { getRandomReporter, addReporterMemory } from './services/reporter-selector';
 
 export async function checkAndTriggerJobs() {
   const configs = await db.select().from(agentConfigs).where(eq(agentConfigs.status, 'ACTIVE'));
@@ -54,39 +55,49 @@ export async function checkAndTriggerJobs() {
 }
 
 export async function triggerAgent(type: 'REPORTER' | 'MARKETER', params: any) {
-  // 1. Create Run Record
-  const [run] = await db.insert(agentRuns).values({
-    agentType: type,
-    status: 'RUNNING',
-    startTime: new Date(),
-  }).returning();
+  // Token tracking
+  let reporterTokens = 0;
+  let editorTokens = 0;
+  let designerTokens = 0;
+  let marketerTokens = 0;
 
-  try {
-    let output: any;
-    let editorReview: EditorOutput | null = null;
-    let designerOutput: any | null = null;
-    let marketerOutput: any | null = null;
+  // 2. Run Agent
+  if (type === 'REPORTER') {
+    // A. Get or select a random reporter
+    const reporter = await getRandomReporter(params.topic);
 
-    // Token tracking
-    let reporterTokens = 0;
-    let editorTokens = 0;
-    let designerTokens = 0;
-    let marketerTokens = 0;
+    // 1. Create Run Record with reporter
+    const [run] = await db.insert(agentRuns).values({
+      agentType: type,
+      reporterId: reporter.id,
+      status: 'RUNNING',
+      startTime: new Date(),
+    }).returning();
 
-    // 2. Run Agent
-    if (type === 'REPORTER') {
-      // A. Run Reporter
-      const reporterResult = await runReporterWorkflow(params as ReporterInput);
-      output = reporterResult.output;
+    try {
+      // B. Run Reporter with personality
+      const reporterInput: ReporterInput = {
+        ...params,
+        reporter: {
+          id: reporter.id,
+          name: reporter.name,
+          personality: reporter.personality,
+          memory: reporter.memory as any[],
+        },
+      };
+      const reporterResult = await runReporterWorkflow(reporterInput);
+      const output = reporterResult.output;
       reporterTokens = reporterResult.tokensUsed;
 
-      // B. Run Editor
+      // C. Run Editor
       const editorResult = await runEditor({ originalContent: output as ReporterOutput });
-      editorReview = editorResult.output;
+      const editorReview = editorResult.output;
       editorTokens = editorResult.tokensUsed;
 
-      // C. Run Designer (if Editor approved or revised, but let's run it anyway for the flow)
+      // D. Run Designer (if Editor approved or revised, but let's run it anyway for the flow)
       // Ideally we only design if approved, but for this demo we chain all.
+      let designerOutput: any | null = null;
+      let designerTokens = 0;
       if (editorReview) {
           const designerResult = await runDesigner({ content: editorReview });
           designerOutput = designerResult.output;
@@ -109,7 +120,32 @@ export async function triggerAgent(type: 'REPORTER' | 'MARKETER', params: any) {
         totalTokens,
       }).where(eq(agentRuns.id, run.id));
 
-    } else if (type === 'MARKETER') {
+      // E. Update reporter's memory
+      await addReporterMemory(
+        reporter.id,
+        'article_created',
+        `Created article: "${output.title}" about ${params.topic}`,
+        run.id
+      );
+
+    } catch (error: any) {
+      console.error(`Error running REPORTER agent:`, error);
+      await db.update(agentRuns).set({
+        status: 'FAILED',
+        endTime: new Date(),
+        logs: [{ message: error.message, timestamp: new Date().toISOString() }],
+      }).where(eq(agentRuns.id, run.id));
+    }
+
+  } else if (type === 'MARKETER') {
+    // 1. Create Run Record (no reporter for marketer)
+    const [run] = await db.insert(agentRuns).values({
+      agentType: type,
+      status: 'RUNNING',
+      startTime: new Date(),
+    }).returning();
+
+    try {
       // Marketer needs content + assets.
       // Find the latest Reporter output to market.
       const lastReportRun = await db.select().from(agentRuns)
@@ -128,8 +164,8 @@ export async function triggerAgent(type: 'REPORTER' | 'MARKETER', params: any) {
              content: review,
              assets: assets
          });
-         output = marketerResult.output;
-         marketerOutput = output;
+         const output = marketerResult.output;
+         const marketerOutput = output;
          marketerTokens = marketerResult.tokensUsed;
 
          // Get total tokens from the reporter run
@@ -164,14 +200,14 @@ export async function triggerAgent(type: 'REPORTER' | 'MARKETER', params: any) {
       } else {
           throw new Error('No recent complete report (with Editor & Designer output) found to market');
       }
-    }
 
-  } catch (error: any) {
-    console.error(`Error running agent ${type}:`, error);
-    await db.update(agentRuns).set({
-      status: 'FAILED',
-      endTime: new Date(),
-      logs: [{ message: error.message, timestamp: new Date().toISOString() }],
-    }).where(eq(agentRuns.id, run.id));
+    } catch (error: any) {
+      console.error(`Error running MARKETER agent:`, error);
+      await db.update(agentRuns).set({
+        status: 'FAILED',
+        endTime: new Date(),
+        logs: [{ message: error.message, timestamp: new Date().toISOString() }],
+      }).where(eq(agentRuns.id, run.id));
+    }
   }
 }

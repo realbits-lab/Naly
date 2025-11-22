@@ -12,6 +12,7 @@ import { useArticle } from '@/hooks/use-article';
 import { DataTable } from '@/components/data-viz/DataTable';
 import { DataChart } from '@/components/data-viz/DataChart';
 import { AdCard } from '@/components/feed/ad-card';
+import RepliesSection from '@/components/RepliesSection';
 
 interface SourceInfo {
   url: string;
@@ -211,7 +212,12 @@ export default function ArticleDetailPage(): React.ReactElement {
 
           <hr className="border-gray-200" />
 
-          {/* 12. Related Articles */}
+          {/* 12. Replies Section */}
+          <RepliesSection articleId={parseInt(articleId)} />
+
+          <hr className="border-gray-200" />
+
+          {/* 13. Related Articles */}
           {relatedArticles.length > 0 && (
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-900">Related Articles</h3>
