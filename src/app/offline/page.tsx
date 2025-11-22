@@ -1,9 +1,4 @@
-import type { Metadata } from 'next';
-
-export const metadata: Metadata = {
-  title: 'Offline - Naly',
-  description: 'You are currently offline',
-};
+'use client';
 
 export default function OfflinePage(): React.ReactElement {
   return (

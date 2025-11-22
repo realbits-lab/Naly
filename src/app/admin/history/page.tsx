@@ -3,6 +3,8 @@ import { agentRuns } from '@/db/schema';
 import { desc } from 'drizzle-orm';
 import { RunCard } from '@/components/RunCard';
 
+export const dynamic = 'force-dynamic';
+
 export default async function HistoryPage() {
   const runs = await db.select().from(agentRuns).orderBy(desc(agentRuns.startTime)).limit(50);
 

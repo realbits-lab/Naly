@@ -16,10 +16,10 @@ export const metadata: Metadata = {
   title: 'Naly - AI-Curated News Feed',
   description: 'AI-powered predictive content service with intelligent news curation',
   manifest: '/manifest.json',
-  themeColor: '#000000',
+  themeColor: '#171717',
   appleWebApp: {
     capable: true,
-    statusBarStyle: 'default',
+    statusBarStyle: 'black-translucent',
     title: 'Naly',
   },
   icons: {

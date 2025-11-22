@@ -1,5 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg width="144" height="144" xmlns="http://www.w3.org/2000/svg">
-  <rect width="144" height="144" fill="#000000"/>
-  <text x="50%" y="50%" text-anchor="middle" dy=".3em" fill="#ffffff" font-family="Arial, sans-serif" font-size="43.199999999999996">N</text>
+<svg width="144" height="144" viewBox="0 0 144 144" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grad144" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#171717;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0a0a0a;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="144" height="144" rx="32" fill="url(#grad144)"/>
+  <g transform="translate(36, 36)">
+    <rect x="0" y="0" width="12" height="72" fill="#ffffff" rx="4"/>
+    <rect x="12" y="18" width="12" height="48" fill="#3b82f6" rx="4" transform="rotate(30 18 42)"/>
+    <rect x="60" y="0" width="12" height="72" fill="#ffffff" rx="4"/>
+  </g>
 </svg>

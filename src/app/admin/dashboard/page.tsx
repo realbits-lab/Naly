@@ -6,6 +6,8 @@ import { runAgentManually } from '@/app/actions';
 import Link from 'next/link';
 import { RunCard } from '@/components/RunCard';
 
+export const dynamic = 'force-dynamic';
+
 export default async function DashboardPage() {
   const configs = await db.select().from(agentConfigs);
   const recentRuns = await db.select().from(agentRuns).orderBy(desc(agentRuns.startTime)).limit(10);
