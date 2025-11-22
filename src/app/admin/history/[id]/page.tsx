@@ -2,6 +2,7 @@ import { db } from '@/db';
 import { agentRuns } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
+import { Zap, DollarSign, TrendingUp, BarChart } from 'lucide-react';
 
 export default async function RunDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -39,6 +40,104 @@ export default async function RunDetailsPage({ params }: { params: Promise<{ id:
           )}
         </div>
       </div>
+
+      {/* Token Usage & ROI Section */}
+      {data.totalTokens !== null && data.totalTokens > 0 && (
+        <div className="rounded-xl bg-gradient-to-r from-blue-50 to-purple-50 p-6 border border-blue-200">
+          <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+            <Zap className="text-blue-600" size={20} />
+            Token Usage & ROI Analysis
+          </h2>
+
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5 mb-4">
+            {/* Reporter Tokens */}
+            {data.reporterTokens !== null && data.reporterTokens > 0 && (
+              <div className="bg-white rounded-lg p-3 border border-gray-200">
+                <p className="text-xs text-gray-600 font-medium">Reporter</p>
+                <p className="text-lg font-bold text-gray-900">{data.reporterTokens.toLocaleString()}</p>
+                <p className="text-xs text-gray-500">tokens</p>
+              </div>
+            )}
+
+            {/* Editor Tokens */}
+            {data.editorTokens !== null && data.editorTokens > 0 && (
+              <div className="bg-white rounded-lg p-3 border border-gray-200">
+                <p className="text-xs text-gray-600 font-medium">Editor</p>
+                <p className="text-lg font-bold text-gray-900">{data.editorTokens.toLocaleString()}</p>
+                <p className="text-xs text-gray-500">tokens</p>
+              </div>
+            )}
+
+            {/* Designer Tokens */}
+            {data.designerTokens !== null && data.designerTokens > 0 && (
+              <div className="bg-white rounded-lg p-3 border border-gray-200">
+                <p className="text-xs text-gray-600 font-medium">Designer</p>
+                <p className="text-lg font-bold text-gray-900">{data.designerTokens.toLocaleString()}</p>
+                <p className="text-xs text-gray-500">tokens</p>
+              </div>
+            )}
+
+            {/* Marketer Tokens */}
+            {data.marketerTokens !== null && data.marketerTokens > 0 && (
+              <div className="bg-white rounded-lg p-3 border border-gray-200">
+                <p className="text-xs text-gray-600 font-medium">Marketer</p>
+                <p className="text-lg font-bold text-gray-900">{data.marketerTokens.toLocaleString()}</p>
+                <p className="text-xs text-gray-500">tokens</p>
+              </div>
+            )}
+
+            {/* Total Tokens */}
+            <div className="bg-blue-600 rounded-lg p-3 border border-blue-700 text-white">
+              <p className="text-xs font-medium opacity-90">Total Tokens</p>
+              <p className="text-lg font-bold">{data.totalTokens.toLocaleString()}</p>
+              <p className="text-xs opacity-75">all agents</p>
+            </div>
+          </div>
+
+          {/* ROI Metrics */}
+          {(data.estimatedCost || data.adRevenue || data.roi) && (
+            <div className="grid gap-4 md:grid-cols-3">
+              {/* Estimated Cost */}
+              {data.estimatedCost && (
+                <div className="bg-white rounded-lg p-4 border border-red-200">
+                  <div className="flex items-center gap-2 text-red-700 mb-2">
+                    <DollarSign size={16} />
+                    <span className="text-xs font-semibold uppercase">Estimated Cost</span>
+                  </div>
+                  <p className="text-xl font-bold text-red-900">${parseFloat(data.estimatedCost).toFixed(6)}</p>
+                  <p className="text-xs text-gray-600 mt-1">Token expenses</p>
+                </div>
+              )}
+
+              {/* Ad Revenue */}
+              {data.adRevenue && (
+                <div className="bg-white rounded-lg p-4 border border-green-200">
+                  <div className="flex items-center gap-2 text-green-700 mb-2">
+                    <TrendingUp size={16} />
+                    <span className="text-xs font-semibold uppercase">Est. Revenue</span>
+                  </div>
+                  <p className="text-xl font-bold text-green-900">${parseFloat(data.adRevenue).toFixed(2)}</p>
+                  <p className="text-xs text-gray-600 mt-1">From predicted clicks</p>
+                </div>
+              )}
+
+              {/* ROI */}
+              {data.roi && (
+                <div className="bg-white rounded-lg p-4 border border-purple-200">
+                  <div className="flex items-center gap-2 text-purple-700 mb-2">
+                    <BarChart size={16} />
+                    <span className="text-xs font-semibold uppercase">ROI</span>
+                  </div>
+                  <p className={`text-xl font-bold ${parseFloat(data.roi) >= 0 ? 'text-green-900' : 'text-red-900'}`}>
+                    {parseFloat(data.roi).toFixed(2)}%
+                  </p>
+                  <p className="text-xs text-gray-600 mt-1">Return on investment</p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="grid gap-8 lg:grid-cols-2">
         {/* Output Section */}

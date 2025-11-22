@@ -3,7 +3,12 @@ import { google } from '@ai-sdk/google';
 import { z } from 'zod';
 import { EditorInput, EditorOutput } from './types';
 
-export async function runEditor(input: EditorInput): Promise<EditorOutput> {
+export interface EditorResult {
+  output: EditorOutput;
+  tokensUsed: number;
+}
+
+export async function runEditor(input: EditorInput): Promise<EditorResult> {
   const prompt = `
     You are an expert AI Editor. Review the following article for quality, accuracy, and style.
     
@@ -17,7 +22,7 @@ export async function runEditor(input: EditorInput): Promise<EditorOutput> {
     4. Determine the status: 'approved' (Score > 85), 'revised' (Score > 60), or 'rejected'.
   `;
 
-  const { object } = await generateObject({
+  const { object, usage } = await generateObject({
     model: google('gemini-2.0-flash'),
     schema: z.object({
       title: z.string(),
@@ -30,5 +35,8 @@ export async function runEditor(input: EditorInput): Promise<EditorOutput> {
     prompt: prompt,
   });
 
-  return object;
+  return {
+    output: object,
+    tokensUsed: usage.totalTokens || 0,
+  };
 }

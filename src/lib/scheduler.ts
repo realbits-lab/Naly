@@ -2,8 +2,8 @@ import { db } from '../db';
 import { agentConfigs, agentRuns } from '../db/schema';
 import { eq, desc, and } from 'drizzle-orm';
 import cronParser from 'cron-parser';
-import { runReporter } from './agents/reporter';
-import { runMarketer } from './agents/marketer';
+import { runReporterWorkflow } from './agents/reporter';
+import { runMarketer, calculateROI } from './agents/marketer';
 import { runEditor } from './agents/editor';
 import { runDesigner } from './agents/designer';
 import { ReporterInput, MarketerInput, ReporterOutput, MarketerOutput, EditorOutput } from './agents/types';
@@ -62,20 +62,48 @@ export async function triggerAgent(type: 'REPORTER' | 'MARKETER', params: any) {
     let editorReview: EditorOutput | null = null;
     let designerOutput: any | null = null;
     let marketerOutput: any | null = null;
-    
+
+    // Token tracking
+    let reporterTokens = 0;
+    let editorTokens = 0;
+    let designerTokens = 0;
+    let marketerTokens = 0;
+
     // 2. Run Agent
     if (type === 'REPORTER') {
       // A. Run Reporter
-      output = await runReporter(params as ReporterInput);
-      
+      const reporterResult = await runReporterWorkflow(params as ReporterInput);
+      output = reporterResult.output;
+      reporterTokens = reporterResult.tokensUsed;
+
       // B. Run Editor
-      editorReview = await runEditor({ originalContent: output as ReporterOutput });
+      const editorResult = await runEditor({ originalContent: output as ReporterOutput });
+      editorReview = editorResult.output;
+      editorTokens = editorResult.tokensUsed;
 
       // C. Run Designer (if Editor approved or revised, but let's run it anyway for the flow)
       // Ideally we only design if approved, but for this demo we chain all.
       if (editorReview) {
-          designerOutput = await runDesigner({ content: editorReview });
+          const designerResult = await runDesigner({ content: editorReview });
+          designerOutput = designerResult.output;
+          designerTokens = designerResult.tokensUsed;
       }
+
+      // Calculate total tokens
+      const totalTokens = reporterTokens + editorTokens + designerTokens;
+
+      // 3. Update Run with Output and Token Usage
+      await db.update(agentRuns).set({
+        status: 'COMPLETED',
+        endTime: new Date(),
+        output: output,
+        editorReview: editorReview,
+        designerOutput: designerOutput,
+        reporterTokens,
+        editorTokens,
+        designerTokens,
+        totalTokens,
+      }).where(eq(agentRuns.id, run.id));
 
     } else if (type === 'MARKETER') {
       // Marketer needs content + assets.
@@ -87,30 +115,50 @@ export async function triggerAgent(type: 'REPORTER' | 'MARKETER', params: any) {
         ))
         .orderBy(desc(agentRuns.startTime))
         .limit(1);
-        
+
       if (lastReportRun.length > 0 && lastReportRun[0].editorReview && lastReportRun[0].designerOutput) {
          const review = lastReportRun[0].editorReview as EditorOutput;
          const assets = lastReportRun[0].designerOutput as any; // Cast to DesignerOutput
-         
-         output = await runMarketer({
+
+         const marketerResult = await runMarketer({
              content: review,
              assets: assets
          });
+         output = marketerResult.output;
          marketerOutput = output;
+         marketerTokens = marketerResult.tokensUsed;
+
+         // Get total tokens from the reporter run
+         const reportRunTotalTokens = lastReportRun[0].totalTokens || 0;
+         const totalTokens = reportRunTotalTokens + marketerTokens;
+
+         // Calculate ROI based on predicted clicks
+         const predictedClicks = (marketerOutput as MarketerOutput).predictedMetrics.clicks;
+         const { estimatedCost, estimatedRevenue, roi } = calculateROI(totalTokens, predictedClicks);
+
+         // Update the marketer run
+         await db.update(agentRuns).set({
+           status: 'COMPLETED',
+           endTime: new Date(),
+           marketerOutput: marketerOutput,
+           marketerTokens,
+           totalTokens: marketerTokens,
+         }).where(eq(agentRuns.id, run.id));
+
+         // Update the reporter run with ROI data
+         await db.update(agentRuns).set({
+           marketerOutput: marketerOutput,
+           marketerTokens,
+           totalTokens,
+           estimatedCost: estimatedCost.toFixed(6),
+           adRevenue: estimatedRevenue.toFixed(2),
+           roi: roi.toFixed(2),
+         }).where(eq(agentRuns.id, lastReportRun[0].id));
+
       } else {
           throw new Error('No recent complete report (with Editor & Designer output) found to market');
       }
     }
-
-    // 3. Update Run with Output
-    await db.update(agentRuns).set({
-      status: 'COMPLETED',
-      endTime: new Date(),
-      output: type === 'REPORTER' ? output : null, // Marketer output is stored in marketerOutput column
-      editorReview: editorReview,
-      designerOutput: designerOutput,
-      marketerOutput: marketerOutput,
-    }).where(eq(agentRuns.id, run.id));
 
   } catch (error: any) {
     console.error(`Error running agent ${type}:`, error);

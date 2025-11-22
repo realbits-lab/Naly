@@ -12,6 +12,7 @@ export interface ReporterWorkflowResult {
     toolCalls?: string[];
   }[];
   totalSteps: number;
+  tokensUsed: number;
 }
 
 export async function runReporter(input: ReporterInput): Promise<ReporterOutput> {
@@ -35,7 +36,7 @@ Always cite your sources with the actual URLs from the news articles.
 Focus on providing accurate, timely, and insightful analysis.`;
 
   // 2. Execute multi-step workflow with AI SDK v6 patterns
-  const { text, steps } = await generateText({
+  const { text, steps, usage } = await generateText({
     model: google('gemini-2.0-flash'),
     system: systemPrompt,
     tools: {
@@ -112,5 +113,6 @@ After gathering the news, provide your response in the following JSON format:
     output,
     steps: stepLogs,
     totalSteps: steps.length,
+    tokensUsed: usage.totalTokens || 0,
   };
 }
